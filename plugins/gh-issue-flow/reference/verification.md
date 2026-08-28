@@ -35,6 +35,25 @@ gh pr view <n> --json state,mergedAt,mergeCommit
 > from a later step. Retrying on the exit code would have chased a phantom failure.
 > Same remedy in both directions: read the state back.
 
+### The mirror image: a write that SUCCEEDED but does not read back yet
+
+Not every mismatch is a failed write. **Projects v2 is eventually consistent.** Measured:
+six `gh project item-add` calls each returned a real item id and exit 0; `item-list`
+immediately afterwards reported **0 cards**, then 5 at ~20s and 6 at ~30s. Every write had
+landed.
+
+So a read-back that concludes from one immediate query manufactures a false failure — the
+same error as trusting exit 0, pointed the other way. **Verify the object, not the
+aggregate:** a write that returns an id lets you resolve that id directly, which is true
+immediately even while the collection lags.
+
+```sh
+gh api graphql -f query='{node(id:"<returned id>"){... on ProjectV2Item{project{number}}}}'
+```
+
+Where only a count is available, **poll with backoff** before declaring anything wrong.
+Label and issue writes do not need this; board writes do.
+
 ### The trap bites READS inside an unattended poll
 
 An unresolved-thread query hit a 503, `--jq` produced nothing, and the *error text*

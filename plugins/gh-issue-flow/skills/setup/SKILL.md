@@ -267,7 +267,13 @@ Close with the **one next command** the user should run — usually
 
 ⚠️ **Read back anything you created before claiming it.** `gh` exits 0 on writes the
 server rejected, so a report listing labels or fields you never actually made is the
-exact failure this skill exists to prevent. Re-list and count. See
+exact failure this skill exists to prevent. Re-list and count.
+
+🚨 **But board writes are eventually consistent — labels are not.** A label read-back is
+immediate and trustworthy. A Projects v2 read-back is **not**: measured, an `item-list`
+immediately after adding items reported 0 while every add had in fact succeeded, settling
+~30s later. Poll with backoff before concluding a board write failed, and prefer
+resolving a returned item id over counting. See
 [`../../reference/verification.md`](../../reference/verification.md).
 
 ## What this cannot give you

@@ -255,8 +255,23 @@ gh project item-list "$BOARD" --owner "$BOARD_OWNER" --limit 1000 --format json
 gh issue list --repo <owner>/<repo> --state open --limit 300 --json number,labels,assignees
 ```
 
-If a number in the receipt does not match the re-read, **say which issue failed and why,
-loudly** — that is the one line a human needs. Details and the other shapes of this trap:
+🚨 **Projects v2 writes are EVENTUALLY CONSISTENT — do not read back immediately.**
+MEASURED: six `gh project item-add` calls each returned a real item id and exit 0, and an
+`item-list` run straight afterwards reported **0 cards**. It reached 5 after ~20s and 6
+after ~30s. Every write had succeeded. A naive read-back here reports total failure on a
+run that worked, which is worse than not checking at all.
+
+**Verify the item, not the count.** `item-add` returns the new item's id; resolving that
+id proves the write landed even while the board's `items` connection still reports zero:
+
+```sh
+gh api graphql -f query='{node(id:"<PVTI_...>"){... on ProjectV2Item{
+  isArchived project{number} content{... on Issue{number}}}}}'
+```
+
+For counts, **poll with backoff** (a few tries over ~30s) and only then compare. If a
+number still does not match, **say which issue failed and why, loudly** — that is the one
+line a human needs. Other shapes of this trap:
 [`../../reference/verification.md`](../../reference/verification.md).
 
 ## 6. Receipt
