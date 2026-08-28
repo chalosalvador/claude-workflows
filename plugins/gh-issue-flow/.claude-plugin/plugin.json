@@ -1,0 +1,37 @@
+{
+  "name": "gh-issue-flow",
+  "displayName": "GitHub Issue Flow",
+  "description": "Board-driven issue workflow: triage, pick the next issue, plan it, implement it in a worktree, adversarially review the diff, open a PR, and drive it to green.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Chalo Salvador"
+  },
+  "license": "MIT",
+  "keywords": ["github", "issues", "projects", "code-review", "workflow", "triage"],
+  "userConfig": {
+    "board_number": {
+      "type": "string",
+      "title": "GitHub Project number",
+      "description": "The Projects v2 board number these repos feed, e.g. 11. Leave empty to skip all board steps.",
+      "required": false
+    },
+    "board_owner": {
+      "type": "string",
+      "title": "Project owner",
+      "description": "The org or user that owns the board. May differ from the repo owner.",
+      "required": false
+    },
+    "status_in_progress": {
+      "type": "string",
+      "title": "\"In progress\" status name",
+      "description": "The Status field value to set when work starts.",
+      "default": "In Progress"
+    },
+    "ready_label": {
+      "type": "string",
+      "title": "Autopilot label",
+      "description": "Label marking an issue as safe for unattended work.",
+      "default": "agent-ready"
+    }
+  }
+}
