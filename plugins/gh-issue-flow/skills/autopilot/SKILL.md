@@ -292,8 +292,22 @@ not push unsigned. Surface it in the report.
 
 Open the PR **ready for review** against the integration branch, with
 `--label agent-authored`, and request review from **the issue's assignee**; if
-unassigned or assigned to the agent's own account, request the lead. Tag them in the
-body too — a requested review alone is easy to miss.
+unassigned or assigned to the agent's own account, request the lead.
+
+🚨 **`gh pr edit --add-reviewer` exits 0 when GitHub silently refuses the request.**
+MEASURED: requesting review from the PR's own author returns exit 0 and adds nobody —
+GitHub does not allow self-review. That is the normal case on a solo repo, or whenever
+the run authenticates as the lead it is trying to notify. **Read it back:**
+
+```sh
+gh pr view <n> --json reviewRequests --jq '[.reviewRequests[].login]'
+```
+
+If it comes back empty, the notification never happened. **Fall back to an @-mention in a
+PR comment**, which does notify, and say in the report that no reviewer could be
+requested and why. Never report "review requested" off the exit code.
+
+Tag them in the body too — a requested review alone is easy to miss.
 
 PR body must contain, in order:
 
