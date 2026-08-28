@@ -96,6 +96,26 @@ If the change adds a guard, invariant, or scan-style test, read
 [`../reference/mutation-harness.md`](../reference/mutation-harness.md) before
 believing any harness number.
 
+### 🚨 When the gate cannot see the diff, say so and define manual acceptance
+
+A docs, config, or comment change often touches nothing the gate reads. The gate is then
+**green identically before and after** — which proves the branch broke nothing and proves
+*nothing at all* about whether the change is correct.
+
+Reporting that bare green as verification is the failure. Instead: **say the gate is
+blind to this diff, and state the manual acceptance you actually ran.** For a documented
+command, that is running it from a clean environment. For a config value, reading it back
+from the system that consumes it.
+
+⚠️ **A fresh-clone acceptance measures the COMMITTED tree.** `git clone` — of a repo or of
+a worktree — copies commits, not your working tree, so an acceptance run before you commit
+silently tests the OLD content and reports the bug you just fixed. **Commit first, then
+clone.** Measured; same family as
+[`../reference/mutation-harness.md`](../reference/mutation-harness.md) way #1.
+
+The upside: that pre-commit run is a valid **control**. Keep it and report both
+directions — pre-fix reproduces, post-fix passes.
+
 ### 2.3 Spec flow
 
 When `workflow.json` → `specFlow` is `openspec`, see

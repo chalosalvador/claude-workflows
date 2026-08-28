@@ -52,6 +52,17 @@ This is where the highest-leverage calls get made, so slow down on:
 
 1. **DECIDE FIRST** — the call, the alternative you rejected, and why.
 
+   🚨 **The issue's own diagnosis is a hypothesis, not a spec.** You read the code; the
+   reporter may not have. If the real defect is bigger, smaller, or elsewhere, **say so
+   here explicitly and plan the real one.** Measured: an issue reported one missing
+   dependency in a documented command; the file declared no dependencies at all, so a
+   second one was missing too and the command died on *that* one first. A fix matching
+   the issue's wording would have shipped, passed review, and left the bug in place —
+   looking done.
+
+   When you contradict the issue, the implementer must carry that into the PR body, so
+   the reporter learns what was actually wrong.
+
 2. **VERIFY-FIRST** — what exists today, by real `file:line` and symbol.
    ⚠️ Address by **pattern**, not by line number, for anything the change itself will
    move — a `file:line` written during a change is invalidated by that change.
@@ -96,7 +107,16 @@ This is where the highest-leverage calls get made, so slow down on:
    runs is asserting nothing, and they should know that.
 
 5. **TESTS** — the cases that would actually catch a regression here, and **the mutation
-   that proves each one bites**. If the change adds a guard, invariant, or scan-style
+   that proves each one bites**.
+
+   ⚠️ **If the gate cannot see this diff, say so and specify manual acceptance instead.**
+   A docs, config, or comment change often touches nothing the gate reads, so it is green
+   identically before and after — proof the branch broke nothing, and no evidence at all
+   that the change is right. Name the concrete acceptance: the command to run from a
+   clean environment, the value to read back from the system that consumes it. And say
+   whether a regression test is worth building *yet* — sometimes the honest answer is
+   "not until this recurs", and saying that is better than adding machinery the repo
+   cannot carry. If the change adds a guard, invariant, or scan-style
    test, say so — it needs the guard-test discipline, not an ordinary unit test.
 
 6. **VALIDATE** — the repo's gate commands, verbatim from its config or CI workflow.

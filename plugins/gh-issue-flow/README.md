@@ -19,6 +19,11 @@ checks your board, and reports every gap it cannot close itself. Then:
 /gh-issue-flow:triage dry run
 ```
 
+⚠️ **Before pointing this at a repo you care about**, consider running it once against a
+throwaway repo with real CI and a few realistic issues. `triage` writes across every open
+issue; `autopilot` opens PRs unattended. Both are reversible, neither is quiet — and a
+testbed run found four real bugs in this plugin that reading the code had not.
+
 ## What's inside
 
 ### Skills

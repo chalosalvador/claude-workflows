@@ -312,7 +312,10 @@ Tag them in the body too — a requested review alone is easy to miss.
 PR body must contain, in order:
 
 - `Fixes #<N>` (use `owner/repo#N` across repos)
-- **What changed** — 2–4 lines, plain language
+- **What changed** — 2–4 lines, plain language. 🚨 **If the plan contradicted the
+  issue's own diagnosis, lead with that.** The reporter needs to learn what was actually
+  wrong, and a reviewer skimming for "does this match the issue" will otherwise read the
+  mismatch as scope creep.
 - **How it was verified** — the exact gate commands and their result, plus the
   mutation-check result for any new test
 - **Noticed, not fixed** — anything out of scope you saw

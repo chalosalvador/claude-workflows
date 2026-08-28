@@ -77,6 +77,37 @@ nothing and tells you what is missing.
 Analyzes everything, writes nothing, prints the exact mutations it would make. When that
 looks right, drop `dry run`.
 
+### 4. Consider a testbed before your real repo
+
+`triage` writes labels and board fields across every open issue, and `autopilot` opens
+PRs unattended. Both are reversible, but neither is quiet.
+
+A throwaway repo — a small project with real CI, half a dozen realistic issues, and its
+own board — exercises every path in about twenty minutes and costs you nothing if it goes
+wrong. **Building this plugin's own testbed found four bugs that reading the code had
+not**, including two where a `gh` call returned exit 0 and did nothing. If you are
+adapting the skills, do this first.
+
+## What a run costs
+
+Worth knowing before you point `autopilot` at a queue, because the caps exist for this
+reason.
+
+A **one-line documentation fix**, end to end, spent roughly **110k tokens and ~12 minutes
+of wall clock** — about 40k on the planner and 70k across two review lenses, both pinned
+at `effort: max`. A substantial change costs more.
+
+That is the justification for three rules you might otherwise be tempted to relax:
+
+- **`autopilot` stops at 3 open `agent-authored` PRs.** The bottleneck is human review,
+  not authoring.
+- **`autopilot` takes at most 2 issues per run**, and caps babysitting at 45 minutes.
+- **The planner names which lenses apply, and you fire only those.** Five max-effort
+  reviewers on a docs change is most of that bill for nothing.
+
+The corollary: the `agent-ready` gate is not conservative for its own sake. Each wrong
+call spends real money to put a wrong PR on a teammate's queue.
+
 ## Prerequisites
 
 | Need | Why | Check |

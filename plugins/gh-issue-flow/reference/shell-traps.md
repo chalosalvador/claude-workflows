@@ -60,6 +60,37 @@ rather than "your shell rewrote the string".
 
 ---
 
+## 🚨 An unmatched glob is an ERROR in zsh — and `?` counts, anywhere
+
+bash passes an unmatched pattern through unchanged. **zsh aborts the command**:
+
+```
+zsh:1: no matches found: .github/workflows/*.yml
+```
+
+Exit 1, nothing runs, and in a chain everything after it is skipped. Any repo without
+that directory breaks a probe written the bash way.
+
+**The part that catches people three times: `?` and `*` are globs in ANY argument**, not
+just ones that look like paths. All three of these abort under zsh, and none of them is
+about files:
+
+```sh
+gh api repos/o/r/git/trees/main?recursive=1     # ? -> no matches found
+git log -1 --format=%G?                          # ? -> no matches found
+ls .github/workflows/*.yml                       # * -> no matches found
+```
+
+**Quote the argument** (`"…?recursive=1"`, `'--format=%G?'`), or test first and use
+`find`:
+
+```sh
+[ -d .github/workflows ] && find .github/workflows -name '*.yml'
+```
+
+`setopt nullglob` would also fix it, but never set shell options inside a skill — you do
+not own the shell the next command runs in.
+
 ## `IFS=$'\t' read -r a b c` cannot parse a row with an empty MIDDLE column
 
 TAB is an **IFS whitespace** character, so a run of tabs collapses into ONE delimiter
