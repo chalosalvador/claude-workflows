@@ -58,13 +58,35 @@ signing failure. That is a user decision, not something to configure for them.
 Never assume. Read each of these:
 
 ```sh
-gh repo view --json nameWithOwner,defaultBranchRef,squashMergeAllowed,rebaseMergeAllowed,mergeCommitAllowed
+gh repo view --json nameWithOwner,defaultBranchRef,squashMergeAllowed,rebaseMergeAllowed,mergeCommitAllowed,isEmpty
 git branch -r --list 'origin/*'
+```
+
+🚨 **Handle the empty repo first.** A GitHub repo created but never pushed to reports
+`isEmpty: true` and `defaultBranchRef.name` as an **empty string** — measured, not null,
+so a truthiness check on the object still passes and you compose `origin/` + `""` =
+`origin/`, a branch name that silently matches nothing downstream.
+
+```sh
+gh repo view --json isEmpty --jq '.isEmpty'   # true -> stop probing the branch
+```
+
+On an empty repo: say so, write no `integrationBranch`, and tell the user to push first
+and re-run. Everything else in this skill still applies — labels and the board can be set
+up before the first commit.
+
+⚠️ **Glob defensively — the agent's shell is zsh, where an unmatched glob is an ERROR,
+not an empty list.** `ls .github/workflows/*.yml` exits 1 with `no matches found` and
+aborts a chained command, where bash would have passed the pattern through. Measured on a
+repo with no CI. Test the directory first, or use `find`:
+
+```sh
+[ -d .github/workflows ] && find .github/workflows -name '*.yml' -o -name '*.yaml'
 ```
 
 | Fact | How |
 |---|---|
-| `integrationBranch` | `origin/` + the default branch. ⚠️ **Not always `main`** — if a `dev`/`develop` remote branch exists and is ahead of the default, the repo probably integrates there and releases from the default. **Ask; do not guess.** |
+| `integrationBranch` | `origin/` + the default branch — **after** the empty-repo check above. ⚠️ **Not always `main`** — if a `dev`/`develop` remote branch exists and is ahead of the default, the repo probably integrates there and releases from the default. **Ask; do not guess.** |
 | `validate` | **Read the CI workflow first** — `.github/workflows/*.yml`, the job that runs on PRs into the integration branch. Copy its step commands in order. Fall back to the toolchain only if there is no CI: `pyproject.toml`/`requirements.txt` → `ruff`/`pytest`; `package.json` → the lint/typecheck/test/build scripts that actually exist; `Cargo.toml` → `cargo clippy`/`cargo test`; `go.mod` → `go vet`/`go test ./...`. |
 | `preflight` | Anything the gate shells out to that no lockfile installs. |
 | `specFlow` | An `openspec/` directory at the repo root → `"openspec"`. |
@@ -119,8 +141,9 @@ gh label create agent-blocked   -d "Unattended run handed it back — a human de
 gh label create agent-authored  -d "PR opened unattended"                                -c 1D76DB
 ```
 
-`bug`, `enhancement`, `question` and `duplicate` ship with every new GitHub repo — check
-before creating.
+A new GitHub repo ships with `bug`, `documentation`, `duplicate`, `enhancement`,
+`good first issue`, `help wanted`, `invalid`, `question` and `wontfix` (verified) — so
+four of the category labels already exist. Check before creating.
 
 `gh label create` **exits 1 on an existing name** (measured) with
 `label with name "x" already exists`. Tolerate that failure rather than passing
