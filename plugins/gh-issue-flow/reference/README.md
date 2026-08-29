@@ -31,3 +31,7 @@ every incident recorded here is a tool that did nothing while looking like it wo
 So the recurring instruction is the same in every doc: **prove the positive case
 first.** Prove the grep matches something. Prove the mutation landed. Prove the
 control is green. Then, and only then, is an empty result evidence.
+
+For the evidence behind that claim — four bugs found in this plugin by running it against
+live systems, none caught by review or CI — see
+[Why the plugin is shaped like this](../README.md#why-the-plugin-is-shaped-like-this).
