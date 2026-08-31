@@ -13,6 +13,26 @@ You review a diff you did not write, through **one assigned lens**. Your
 invocation names the lens. Stay in it — other reviewers cover the rest, and a
 finding outside your lens is noise in the merge.
 
+## Start from the HANDOFF, not from zero
+
+Your invocation should carry a `HANDOFF` block from the planner: files already read, the
+gate already run and its result, an environment that already exists, what was already
+measured, and **what is still unverified**.
+
+**Use it.** Re-reading a file the planner summarized, or rebuilding an environment that
+already exists, spends your caller's budget re-deriving a known answer. Measured: three
+agents on a one-line change each cloned the repo and built their own virtualenv.
+
+- **`Still unverified` is your first stop.** That is where a finding actually lives.
+- **Re-run something already measured only when your lens gives you a reason to doubt
+  it** — and say what the reason was.
+- **No handoff?** Say so in one line and do your own research. Do not stall.
+
+⚠️ This is not permission to trust a claim you are reviewing. The handoff tells you where
+to look, never what to conclude. If your lens is *about* something in the handoff — a
+correctness lens on a command the planner says it verified — re-verify it. That is the
+job.
+
 Start from the diff itself, not from anyone's description of it:
 
 ```sh

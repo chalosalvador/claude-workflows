@@ -170,6 +170,9 @@ Same research (steps 1–3), executed as actions, with a hard checkpoint:
 - [ ] 6. Review: spawn `diff-reviewer` subagents IN PARALLEL (effort: max, fresh
          context), one per lens the plan named. Adjudicate: fix every valid finding,
          explain any rejected. Commit BEFORE spawning them.
+         💰 Paste the plan's HANDOFF block + the gate result into EACH lens prompt —
+         otherwise every lens re-clones and re-reads what the planner already did.
+         On an `effort:easy` issue, pass `model: sonnet` to the spawns.
 - [ ] 6b. If those fixes introduced NEW LOGIC — a new branch, gate, condition or code
          path — spawn ONE more `diff-reviewer` (correctness, max) over just that delta.
          Skip for test/comment/message/doc-only fixes.

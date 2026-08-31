@@ -108,6 +108,28 @@ That is the justification for three rules you might otherwise be tempted to rela
 The corollary: the `agent-ready` gate is not conservative for its own sake. Each wrong
 call spends real money to put a wrong PR on a teammate's queue.
 
+### Bringing it down
+
+The skills apply four levers, in order of saving:
+
+1. **A research handoff.** The planner ends with a `HANDOFF` block — files read, gate
+   result, existing environment, what is already verified and **what is not** — and every
+   reviewer starts from it. Without this, each agent re-clones the repo, rebuilds a
+   virtualenv and re-reads the same files. Measured on the run above: three agents did the
+   identical research three times, roughly a third of the spend for nothing.
+2. **Lens gating.** The planner names which lenses the diff can actually trip. Five where
+   two apply is more than double the review cost.
+3. **Model tiering per spawn.** `model` is an argument on each spawn; `effort` is
+   frontmatter-only and cannot be overridden. `effort:easy` issues run planner and lenses
+   on a cheaper tier.
+4. **Plan scaling.** The planner caps its own output by issue size — ≤400 words for a
+   one-file easy fix, uncapped for a migration. Every word is paid for twice: once
+   written, once read by each lens.
+
+⚠️ **None of these cuts scrutiny.** They remove duplicated research and unearned lenses.
+If you find yourself skipping the review to save budget, the honest move is to not run
+the agent on that issue at all.
+
 ## Prerequisites
 
 | Need | Why | Check |
