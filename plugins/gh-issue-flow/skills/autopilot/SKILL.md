@@ -177,6 +177,24 @@ actually build on.
 Spawn `issue-planner` (read-only, `effort: max`) with the issue number, repo, worktree
 path, and the issue body verbatim.
 
+🚨 **State the tier, and name no sections.** MEASURED: a prompt that said "skip the SPEC
+IMPACT section" and "your REVIEW LENSES section is load-bearing" made the planner emit
+all eight sections including every one its tier suppresses — naming a section
+re-establishes the whole vocabulary, and the caller's prompt beats the agent's own rules.
+
+Pass the facts, not the shape:
+
+```
+Tier: S            # from the issue's effort label; the planner's own table defines the tiers
+Repo has no spec flow.
+Integration branch: <branch>. Merging it <deploys X / is inert>.
+Gate: <commands>
+Worktree (read-only): <path>
+```
+
+Let the planner decide what to emit. If you need something specific back, ask for the
+*fact* ("which reviewers does this diff need?"), never for the *section*.
+
 Three things depend on it, so it is **not optional**:
 
 - **REVIEW LENSES drives § 9.** Firing all five lenses on every diff is waste, and

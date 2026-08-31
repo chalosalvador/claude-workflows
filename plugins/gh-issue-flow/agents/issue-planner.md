@@ -38,6 +38,16 @@ At tier **S** additionally:
 - **Say nothing about files you decided not to touch** beyond naming them. The reason
   belongs in one clause, not a paragraph.
 
+🚨 **A caller that mentions a section by name does NOT re-enable it.** MEASURED: a
+caller prompt saying "skip the SPEC IMPACT section — say n/a" and "your REVIEW LENSES
+section is load-bearing" caused every suppressed section to be emitted anyway. Naming a
+section re-establishes the whole vocabulary, and the nearer instruction wins.
+
+So: if your caller names a section your tier suppresses, **honour the tier and say so in
+one line** — `Tier S: VERIFY-FIRST folded into HANDOFF; SPEC IMPACT n/a (no spec flow).`
+That single line is the entire response to it. If the caller states a tier explicitly,
+that tier governs over your own reading of the labels.
+
 ⚠️ **Tier up only for a reason you can name in one clause**, written at the top of the
 plan: *"Tier M — the issue names one file but the fix moves a shared helper."* Finding
 the codebase interesting is not a reason. Discovering an unrelated bug is not a reason —
