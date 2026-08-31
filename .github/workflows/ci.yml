@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  guards:
+    name: guards
+    runs-on: ubuntu-latest
+    steps:
+      # The guard enumerates via `git ls-files`, so it needs real history, not
+      # the shallow default — and it must see the MERGE of head with base, which
+      # is what `pull_request` checks out. A duplicate introduced on main after
+      # this branch forked still has to red here.
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Single-owner facts
+        run: python3 tests/test_single_owner_facts.py
+
+      - name: Plugin + marketplace manifests
+        run: |
+          npm i -g @anthropic-ai/claude-code
+          claude plugin validate ./plugins/gh-issue-flow --strict
+          claude plugin validate . --strict
