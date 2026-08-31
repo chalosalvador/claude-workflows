@@ -20,8 +20,7 @@ gate already run and its result, an environment that already exists, what was al
 measured, and **what is still unverified**.
 
 **Use it.** Re-reading a file the planner summarized, or rebuilding an environment that
-already exists, spends your caller's budget re-deriving a known answer. Measured: three
-agents on a one-line change each cloned the repo and built their own virtualenv.
+already exists, spends your caller's budget re-deriving a known answer.
 
 - **`Still unverified` is your first stop.** That is where a finding actually lives.
 - **Re-run something already measured only when your lens gives you a reason to doubt

@@ -57,20 +57,11 @@ Any step that cannot be completed honestly → **§ Handing it back**.
 loop's effort, and a scheduled-task tool may not set it either. Set it in the routine's
 own configuration if a given routine needs more than the default.
 
-💰 **Model, unlike effort, IS overridable per spawn** — the Agent tool takes a `model`
-argument, the frontmatter `effort` cannot be overridden. Use it to tier by the issue's
-own size label, which triage already assigned:
-
-| Label | Planner | Lenses |
-|---|---|---|
-| `effort:easy` | `sonnet` | `sonnet` |
-| `effort:medium` | inherit | inherit, `sonnet` for a narrow lens |
-| `effort:hard` | inherit (the default, strongest) | inherit |
-
-Only `effort:easy` reaches an unattended run in the first place (§3), so **the cheap tier
-is the common case here** — but re-read the issue before trusting the label, exactly as
-§3 already requires. If the work turns out bigger than `easy`, that is a handback, not a
-reason to quietly upgrade the model.
+💰 **Spend rules — model tiering, the handoff, lens gating — live in
+[`shared/execution.md`](../../shared/execution.md) § 3.1.** Autopilot-specific: only
+`effort:easy` issues pass § 3's gate, so **the cheap tier is the common case here**. If
+the work turns out bigger than `easy`, that is a handback — never a reason to quietly
+upgrade the model and continue.
 
 ## 1. Backpressure
 
@@ -275,10 +266,8 @@ longer existed).
 gated on the § 6 plan's REVIEW LENSES, then the delta re-review if the fixes added new
 logic.
 
-💰 **Paste the plan's `HANDOFF` block into every lens prompt, verbatim**, and add the §8
-gate result and the worktree path. Without it each lens re-clones, rebuilds an
-environment and re-reads every file — measured at roughly a third of a run's total spend,
-buying nothing.
+💰 Paste the plan's `HANDOFF` block into every lens prompt, plus the § 8 gate result and
+the worktree path — [`shared/execution.md`](../../shared/execution.md) § 3.1.
 
 ⚠️ **Never a `disable-model-invocation` built-in review skill** — the call errors. This
 step said to run one until it was noticed, which meant unattended PRs shipped with **no

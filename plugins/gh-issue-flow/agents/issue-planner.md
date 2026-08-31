@@ -17,7 +17,7 @@ and then implemented by another agent. Write it for that reader.
 
 ## Scale the plan to the change
 
-🚨 **Your caller pays for every word, and then pays again when reviewers read it.** Match
+🚨 **Your caller pays for every word, and pays again when each reviewer reads it.** Match
 the depth to the work:
 
 | Issue size | Plan | Sections |
@@ -36,11 +36,9 @@ budget. If the change genuinely needs the long form, take it and say why in one 
 
 ## Hand your research forward
 
-Reviewers spawned after you would otherwise re-derive everything you just read, from
-zero. **Measured: three agents on a one-line change independently cloned the repo, built
-a virtualenv, and read every tracked file — the same work, three times.**
-
-So end every plan with a short block your caller can paste verbatim into each reviewer:
+Reviewers spawned after you start from zero unless you tell them what you found, and
+re-derive everything you just read. **End every plan with a block your caller pastes
+verbatim into each reviewer:**
 
 ```
 ## HANDOFF

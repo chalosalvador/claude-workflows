@@ -145,22 +145,38 @@ execute unaided.
 LENSES**; gate on that rather than always firing five. A max-effort lens on a diff it
 cannot touch buys nothing.
 
-💰 **Cost discipline, in order of saving.** Measured on a one-line docs fix: planner 42k
-tokens, two lenses 67k, ~110k total.
+### 3.1 Cost discipline
 
-1. **Pass the planner's `HANDOFF` block to every lens**, plus the gate result and the
-   worktree path. Without it each agent re-clones, rebuilds an environment and re-reads
-   the same files — roughly a third of the spend, buying nothing.
-2. **Gate the lens list** on the plan. Five lenses where two apply is more than double.
-3. **Tier the `model` per spawn** by the issue's size label. `model` is a per-spawn
-   argument; `effort` is frontmatter-only and cannot be overridden.
-4. **Let the planner scale its own output.** A one-line fix does not need a
-   rejected-alternatives essay, and every word is paid for twice — once written, once
-   read by each lens.
+**This subsection is the single source for spend rules. Skills link here; they do not
+restate it.**
 
-⚠️ **None of this is a reason to skip the review.** Scale it to the change; do not cut it
-across the board. The failure mode being optimized away is *duplicated research*, not
-scrutiny.
+Measured on a one-line docs fix: planner 42k tokens, two lenses 67k, **~110k total**. The
+dominant waste was not review depth — three agents each cloned the repo, built their own
+environment and read the same files. Roughly a third of the spend, buying nothing.
+
+Four levers, in order of saving:
+
+1. **Pass the planner's `HANDOFF` block to every lens**, verbatim, plus the gate result
+   and the worktree path. This is the one that removes the duplication above.
+2. **Gate the lens list** on the plan's REVIEW LENSES. Five lenses where two apply is
+   more than double.
+3. **Tier the `model` per spawn**, by the issue's size label:
+
+   | Label | Planner | Lenses |
+   |---|---|---|
+   | `effort:easy` | `sonnet` | `sonnet` |
+   | `effort:medium` | inherit | inherit; `sonnet` for a narrow lens |
+   | `effort:hard` | inherit (strongest) | inherit |
+
+   ⚠️ **`model` is a per-spawn argument; `effort` is frontmatter-only and cannot be
+   overridden.** That asymmetry is why tiering goes through the model.
+
+4. **Let the planner scale its own output** (its own frontmatter carries the budget).
+   Every word is paid for twice — once written, once read by each lens.
+
+🚨 **None of this is a reason to skip the review.** Scale it to the change; never cut it
+across the board. What is being removed is *duplicated research*, not scrutiny — and a
+handoff tells a reviewer where to look, never what to conclude.
 
 Adjudicate the merged findings yourself: fix every valid one, and for any you reject
 **say so with the reason in the PR body, never silently.**
