@@ -65,8 +65,10 @@ OWNED: dict[str, tuple[str, int]] = {
     "roughly a third of the spend":
         ("plugins/gh-issue-flow/shared/execution.md", 1),
 
-    # The planner's own output budget belongs with the planner.
-    "≤400 words":
+    # The planner's own output budget belongs with the planner. Was a word count
+    # ("≤400 words"); replaced by a structural section allowlist after the word
+    # budget was measured being exceeded 4.75x — advice loses, structure holds.
+    "| Tier | Trigger | EMIT exactly | DO NOT EMIT |":
         ("plugins/gh-issue-flow/agents/issue-planner.md", 1),
 
     # The HANDOFF schema. The planner PRODUCES it; diff-reviewer only consumes,
