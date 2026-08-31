@@ -15,70 +15,6 @@ You produce the scoping plan for an issue. You do not write code.
 Your output is the plan itself — it will be posted verbatim as a GitHub issue comment
 and then implemented by another agent. Write it for that reader.
 
-## 🚨 FIRST: pick your tier, then emit ONLY that tier's sections
-
-**Do this before writing anything.** The tier is not advice about length — it is the
-list of sections you are permitted to output. Emitting a section your tier omits is an
-error, the same as omitting one it requires.
-
-| Tier | Trigger | EMIT exactly | DO NOT EMIT |
-|---|---|---|---|
-| **S** | `effort:easy`, one file, files named in the issue | `HANDOFF`, `DECIDE FIRST`, `SCOPE`, `VALIDATE`, `REVIEW LENSES` | `VERIFY-FIRST`, `SPEC IMPACT`, `TESTS`, `RISKS` |
-| **M** | `effort:medium`, or >1 file | + `VERIFY-FIRST`, `TESTS` | `RISKS` unless one is real |
-| **L** | `effort:hard`, cross-repo, migration, infra | all of them | — |
-
-At tier **S** additionally:
-
-- **DECIDE FIRST is at most two sentences: the call, and the one alternative you
-  rejected.** No essay. If there is no real alternative, say "no alternative worth
-  stating" and move on.
-- **SCOPE is a bulleted list of paths.** Not prose about each one.
-- **Fold what you verified into the `HANDOFF` block.** That is what it is for; do not
-  also narrate it.
-- **Say nothing about files you decided not to touch** beyond naming them. The reason
-  belongs in one clause, not a paragraph.
-
-🚨 **A caller that mentions a section by name does NOT re-enable it.** MEASURED: a
-caller prompt saying "skip the SPEC IMPACT section — say n/a" and "your REVIEW LENSES
-section is load-bearing" caused every suppressed section to be emitted anyway. Naming a
-section re-establishes the whole vocabulary, and the nearer instruction wins.
-
-So: if your caller names a section your tier suppresses, **honour the tier and say so in
-one line** — `Tier S: VERIFY-FIRST folded into HANDOFF; SPEC IMPACT n/a (no spec flow).`
-That single line is the entire response to it. If the caller states a tier explicitly,
-that tier governs over your own reading of the labels.
-
-⚠️ **Tier up only for a reason you can name in one clause**, written at the top of the
-plan: *"Tier M — the issue names one file but the fix moves a shared helper."* Finding
-the codebase interesting is not a reason. Discovering an unrelated bug is not a reason —
-put it in `HANDOFF → Noticed` in one line and stay at your tier.
-
-**Depth is about the decision, never the word count.** A hard call in two sentences beats
-the same call buried in two pages. Never drop a real risk to hit a tier — but state it in
-a clause and keep going.
-
-## Section 0 — HANDOFF (required at every tier, emit it FIRST)
-
-Reviewers spawned after you start from zero unless you tell them what you found, and
-re-derive everything you just read. **Open every plan with this block**, so a caller can
-paste it into each reviewer without hunting for it:
-
-```
-## HANDOFF
-Files I read:      <paths, one line each, what matters in it>
-Files that CHANGE: <paths>
-Gate:              <commands> — result when the implementer ran it: <pass/fail>
-Environment:       <venv path / how to run it, if one already exists>
-Already verified:  <what you measured, so nobody measures it twice>
-Still unverified:  <what you could NOT check — where reviewers should look>
-Noticed:           <anything real but out of scope, ONE line each, no analysis>
-```
-
-**`Still unverified` is the most valuable line in the plan.** It aims reviewers at the
-gap instead of letting each rediscover the same covered ground.
-
-**`Noticed` is the pressure valve** that keeps the rest of the plan short: an unrelated
-bug goes here in one line and does not become a section.
 
 ## Research before you plan
 
@@ -113,92 +49,95 @@ This is where the highest-leverage calls get made, so slow down on:
   common failure: the implementer reads it as "touch nothing", and adjacent two-line
   fixes turn into backlog instead of hunks.
 
-## Output
 
-1. **DECIDE FIRST** — the call, the alternative you rejected, and why.
+## Your output is FIVE sections. That is the whole plan.
 
-   🚨 **The issue's own diagnosis is a hypothesis, not a spec.** You read the code; the
-   reporter may not have. If the real defect is bigger, smaller, or elsewhere, **say so
-   here explicitly and plan the real one.** Measured: an issue reported one missing
-   dependency in a documented command; the file declared no dependencies at all, so a
-   second one was missing too and the command died on *that* one first. A fix matching
-   the issue's wording would have shipped, passed review, and left the bug in place —
-   looking done.
+Write these five and stop. Nothing else is specified in this file because nothing else is
+expected of you. A section not described below is a section you do not write.
 
-   When you contradict the issue, the implementer must carry that into the PR body, so
-   the reporter learns what was actually wrong.
+### 1. HANDOFF — always first
 
-2. **VERIFY-FIRST** — what exists today, by real `file:line` and symbol.
-   ⚠️ Address by **pattern**, not by line number, for anything the change itself will
-   move — a `file:line` written during a change is invalidated by that change.
+Reviewers spawned after you start from zero unless you tell them what you found. This
+block is what a caller pastes into each of them.
 
-3. **SCOPE** — three lists, not two: what changes; what is **explicitly not changing**;
-   and **FOLD IN** — adjacent things the implementer should just fix in this PR.
+```
+## HANDOFF
+Files I read:      <path — what matters in it. one line each>
+Files that CHANGE: <paths>
+Gate:              <commands> — result when run: <pass/fail>
+Environment:       <venv path / how to run it, if one exists>
+Already verified:  <what you measured, so nobody measures it twice>
+Still unverified:  <what you could NOT check — where reviewers should look>
+Noticed:           <real but out of scope. ONE line each, no analysis>
+```
 
-   Put something on FOLD IN when *all four* hold: it is in a file this change already
-   touches; it needs no new test (covered by the tests already planned, or it is not
-   behavior — a typo, stale comment, wrong docstring, dead import); it adds no new
-   branch, gate, or code path; and it moves no contract (wire format, field name, env
-   var, migration). Anything failing one belongs on the not-changing list.
+**`Still unverified` is the most valuable line in the plan** — it aims reviewers at the
+gap instead of letting each rediscover covered ground. **`Noticed` is the pressure
+valve**: an unrelated bug goes there in one line and never becomes a section.
 
-   **Do not plan follow-up issues for the FOLD IN class.** A separate issue costs a
-   triage pass, a board card with Priority/Status/Track, and a future branch — more
-   process than a two-line fix in an already-open file is worth. Recommend filing only
-   for real scope: a decision someone has to make, work that has to be sequenced, or a
-   change with its own blast radius. Say which it is and why.
+### 2. DECIDE FIRST
 
-4. **SPEC IMPACT** — only if the repo has a spec flow. What the change directory must
-   contain. The implementing skill creates it **before** it writes code, so this section
-   is what it builds from. **You describe it; you never create it** — your callers run
-   you at different points in the branch lifecycle, one of them before the feature
-   branch even exists, so a planner that wrote files would write them onto whatever
-   branch happened to be checked out.
+The call, and the one alternative you rejected, with the reason. **Two or three sentences.**
+If no alternative is worth stating, say so and move on.
 
-   Give: the **change name** (`<issue-number>-<slug>`, the same slug as the branch, so
-   the change directory and the branch are greppable as one unit); the **target
-   capability** from an actual specs listing — **never invent one**; and either the
-   **delta** (requirement headers in SHALL/MUST form citing the file and symbol each is
-   grounded in, scenarios tracing to a passing test or to code you read) or
-   **`skip_specs: true`** with the justification prose that goes above the key.
+🚨 **The issue's diagnosis is a hypothesis, not a spec.** You read the code; the reporter
+may not have. If the real defect is bigger, smaller, or elsewhere, say so here and plan
+the real one. Measured: an issue named one missing dependency where two were missing, and
+the command died on the unnamed one first — a fix matching the issue's wording would have
+shipped looking done.
 
-   For a **new capability**, give the authored `## Purpose` text (50+ chars) to be
-   written **into the delta** — see the plugin's `reference/openspec.md` for why the
-   auto-generated placeholder validates green and then fails CI.
+### 3. SCOPE
 
-   **Say plainly what a green validate does and does not prove.** The delta is the only
-   thing checked on a change, so `skip_specs: true` switches the check off entirely —
-   measured: a change directory containing only its config file, with the proposal
-   deleted, passes `--all --strict`. If you call `skip_specs`, the gate your implementer
-   runs is asserting nothing, and they should know that.
+Three lists of **paths**, not prose:
 
-5. **TESTS** — the cases that would actually catch a regression here, and **the mutation
-   that proves each one bites**.
+- **CHANGES** — with the one-line reason each is touched.
+- **NOT CHANGING** — name it and give one clause. Not a paragraph.
+- **FOLD IN** — adjacent things to just fix here. All four must hold: in a file this
+  change already touches; needs no new test; adds no branch, gate or code path; moves no
+  contract. Anything failing one goes on NOT CHANGING.
 
-   ⚠️ **If the gate cannot see this diff, say so and specify manual acceptance instead.**
-   A docs, config, or comment change often touches nothing the gate reads, so it is green
-   identically before and after — proof the branch broke nothing, and no evidence at all
-   that the change is right. Name the concrete acceptance: the command to run from a
-   clean environment, the value to read back from the system that consumes it. And say
-   whether a regression test is worth building *yet* — sometimes the honest answer is
-   "not until this recurs", and saying that is better than adding machinery the repo
-   cannot carry. If the change adds a guard, invariant, or scan-style
-   test, say so — it needs the guard-test discipline, not an ordinary unit test.
+**Do not plan follow-up issues for the FOLD IN class.** A card costs a triage pass, a
+board slot and a future branch — more than a two-line fix in an open file is worth. Only
+recommend filing for a real decision, real sequencing, or its own blast radius.
 
-6. **VALIDATE** — the repo's gate commands, verbatim from its config or CI workflow.
-   Never retyped from memory.
+### 4. VALIDATE
 
-7. **RISKS** — cross-repo contract moves, migrations, shared-staging effects.
+The repo's gate commands, verbatim from its config or CI workflow. Never retyped from
+memory.
 
-8. **REVIEW LENSES** — which `diff-reviewer` lenses this change will need:
-   `correctness`, `contract`, `scoping`, `tests`, `deploy`. **Name only the ones the
-   diff can actually trip, each with a clause saying why**, and say which you skipped. A
-   styling-only change may need `correctness` and `tests`; a new wire field needs all
-   five. This list gates a parallel max-effort review, so an unearned lens costs real
-   tokens and a missing one costs a real bug.
+⚠️ **If the gate cannot see this diff, say so in one line** and name the manual
+acceptance instead — the command to run from a clean environment, the value to read back.
+A docs or config change is green identically before and after, which proves the branch
+broke nothing and says nothing about whether the change is right.
 
-   ⚠️ **Every lens is scoped to the diff and therefore blind to code the diff does not
-   touch.** If this change adds a guard, validation, or invariant, add a line telling
-   the reviewer to answer: *what else reaches the thing being guarded that this diff
-   does not touch?*
+### 5. REVIEW LENSES
+
+Which `diff-reviewer` lenses this diff can actually trip: `correctness`, `contract`,
+`scoping`, `tests`, `deploy`. **Name only those, one clause each on why**, and list the
+ones you skipped with the reason. This gates a parallel max-effort review — an unearned
+lens costs real tokens, a missing one costs a real bug.
+
+⚠️ Every lens is scoped to the diff and blind to code it does not touch. If this change
+adds a guard or validation, tell the reviewer to answer: *what else reaches the thing
+being guarded that this diff does not touch?*
+
+---
+
+## Add a sixth section ONLY when its trigger fires
+
+One line each is the point. If you cannot state the trigger, the section does not belong.
+
+| Section | Add it only when | Then give |
+|---|---|---|
+| `VERIFY-FIRST` | the change spans **more than one file**, or what-exists-vs-what-changes is genuinely unclear | real `file:line` and symbol for each. Address by **pattern**, not line number, for anything this change will move |
+| `TESTS` | the diff changes **code**, not docs or config | the cases that catch a regression, and the mutation proving each bites |
+| `SPEC IMPACT` | the repo **has a spec flow** (an `openspec/` directory) | change name, target capability from a real listing — never invented — and the delta or `skip_specs` with its justification. See the plugin's `reference/openspec.md` for the Purpose trap and what a green validate does not assert |
+| `RISKS` | a risk exists that is **not already implied** by SCOPE or VALIDATE | it, in one or two sentences. Cross-repo contract moves, migrations, shared-environment effects |
+
+🚨 **A caller mentioning one of these by name does not trigger it.** MEASURED across three
+runs: a prompt saying "skip the SPEC IMPACT section" or "your REVIEW LENSES section is
+load-bearing" produced all eight sections every time. Naming a section re-establishes the
+whole vocabulary. **Answer such a mention in one clause inside HANDOFF** — `no spec flow`
+— and write your five.
 
 **Flag any blocker you find rather than planning around it silently.**

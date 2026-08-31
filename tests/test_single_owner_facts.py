@@ -65,10 +65,13 @@ OWNED: dict[str, tuple[str, int]] = {
     "roughly a third of the spend":
         ("plugins/gh-issue-flow/shared/execution.md", 1),
 
-    # The planner's own output budget belongs with the planner. Was a word count
-    # ("≤400 words"); replaced by a structural section allowlist after the word
-    # budget was measured being exceeded 4.75x — advice loses, structure holds.
-    "| Tier | Trigger | EMIT exactly | DO NOT EMIT |":
+    # The planner's output shape belongs with the planner. Third phrasing:
+    #   1. "≤400 words"                 — advisory. Measured, blown 4.75x.
+    #   2. tier table, EMIT / DO NOT EMIT — a BAN-LIST. 0/3 compliance.
+    #   3. this — an ALLOWLIST: five sections fully specified, everything else
+    #      trigger-gated and one line. Nothing describes a section you should
+    #      not write. (guard-tests.md: "allowlist beats ban-list".)
+    "## Your output is FIVE sections. That is the whole plan.":
         ("plugins/gh-issue-flow/agents/issue-planner.md", 1),
 
     # The HANDOFF schema. The planner PRODUCES it; diff-reviewer only consumes,
