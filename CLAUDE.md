@@ -28,20 +28,25 @@ The marketplace is registered as a **Directory** source pointing at this checkou
 GitHub:
 
 ```bash
-claude plugin marketplace list     # Source: Directory (/Users/chalo/monogram/claude-workflows)
+claude plugin marketplace list     # Source: Directory (<your checkout>) — or GitHub
 ```
 
-So **checking out a different branch changes what the installed plugin serves.** That is
-deliberate — it is how unmerged agent changes get tested — but it means a stray
-`git checkout` silently changes behaviour in every other session on this machine. If you
-want the published version instead, re-add the marketplace as `chalosalvador/claude-workflows`.
+**If it says `Directory`, checking out a different branch changes what the installed
+plugin serves.** That is deliberate — it is how unmerged agent changes get tested — but a
+stray `git checkout` then silently changes behaviour in every other session on that
+machine. After merging, return the checkout to `main`.
+
+If it says `GitHub`, you are on the published version and local edits do nothing until
+they land on `main`. Re-add as a directory source to test unmerged work:
+`claude plugin marketplace add ./`
 
 ## 🚨 Two agent-loading traps, both of which cost real work here
 
-**Shadowing.** `~/.claude/agents/` holds an `issue-planner.md` and a `diff-reviewer.md`
-that predate this plugin. A **bare** `issue-planner` resolves to those; only
-`gh-issue-flow:issue-planner` resolves to the plugin's copy. There is no warning, and the
-shadowing agent returns a perfectly good-looking result.
+**Shadowing.** If `~/.claude/agents/` (or a project's `.claude/agents/`) holds an agent
+with the same name, **that file wins and the plugin's copy never runs.** A **bare**
+`issue-planner` resolves to whichever wins; only `gh-issue-flow:issue-planner` reaches the
+plugin's. There is no warning, and the shadowing agent returns a perfectly good-looking
+result. Check with `ls ~/.claude/agents/` before trusting any agent change.
 
 > Five consecutive agent runs were spent tuning the plugin's planner while the
 > user-level file was the one executing. Four separate explanations were constructed for
@@ -72,13 +77,17 @@ to it, so `git add` before trusting a local green.
 
 ## Testbed
 
-`chalosalvador/claude-workflows-testbed` + Projects board **1** (owner `chalosalvador`) —
-a real Python repo with CI and six deliberately varied issues, kept for exercising the
-plugin end to end. `scripts/reset.sh` in that repo returns it to pristine; run
-`--dry-run` first. Its `main` is deliberately **unprotected**.
+End-to-end changes should be exercised against a throwaway repo, not a real one — see
+[`CONTRIBUTING.md`](CONTRIBUTING.md) for how to build one in about ten minutes.
 
-⚠️ Its `README.md` install line is **deliberately wrong** — that is issue #3's fixture,
-not a bug. `scripts/reset.sh` restores the broken form on every reset.
+The maintainer's is `chalosalvador/claude-workflows-testbed` + Projects board **1**
+(owner `chalosalvador`) — **you will not have write access to it, so make your own.** It
+is a small Python repo with real CI and six deliberately varied issues; its `main` is
+deliberately unprotected; `scripts/reset.sh` in that repo returns it to pristine
+(`--dry-run` first).
+
+⚠️ In that repo the `README.md` install line is **deliberately wrong** — it is a fixture
+for its issue #3, not a bug. `scripts/reset.sh` restores the broken form on every reset.
 
 ## Convention
 

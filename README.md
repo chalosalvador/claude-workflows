@@ -31,12 +31,15 @@ a guard test gets defeated, what a passing bot check does not tell you.
 ### 1. Install
 
 ```bash
-/plugin marketplace add <owner>/claude-workflows
+/plugin marketplace add chalosalvador/claude-workflows
 ```
 
 ```bash
 /plugin install gh-issue-flow@claude-workflows
 ```
+
+*(Working from a fork? Substitute your own `owner/repo` in the first line — the second is
+unchanged, since it names the marketplace, not the repo.)*
 
 You will be prompted for your board number and owner. **Leave them blank if you have no
 project board** — the skills fall back to labels and `gh issue list`.
@@ -47,7 +50,7 @@ To enable it for a whole team, commit this to the repo's `.claude/settings.json`
 {
   "extraKnownMarketplaces": {
     "claude-workflows": {
-      "source": { "source": "github", "repo": "<owner>/claude-workflows" }
+      "source": { "source": "github", "repo": "chalosalvador/claude-workflows" }
     }
   },
   "enabledPlugins": { "gh-issue-flow@claude-workflows": true }
