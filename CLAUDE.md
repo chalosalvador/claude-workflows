@@ -8,6 +8,7 @@ caused wasted work.
 
 ```bash
 python3 tests/test_single_owner_facts.py
+python3 tests/test_no_stray_files.py
 claude plugin validate ./plugins/gh-issue-flow --strict
 claude plugin validate . --strict
 ```
