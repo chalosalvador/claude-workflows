@@ -7,6 +7,7 @@ Everything here is markdown and JSON. There is no build, no install, no dependen
 
 ```bash
 python3 tests/test_single_owner_facts.py
+python3 tests/test_no_stray_files.py
 claude plugin validate ./plugins/gh-issue-flow --strict
 claude plugin validate . --strict
 ```
