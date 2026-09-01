@@ -124,6 +124,23 @@ measured numbers: [`shared/execution.md`](plugins/gh-issue-flow/shared/execution
 you find yourself skipping the review to save budget, the honest move is to not run the
 agent on that issue at all.
 
+**Measured, two issues, same prompt and worktree, only the planner spec differing:**
+
+| | tokens before → after | |
+|---|---|---|
+| a 2-file code change | 52,075 → 40,790 | **−22%** |
+| a 1-file docs change | 55,169 → 53,861 | −2%, flat |
+
+So this **reallocates effort rather than uniformly cutting it.** The simple issue got
+cheaper; the subtle one spent the same and used it better — on the docs change the planner
+replayed six candidate strings through a consuming script and found one that passes its
+guard, fails its rewrite, and destroys a fixture while printing success.
+
+Section discipline held **17/17** across both, and the triggers discriminated in both
+directions: `VERIFY-FIRST`/`TESTS` fired on the code change and stayed silent on the docs
+one; `RISKS` did the reverse. **Treat this as a compliance-and-quality result, not a cost
+result** — the saving is real only on easy issues.
+
 ## Prerequisites
 
 | Need | Why | Check |
