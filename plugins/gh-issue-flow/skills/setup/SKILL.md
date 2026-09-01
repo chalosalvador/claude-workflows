@@ -222,11 +222,53 @@ will never notice when they silently are not running.
 | `issue-planner` | `effort: max`, read-only | `next-issue`, `autopilot` | The scoping plan — and **REVIEW LENSES**, which decides the next step |
 | `diff-reviewer` | `effort: max`, read-only | `next-issue`, `autopilot` | Findings through one lens: `correctness`, `contract`, `scoping`, `tests`, `deploy` |
 
-Confirm both are discoverable — they appear as `gh-issue-flow:<name>` in `/context` under
-custom agents, or in the @-mention list. **If a same-named agent already exists in the
-user's `~/.claude/agents/` or the project's `.claude/agents/`, that one wins and the
-plugin's copy never runs.** Say so if you find one; a stale local `diff-reviewer` without
-`effort: max` silently downgrades every review.
+### 🚨 Detect shadowing — do not just warn about it
+
+**A same-named agent in `~/.claude/agents/` or the project's `.claude/agents/` wins, and
+the plugin's copy never runs.** There is no error, no warning, and the shadowing agent
+still returns a good-looking result — so every symptom points at the plugin's file, which
+is not the file executing.
+
+MEASURED: five consecutive agent runs were spent tuning a plugin agent file that nothing
+read, because an older same-named agent sat in `~/.claude/agents/`. Four separate
+explanations were constructed for the resulting "non-compliance". All were void. **Prose
+warning this was already in this skill and was ignored** — which is why it is now a check
+you run, not a paragraph you read.
+
+```sh
+claude plugin list          # "No plugins installed" -> NOTHING in the plugin is loaded
+ls ~/.claude/agents/ .claude/agents/ 2>/dev/null
+```
+
+For each of `issue-planner` and `diff-reviewer`, report explicitly:
+
+| Finding | What it means |
+|---|---|
+| plugin not installed | **Stop.** Every skill here is inert. Install it, or run `claude --plugin-dir <path>`. |
+| same-named file in `~/.claude/agents/` | That file runs. The plugin's copy is dead. |
+| same-named file in `.claude/agents/` | Same, and it also shadows the user-level one. |
+| neither | The plugin's agents are live. |
+
+**If a shadow exists, say which file will actually execute, by absolute path.** Do not
+delete or rename it — it may be deliberate and it may be older and better. The user
+decides; you only make the invisible visible.
+
+⚠️ **The namespaced name is the reliable one.** `gh-issue-flow:issue-planner` always
+resolves to the plugin's copy; a bare `issue-planner` resolves to whichever wins. Prefer
+the namespaced form when spawning.
+
+🚨 **Agent discovery happens at SESSION START.** Editing an agent file — or adding a new
+one — changes nothing for the session already running; the spawn fails with
+`Agent type '<name>' not found` listing the agents as they were at launch. Measured.
+
+So an agent edit cannot be tested in the session that made it. **Restart with the plugin
+loaded, then measure:**
+
+```sh
+claude --plugin-dir <path-to>/plugins/gh-issue-flow
+```
+
+`/reload-plugins` refreshes skills; do not assume it re-resolves agent types.
 
 Two things worth telling the user once, because they are not obvious:
 
