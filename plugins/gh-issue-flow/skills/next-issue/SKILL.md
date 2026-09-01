@@ -129,9 +129,13 @@ gh pr view <PR> --repo <owner>/<repo>      # linked / "follow-up to" PRs
 If `gh issue view` returns empty for a transferred issue, read the body straight from
 the board JSON (`.content.body`).
 
-Then delegate to the **`issue-planner`** subagent (read-only, `effort: max`). It
-returns the DECIDE-FIRST call, VERIFY-FIRST (what exists vs. what changes, naming real
-files and symbols), the SCOPE, SPEC IMPACT, the test plan, and **REVIEW LENSES**.
+Then delegate to the **`issue-planner`** subagent (read-only, `effort: max`). It returns
+the decision, what exists vs. what changes, the scope, the test/validate plan, a HANDOFF
+block for the reviewers, and which review lenses this diff needs.
+
+🚨 **State the tier from the issue's effort label; name no sections.** Naming one
+re-establishes the whole vocabulary and the planner emits all of them — measured. Pass
+the facts (branch, gate, spec flow, worktree) and let it choose the shape.
 
 **The VERIFY-FIRST section must name real files/symbols, not guesses.**
 
