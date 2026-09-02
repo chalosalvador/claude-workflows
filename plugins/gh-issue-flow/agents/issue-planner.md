@@ -18,10 +18,20 @@ and then implemented by another agent. Write it for that reader.
 
 ## Research before you plan
 
-- `gh issue view <N> --repo <owner>/<repo> --comments`, plus every PR and issue the body
-  references. ⚠️ **Resolve each repo's owner from its own URL** — repos on one board can
-  sit under different owners, and the board's owner is a third thing. If `gh issue view`
-  returns empty (a transferred issue), read `.content.body` from the board JSON instead.
+- **The issue body and its comments are already in your prompt. Do not re-fetch them.**
+  Your caller paid for that read before spawning you; you start blank, which is exactly
+  how one `gh issue view` gets billed twice per issue. If they are genuinely missing, say
+  so and read them **once, over REST** — `gh api repos/<owner>/<repo>/issues/<N>` and
+  `.../issues/<N>/comments`. MEASURED: that pair costs **0** GraphQL points where
+  `gh issue view --comments` costs 2. Small per call — but it is the budget that actually
+  runs out, and REST bills against a separate one.
+- **Referenced PRs and issues: at most three, and only the ones the DECIDE FIRST call
+  actually turns on.** A body citing eight PRs is not eight reads. Fetch each over REST —
+  `gh api repos/<owner>/<repo>/pulls/<n> --jq '{title,state,merged_at,body}'`. If a fourth
+  would genuinely change the call, name it in the HANDOFF as something you could not
+  check rather than fetching it. ⚠️ **Resolve each repo's owner from its own URL** —
+  repos on one board can sit under different owners, and the board's owner is a third
+  thing.
 - Open the **actual files** the issue touches. Confirm what already exists vs. what has
   to change. **Every file and symbol you name must be one you have read** — never a
   guess.

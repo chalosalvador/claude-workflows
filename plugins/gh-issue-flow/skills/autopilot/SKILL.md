@@ -80,16 +80,17 @@ queue worse. Also flag any `agent-authored` PR open more than 5 days as stalled.
 ## 2. Select candidates (max 2)
 
 ```sh
-gh project item-list "$BOARD" --owner "$BOARD_OWNER" --limit 1000 --format json \
-  | jq -r --arg ready "$READY_LABEL" '.items[] | select(.status=="Todo")
-      | select((.labels // []) | index($ready))
-      | select(((.labels // []) | index("agent-wip") | not)
-               and ((.labels // []) | index("agent-blocked") | not)
-               and ((.labels // []) | index("blocked") | not))
-      | "#\(.content.number)\t\(.content.repository|sub(".*/";""))\tP:\(.priority // "-")\t\(.content.title)"'
+jq -r --arg ready "$READY_LABEL" '.items[] | select(.status=="Todo")
+   | select((.labels // []) | index($ready))
+   | select(((.labels // []) | index("agent-wip") | not)
+            and ((.labels // []) | index("agent-blocked") | not)
+            and ((.labels // []) | index("blocked") | not))
+   | "#\(.content.number)\t\(.content.repository|sub(".*/";""))\tP:\(.priority // "-")\t\(.content.title)"' "$BOARD_JSON"
 ```
 
-⚠️ `--limit 1000` is mandatory — the 30-item default hides most of a real board.
+⚠️ `$BOARD_JSON` is this run's single board fetch — see
+[`shared/config.md`](../../shared/config.md) § Board queries. Every later step that needs
+the board reads that file; only a post-write read-back re-fetches.
 
 **Repo scope.** When the caller names a repo — a scheduled routine pinned to one
 checkout does — filter to that repo and ignore the other's cards entirely. A run pinned
@@ -105,6 +106,21 @@ churn). Take at most **2**. Empty queue → say so in one line and stop.
 been edited, a dependency may have appeared, or triage may simply have been wrong.
 Before touching code, read the issue + comments + the actual files and re-run the full
 checklist in [`triage` § 4](../triage/SKILL.md).
+
+Read it **once**, into a file — § 6 hands the same file to the planner:
+
+```sh
+ISSUE_MD="${SCRATCH:-${TMPDIR:-/tmp}}/issue-<N>.md"
+{ gh api repos/<owner>/<repo>/issues/<N> \
+    --jq '"# #\(.number) \(.title)\n\n\(.body // "")"'
+  gh api repos/<owner>/<repo>/issues/<N>/comments \
+    --jq '.[] | "\n---\n@\(.user.login):\n\n\(.body)"'
+} > "$ISSUE_MD"
+```
+
+⚠️ REST on purpose — `gh issue view` is GraphQL, and an unattended run that plans two
+issues is the last thing that should be spending the GraphQL budget on a read it can get
+from the core one.
 
 Bail immediately if the issue now: is `blocked`/`legal`/`compliance`/`security`/`epic`,
 needs infrastructure or a migration, touches secrets/env/runtime config, changes an
@@ -175,7 +191,8 @@ Do this in the worktree, *after* the re-base, so the plan reflects the base you 
 actually build on.
 
 Spawn `issue-planner` (read-only, `effort: max`) with the issue number, repo, worktree
-path, and the issue body verbatim.
+path, and **`$ISSUE_MD` from § 3 pasted verbatim — body and comments both**. A subagent
+starts blank: every fact you hold and do not pass is one it pays to fetch again.
 
 🚨 **State the tier, and name no sections.** MEASURED: a prompt that said "skip the SPEC
 IMPACT section" and "your REVIEW LENSES section is load-bearing" made the planner emit
@@ -186,6 +203,7 @@ Pass the facts, not the shape:
 
 ```
 Tier: S            # from the issue's effort label; the planner's own table defines the tiers
+Issue body + comments: <contents of $ISSUE_MD, verbatim — do not re-fetch these>
 Repo has no spec flow.
 Integration branch: <branch>. Merging it <deploys X / is inert>.
 Gate: <commands>

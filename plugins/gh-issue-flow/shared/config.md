@@ -116,10 +116,32 @@ single constant.
 
 ## Board queries
 
+**Fetch the board once per run, into a file. Every consumer reads that file.**
+
 ```sh
-gh project item-list "${user_config.board_number}" \
-  --owner "${user_config.board_owner}" --limit 1000 --format json
+BOARD_JSON="${SCRATCH:-${TMPDIR:-/tmp}}/board-${user_config.board_number}.json"
+[ -s "$BOARD_JSON" ] || gh project item-list "${user_config.board_number}" \
+  --owner "${user_config.board_owner}" --limit 1000 --format json > "$BOARD_JSON"
 ```
+
+🚨 **One board read per run.** MEASURED against a **6-item** board: `--limit 1000` costs
+**102 GraphQL points**, `--limit 100` also 102, `--limit 30` costs 31. GraphQL bills on
+what a query *could* return, not what it does — so the price tracks the **requested page
+size**, and a nearly-empty board costs the same 102 as a full one. For comparison, on the
+same run `gh issue view --comments` cost 2 and the REST spelling of it cost 0.
+
+That makes a board pull **the most expensive call in this plugin by ~50x**, against the
+one budget with no REST alternative to spend instead. Two steps that both need the board
+are two `jq` passes over `$BOARD_JSON`, **never two fetches** — a skill that pulls twice
+burns 204 of your 5000 for identical bytes.
+
+⚠️ `gh` pages at 100, so a board over 100 cards costs ~102 **per page**. That part is
+inferred from the page-size relationship above, not measured — the test board fit in one
+page. Re-measure on a large board before quoting a number for one.
+
+⚠️ **One exception: a read-back AFTER a write must re-fetch.** Verifying a mutation
+landed against JSON pulled *before* the mutation proves nothing. Pull to a second path
+for that — and read the eventual-consistency trap before trusting the result.
 
 🚨 **`--limit 1000` is mandatory.** The default is 30 and silently drops the newest
 cards on any board bigger than that — it can return only `Done` rows and look like a

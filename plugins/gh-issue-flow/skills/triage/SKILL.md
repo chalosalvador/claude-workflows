@@ -68,11 +68,14 @@ for R in <owner/repo> <owner/repo>; do
     --jq ".[] | {repo:\"$R\"} + ."
 done > "$SCRATCH/open.json"
 
+BOARD_JSON="$SCRATCH/board.json"
 gh project item-list "$BOARD" --owner "$BOARD_OWNER" --limit 1000 --format json \
-  > "$SCRATCH/board.json"
+  > "$BOARD_JSON"
 ```
 
-⚠️ `--limit 1000` is mandatory — the 30-item default silently hides most cards.
+⚠️ That is this run's **only** board fetch — see [`shared/config.md`](../../shared/config.md)
+§ Board queries. Every pass below is `jq` over `$BOARD_JSON`; the § 5 read-back is the one
+deliberate exception, because it has to see state written after this pull.
 
 **Untriaged = open AND no `triaged` label.** That label is the idempotency key —
 without it every run re-litigates every open issue and spams the same comments. A
@@ -251,6 +254,7 @@ state is worse than no receipt, because the next run and the autopilot both trus
 after the writes, and count from *those*:
 
 ```sh
+# The one sanctioned second board fetch — $BOARD_JSON predates the writes:
 gh project item-list "$BOARD" --owner "$BOARD_OWNER" --limit 1000 --format json
 gh issue list --repo <owner>/<repo> --state open --limit 300 --json number,labels,assignees
 ```
