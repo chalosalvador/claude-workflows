@@ -23,23 +23,61 @@ conversation resolution, and no force-pushes. **Every change needs a branch and 
 including the owner's. A direct push is rejected with `GH006: Protected branch update
 failed`.
 
-## 🚨 The installed plugin is served from THIS working tree
+## 🚨 The installed plugin is served from a CACHED COPY, not this working tree
 
-The marketplace is registered as a **Directory** source pointing at this checkout, not at
-GitHub:
+Registering the marketplace as a **Directory** source does *not* make the installed
+plugin a live view of the checkout:
 
 ```bash
 claude plugin marketplace list     # Source: Directory (<your checkout>) — or GitHub
 ```
 
-**If it says `Directory`, checking out a different branch changes what the installed
-plugin serves.** That is deliberate — it is how unmerged agent changes get tested — but a
-stray `git checkout` then silently changes behaviour in every other session on that
-machine. After merging, return the checkout to `main`.
+Install **copies** the plugin into a version-keyed cache and serves from there:
 
-If it says `GitHub`, you are on the published version and local edits do nothing until
-they land on `main`. Re-add as a directory source to test unmerged work:
-`claude plugin marketplace add ./`
+```
+~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/
+```
+
+MEASURED: those files have different inodes from the checkout's, are not symlinks, and
+carry the mtime of the install. **The version in that path is `plugin.json` → `version`,
+and nothing invalidates the cache while that string is unchanged.**
+
+### This has already served a four-day-old plugin, silently
+
+MEASURED 2026-09-02: the cache held the tree as of `f12f53a` (2026-08-28) while the
+checkout sat on `main` **14 commits and 8 merged PRs later** — because `version` had read
+`0.1.0` since the initial commit and was never bumped. Every merged change was invisible
+to every session. The triage skill that ran still carried the 102-point board query that
+had been replaced days earlier, and nothing anywhere said so.
+
+**Both refresh commands report success and change nothing:**
+
+| Command | Says | Does |
+|---|---|---|
+| `claude plugin marketplace update <name>` | `✔ Successfully updated marketplace` | refreshes the marketplace manifest only — not the cached plugin |
+| `claude plugin update <plugin>` | `✔ already at the latest version (0.1.0)` | nothing: it compares versions, and yours did not change |
+
+What works is a full reinstall — `claude plugin uninstall <plugin>` then
+`claude plugin install <plugin>@<marketplace>`. MEASURED: afterwards the cache matched
+`main` byte for byte. **A restart is required to apply it**, and see the agent-discovery
+trap below.
+
+### So bump `version` in the same PR as any behaviour change
+
+`plugin.json` → `version`, **and** the two `version` fields in
+`.claude-plugin/marketplace.json` — `claude plugin tag` validates that they agree. That
+bump is the only thing that gives `claude plugin update` anything to do. Skipping it is
+how eight consecutive PRs shipped to `main` without reaching a single running session.
+
+⚠️ **A `git checkout` here does NOT change what the installed plugin serves.** An earlier
+version of this file claimed it did; that was wrong, and testing an unmerged branch this
+way tests the last copy rather than your work. The live hazard is the reverse of the one
+that used to be documented: **your edits do nothing until you reinstall.**
+
+Not measured: whether a `GitHub`-source marketplace caches the same way. On a GitHub
+source local edits do nothing until they land on `main` regardless; re-add as a directory
+source to test unmerged work — `claude plugin marketplace add ./` — and reinstall after
+each change you want to see.
 
 ## 🚨 Two agent-loading traps, both of which cost real work here
 
