@@ -42,7 +42,7 @@ Resolve board, repos, branches and gate commands via
 - [ ] 6. Plan it: delegate to `issue-planner`; post the plan on the issue
 - [ ] 7. Spec change from the plan's SPEC IMPACT, then implement the issue's scope
 - [ ] 8. Run the repo's full VALIDATE gate until green
-- [ ] 9. Review: parallel `diff-reviewer` subagents, one per lens the plan named
+- [ ] 9. Review: parallel `gh-issue-flow:diff-reviewer` subagents, one per named lens
 - [ ] 10. Archive → signed commit → push → PR ready-for-review → request review
 - [ ] 11. Babysit to green — CI + review threads, under a 45-minute cap
 - [ ] 12. Board + labels; clean up the worktree
@@ -52,7 +52,8 @@ Resolve board, repos, branches and gate commands via
 Any step that cannot be completed honestly → **§ Handing it back**.
 
 **Effort.** Planning and review run at `effort: max` from the `issue-planner` /
-`diff-reviewer` frontmatter, so it is automatic regardless of how the run was launched.
+`gh-issue-flow:diff-reviewer` frontmatter, so it is automatic regardless of how the run
+was launched.
 **Implementation runs at the session's own effort** — a skill cannot pin the main
 loop's effort, and a scheduled-task tool may not set it either. Set it in the routine's
 own configuration if a given routine needs more than the default.
@@ -197,7 +198,7 @@ Let the planner decide what to emit. If you need something specific back, ask fo
 
 Three things depend on it, so it is **not optional**:
 
-- **REVIEW LENSES drives § 9.** Firing all five lenses on every diff is waste, and
+- **REVIEW LENSES drives § 9.** Firing every lens on every diff is waste, and
   guessing which apply is exactly the judgment call an unattended run should not make.
 - **SPEC IMPACT drives § 7's change directory.** It names the change, the target
   capability, and the delta-vs-`skip_specs` call. Choosing a capability yourself means
@@ -282,7 +283,11 @@ longer existed).
 
 **Procedure: [`shared/execution.md`](../../shared/execution.md) § 3.** Parallel lenses
 gated on the § 6 plan's REVIEW LENSES, then the delta re-review if the fixes added new
-logic.
+logic — run as the lens that raised the finding.
+
+🚨 **Spawn `gh-issue-flow:diff-reviewer`, never the bare name.** Nobody is watching to
+notice that a shadowing file in `~/.claude/agents/` answered instead, and it returns a
+plausible review either way.
 
 💰 Paste the plan's `HANDOFF` block into every lens prompt, plus the § 8 gate result and
 the worktree path — [`shared/execution.md`](../../shared/execution.md) § 3.1.

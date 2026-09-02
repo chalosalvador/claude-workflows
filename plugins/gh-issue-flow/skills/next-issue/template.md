@@ -71,16 +71,17 @@ PROCESS:
 1. Post the scoping plan as a comment on #412 first; set the board card to In
    Progress. Then branch, then create the SPEC block's change directory and get its
    validate to exit 0 BEFORE writing code.
-2. Review with parallel diff-reviewer subagents (effort: max, fresh context), one
-   per lens: `correctness` (the payload can be absent, null, or huge); `contract`
-   (the envelope is consumed by the analytics reader — a shape change is two
-   coordinated PRs); `tests` (parity across two stores); `deploy` (additive
-   nullable column; infra is NOT in the CD workflow). Skip `scoping` — this adds no
-   new tenant-scoped query. Commit before spawning them. Fix every valid finding;
-   explain any rejected in the PR body.
+2. Review with parallel gh-issue-flow:diff-reviewer subagents (effort: max, fresh
+   context — spawn the NAMESPACED name), one per lens: `correctness` (the payload can
+   be absent, null, or huge); `contract` (the envelope is consumed by the analytics
+   reader — a shape change is two coordinated PRs); `tests` (parity across two
+   stores); `deploy` (additive nullable column; infra is NOT in the CD workflow).
+   Skip `scoping` — this adds no guard, and every caller of the writer is in the diff.
+   Skip `safety` — no new tenant-scoped query. Commit before spawning them. Fix every
+   valid finding; explain any rejected in the PR body.
 2b. If those fixes added NEW LOGIC — a branch, gate, condition, or code path — one
-   more diff-reviewer on `correctness` over just that delta. Once, not a loop.
-   Skip for test/comment/doc-only fixes.
+   more gh-issue-flow:diff-reviewer over just that delta, run as the lens that raised
+   the finding. Once, not a loop. Skip for test/comment/doc-only fixes.
 2c. `openspec archive 412-audit-payload-analytics -y --json` as the LAST commit of
    this PR — never post-merge. Assert specsUpdated: true, then re-validate the
    folded tree.
@@ -140,7 +141,7 @@ workflow: ask before applying it.
   preflight, and carry the caveats on what a spec validate does **not** assert so the
   fresh session does not read a green as proof.
 - **PROCESS** — the numbered steps as in the example: scoping comment → branch → spec
-  change before code → **named** review lenses from the plan (never the generic five)
+  change before code → **named** review lenses from the plan (never the generic list)
   → conditional delta re-review → archive as the last commit → commit → PR → babysit
   threads *and* checks → board tracking.
 - **DEPLOY NOTE** — schema/infra/deploy caveats. State plainly whether merging the

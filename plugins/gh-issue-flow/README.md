@@ -44,11 +44,16 @@ regardless of the session's own setting. They appear as `gh-issue-flow:<name>`.
 | Agent | Used by | Returns |
 |---|---|---|
 | [`issue-planner`](agents/issue-planner.md) | `next-issue` step 3, `autopilot` § 6 | DECIDE-FIRST, VERIFY-FIRST, SCOPE (+FOLD IN), SPEC IMPACT, TESTS, RISKS, and **REVIEW LENSES** |
-| [`diff-reviewer`](agents/diff-reviewer.md) | `next-issue` step 6, `autopilot` § 9 | Findings through **one** assigned lens: `correctness`, `contract`, `scoping`, `tests`, `deploy` |
+| [`diff-reviewer`](agents/diff-reviewer.md) | `next-issue` step 6, `autopilot` § 9 | Findings through **one** assigned lens: `correctness`, `contract`, `scoping`, `safety`, `tests`, `deploy` |
 
 🚨 **A subagent cannot fan out** — it has no Agent tool and spawns do not nest. Spawn
-`diff-reviewer` **N times from the parent, in one message**, one per lens. Gate the lens
-list on what the planner named; five max-effort reviewers on a styling change is waste.
+`gh-issue-flow:diff-reviewer` **N times from the parent, in one message**, one per lens.
+Gate the lens list on what the planner named; six max-effort reviewers on a styling
+change is waste.
+
+🚨 **Spawn the namespaced name.** A bare `diff-reviewer` resolves to whichever same-named
+agent file wins, and a stale one in `~/.claude/agents/` shadows this one with no warning
+at all — see `skills/setup/SKILL.md` § Detect shadowing.
 
 ⚠️ `issue-planner` describes the spec change; it never creates it. Its callers run it at
 different points in the branch lifecycle, one of them before the branch exists.

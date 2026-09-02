@@ -125,15 +125,21 @@ a bare green from it.
 
 ---
 
-## 3. Code review — parallel `diff-reviewer` subagents
+## 3. Code review — parallel `gh-issue-flow:diff-reviewer` subagents
 
 **Full method: [`../reference/review-process.md`](../reference/review-process.md).**
 Read it before the first review of a session.
 
-Before committing, spawn `diff-reviewer` subagents (read-only, `effort: max`, fresh
-context) **in parallel — one message, several tool calls** — one per lens:
-`correctness`, `contract`, `scoping`, `tests`, `deploy`. Give each the diff location
-and enough issue context to judge intent.
+Before committing, spawn `gh-issue-flow:diff-reviewer` subagents (read-only,
+`effort: max`, fresh context) **in parallel — one message, several tool calls** — one
+per lens: `correctness`, `contract`, `scoping`, `safety`, `tests`, `deploy`. Give each
+the diff location and enough issue context to judge intent.
+
+🚨 **Spawn the NAMESPACED name, always.** A bare `diff-reviewer` resolves to whichever
+same-named file wins, and a stale one in `~/.claude/agents/` shadows the plugin's
+silently — same lens names, no handoff, another repo's branch names hardcoded. It
+returns a good-looking review of the wrong thing. See
+[`../skills/setup/SKILL.md`](../skills/setup/SKILL.md) § Detect shadowing.
 
 ⚠️ **A built-in `/code-review` skill may be `disable-model-invocation`, meaning a
 session cannot invoke it and the call errors.** Do not put it in a workflow step. (It
@@ -142,8 +148,10 @@ never ran.) The user can still type it themselves; this is the step a *session* 
 execute unaided.
 
 **Fire only the lenses that apply.** `issue-planner` names them under **REVIEW
-LENSES**; gate on that rather than always firing five. A max-effort lens on a diff it
-cannot touch buys nothing.
+LENSES**; gate on that rather than always firing the full set. A max-effort lens on a
+diff it cannot touch buys nothing — but **any diff that adds a guard, validation or
+invariant gets `scoping`**, whatever else it gets. That is the lens that asks what the
+diff does not touch, and it is the hole every other lens is built to miss.
 
 ### 3.1 Cost discipline
 
@@ -158,8 +166,8 @@ Four levers, in order of saving:
 
 1. **Pass the planner's `HANDOFF` block to every lens**, verbatim, plus the gate result
    and the worktree path. This is the one that removes the duplication above.
-2. **Gate the lens list** on the plan's REVIEW LENSES. Five lenses where two apply is
-   more than double.
+2. **Gate the lens list** on the plan's REVIEW LENSES. Six lenses where two apply is
+   triple.
 3. **Tier the `model` per spawn**, by the issue's size label:
 
    | Label | Planner | Lenses |
@@ -185,8 +193,24 @@ Adjudicate the merged findings yourself: fix every valid one, and for any you re
 
 Code written to satisfy a reviewer was never itself reviewed. If adjudicating
 introduced a new branch, gate, condition, or code path, spawn **one** more
-`diff-reviewer` (`correctness`) over just that delta. Skip it when the fixes were only
-tests, comments, messages, or docs. **Once — a conditional pass, not a loop.**
+`gh-issue-flow:diff-reviewer` over just that delta.
+
+**Run it as the lens that RAISED the finding**, not always `correctness`. The delta
+exists to establish that lens's property, so that is the question to ask of it — a
+`correctness` pass over a gate added for `deploy` asks the wrong thing of exactly the
+code most likely to be wrong. Where the fixes answer several lenses, pick the one whose
+fix added the most new logic; where the finding was your own rather than a lens's, use
+`correctness`. Still one agent.
+
+Skip it when the fixes were only tests, comments, or docs — **not** when a message
+changed, since an error string can be something's parsed contract. **Once — a
+conditional pass, not a loop.**
+
+⚠️ **One pass is a budget decision, not a sufficiency claim.** Measured rounds of a bot
+finding real defects in code written to satisfy an earlier lens are in
+[`../reference/review-process.md`](../reference/review-process.md); on a security or
+guard change, the first green is where the work starts, not where it ends. Say in the
+PR body that the delta got one pass, so the human reviewer knows the bound.
 
 ⚠️ **Commit before spawning lenses**, and do not edit files while one is running —
 they mutate the shared worktree. See
