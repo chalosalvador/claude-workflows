@@ -144,6 +144,19 @@ empty (a transferred issue), read `.content.body` out of the board JSON instead.
 By the time an issue reaches here it already has area, assignee, Track, Status and a
 board slot from § 2 — so this pass adds only the judgment-heavy attributes.
 
+**Optional — fan this pass out.** The judgments below are independent per issue, so on a
+large untriaged set they can run as parallel batched subagents instead of serially.
+[`../../reference/workflow-fanout.md`](../../reference/workflow-fanout.md) holds the
+script, the batch build, and the boundaries that keep it from drifting into a second
+implementation of this section. It returns verdicts only — **§ 5 still performs every
+write, in § 5's order** — and you still adjudicate § 4 yourself from the evidence it
+returns.
+
+Take that path only when the Workflow tool is in this session **and** the untriaged set
+is big enough to pay for its fixed overhead (that file names the threshold). Otherwise
+this section runs serially exactly as written, which is the contract either path has to
+satisfy. Its absence is a normal state; it is not worth a line in the receipt.
+
 ### 3a. Category → label
 
 | Verdict | Label |

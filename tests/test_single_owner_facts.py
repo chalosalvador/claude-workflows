@@ -82,11 +82,18 @@ OWNED: dict[str, tuple[str, int]] = {
     # Autopilot's first hard rule. Restating it elsewhere invites a softened copy.
     "Never merge.":
         ("plugins/gh-issue-flow/skills/autopilot/SKILL.md", 1),
+
+    # The fan-out's boundary. This is the clause a caller would most naturally
+    # restate in the triage skill, and a softened copy there would licence a
+    # distributed writer — which § 5's write ordering, its label-splitting trap
+    # and its eventually-consistent read-back each independently cannot survive.
+    "Every agent in the fan-out is read-only; the writes never leave the main session.":
+        ("plugins/gh-issue-flow/reference/workflow-fanout.md", 1),
 }
 
 # Independent completeness check: NOT derived from len(OWNED), which would be
 # circular and pass over a silently emptied pin.
-EXPECTED_PINNED_CLAUSES = 6
+EXPECTED_PINNED_CLAUSES = 7
 
 
 def normalize(text: str) -> str:
