@@ -160,12 +160,27 @@ Reading PR state without GraphQL: `gh api .../pulls/<n>` (`mergeable_state: clea
 owner type`** — which reads like a bad `--owner` flag and sends you debugging the wrong
 thing.
 
-🚨 **And `gh api rate_limit` does not see the limit that stops `gh project`.** A
-`gh project item-list` returned `API rate limit exceeded` at every `--limit` down to 30
-while `rate_limit` reported **5000/5000 remaining on both core and graphql**. Projects
-v2 pagination trips a *secondary* limit the endpoint does not report. **Believe the
-error, not the meter.** Large `--limit` values make it worse, since each page is a
-request.
+🚨 **`gh api rate_limit` reports a stale budget. Do not gate anything on it.** MEASURED
+on a later run: every GraphQL call — including a bare `{viewer{login}}`, the cheapest
+query there is — failed with `API rate limit already exceeded`, while `rate_limit`
+returned `graphql 5000/5000` on **13 of 14** consecutive reads. The one honest read said
+`remaining=0`. Core was equally wrong, reporting 5000 after a dozen REST calls.
+
+**Use GraphQL's own meter instead — it is accurate, and it is free:**
+
+```bash
+gh api graphql -f query='{rateLimit{remaining}}' --jq .data.rateLimit.remaining
+```
+
+MEASURED: that query costs **0 points**, so it can bracket a command to price it exactly:
+`before=$(probe); <command>; after=$(probe)`. That is how the numbers in
+[`../shared/config.md`](../shared/config.md) § Board queries were obtained.
+
+⚠️ An earlier note here attributed a `gh project` failure to a *secondary* Projects v2
+limit, on the strength of a clean `rate_limit` read. That reading was the stale-meter
+artifact above; a bare `viewer` query failed identically, which a Projects-specific limit
+cannot explain. **Believe the error, not the meter** still holds — the diagnosis behind it
+did not.
 
 > There is no REST fallback for Projects v2. When GraphQL is exhausted, board writes
 > simply wait.

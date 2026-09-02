@@ -52,16 +52,16 @@ Otherwise pick from the **Todo column**. **Eligible = Todo AND (assigned to the
 current GitHub user OR unassigned).** Resolve the user dynamically —
 `gh api user --jq .login` — never hardcode a login.
 
-⚠️ **Always pass `--limit 1000`.** The default is 30 and silently hides most Todo
-cards on any real board — it may return only `Done` rows and look like an empty queue.
+⚠️ **`$BOARD_JSON` is the one board fetch this run gets** — see
+[`shared/config.md`](../../shared/config.md) § Board queries for it. This step and the
+theme sense below are two `jq` passes over that same file, not two `item-list` calls.
 
 ```sh
 ME=$(gh api user --jq .login)
-gh project item-list "$BOARD" --owner "$BOARD_OWNER" --limit 1000 --format json \
-  | jq -r --arg me "$ME" '.items[]
-      | select(.status=="Todo")
-      | select((.assignees|index($me)) or (.assignees|length==0))
-      | "#\(.content.number)\t\(.content.repository|sub(".*/";""))\tP:\(.priority // "-")\t\(.assignees|if length==0 then "unassigned" else join(",") end)\t\(.content.title)"'
+jq -r --arg me "$ME" '.items[]
+   | select(.status=="Todo")
+   | select((.assignees|index($me)) or (.assignees|length==0))
+   | "#\(.content.number)\t\(.content.repository|sub(".*/";""))\tP:\(.priority // "-")\t\(.assignees|if length==0 then "unassigned" else join(",") end)\t\(.content.title)"' "$BOARD_JSON"
 ```
 
 ⚠️ Strip owners with `sub(".*/";"")` — never match a literal owner prefix. Repos on one
@@ -73,9 +73,8 @@ Before ranking, read what is *actively* happening so the pick continues the curr
 thread instead of cold-starting an unrelated one:
 
 ```sh
-# Strongest signal — what is mid-flight right now:
-gh project item-list "$BOARD" --owner "$BOARD_OWNER" --limit 1000 --format json \
-  | jq -r '.items[] | select(.status=="In Progress") | "#\(.content.number)\t\(.content.title)"'
+# Strongest signal — what is mid-flight right now (same fetch, second pass):
+jq -r '.items[] | select(.status=="In Progress") | "#\(.content.number)\t\(.content.title)"' "$BOARD_JSON"
 
 # Recently merged work (last ~2 weeks), per repo — owners differ, resolve each:
 for NWO in <owner/repo> <owner/repo>; do
@@ -122,17 +121,31 @@ Confirm against the current tree, not the issue text.
 
 ## 3. Research before writing
 
+Read the issue **once**, into a file — its contents go into the planner's spawn prompt,
+and the planner is told not to fetch them again:
+
 ```sh
-gh issue view <N> --repo <owner>/<repo> --comments
-gh pr view <PR> --repo <owner>/<repo>      # linked / "follow-up to" PRs
+ISSUE_MD="${SCRATCH:-${TMPDIR:-/tmp}}/issue-<N>.md"
+{ gh api repos/<owner>/<repo>/issues/<N> \
+    --jq '"# #\(.number) \(.title)\n\n\(.body // "")"'
+  gh api repos/<owner>/<repo>/issues/<N>/comments \
+    --jq '.[] | "\n---\n@\(.user.login):\n\n\(.body)"'
+} > "$ISSUE_MD"
 ```
 
-If `gh issue view` returns empty for a transferred issue, read the body straight from
-the board JSON (`.content.body`).
+⚠️ **These are the REST spellings on purpose.** `gh issue view` is GraphQL; these bill
+against the separate core budget, which is the budget a planning run is *not* exhausting.
+For a transferred issue that returns empty, take the body from `$BOARD_JSON`
+(`.content.body`) — you already have that file, so it costs nothing.
 
-Then delegate to the **`issue-planner`** subagent (read-only, `effort: max`). It returns
-the decision, what exists vs. what changes, the scope, the test/validate plan, a HANDOFF
-block for the reviewers, and which review lenses this diff needs.
+**Do not chase the linked PRs here.** The planner does that, bounded to the few the
+decision turns on. Fetching them in both places is the same read billed twice.
+
+Then delegate to the **`issue-planner`** subagent (read-only, `effort: max`), **pasting
+`$ISSUE_MD` into the prompt verbatim**. A subagent starts blank: anything you hold and do
+not pass, it pays to re-fetch. It returns the decision, what exists vs. what changes, the
+scope, the test/validate plan, a HANDOFF block for the reviewers, and which review lenses
+this diff needs.
 
 🚨 **State the tier from the issue's effort label; name no sections.** Naming one
 re-establishes the whole vocabulary and the planner emits all of them — measured. Pass
