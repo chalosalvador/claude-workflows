@@ -13,7 +13,7 @@ file, unless you are about to do the whole thing.
 | [`git-and-github.md`](git-and-github.md) | Checking diff scope, diagnosing CI-vs-local, writing a PR body, or merging. |
 | [`review-process.md`](review-process.md) | Before opening any PR. Also when adjudicating reviewer findings. |
 | [`parallel-agents.md`](parallel-agents.md) | Before spawning parallel reviewers, or before any worktree squash/reset. |
-| [`workflow-fanout.md`](workflow-fanout.md) | The triage deep pass is slow on a big untriaged set and you are considering running it as parallel batched agents. Holds the script, and the read-only boundary that keeps it from becoming a second implementation of triage. |
+| [`workflow-fanout.md`](workflow-fanout.md) | You are considering running the triage deep pass, or autopilot's two candidates, as parallel agents via the Workflow tool. Holds both scripts, and the two different write boundaries — which are not the same rule, and must not be merged. |
 | [`openspec.md`](openspec.md) | The repo has an `openspec/` directory — install, where the spec change sits in the flow, and what its validate does NOT assert. |
 | [`shell-traps.md`](shell-traps.md) | Writing any shell loop, batch-edit script, or script that holds a credential. |
 | [`secrets-and-ci.md`](secrets-and-ci.md) | Provisioning a secret or environment variable; diagnosing green-local/red-CI. |

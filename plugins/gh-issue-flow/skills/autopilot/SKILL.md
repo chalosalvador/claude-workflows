@@ -64,6 +64,17 @@ own configuration if a given routine needs more than the default.
 the work turns out bigger than `easy`, that is a handback — never a reason to quietly
 upgrade the model and continue.
 
+**Optional — run the two candidates concurrently.** §§ 6–10 for both issues can run as a
+Workflow script, one worktree each, instead of finishing issue A before starting issue B.
+[`../../reference/workflow-fanout.md`](../../reference/workflow-fanout.md) § B holds the
+script and the rules two concurrent writers need. §§ 1–5 and §§ 11–13 do not move: the
+session claims the issues, **creates both worktrees itself**, and afterwards babysits both
+PRs together under one § 11 cap — which is the second reason to bother.
+
+Take that path only when the Workflow tool is in this session and § 2 actually selected
+two candidates; on one issue it buys nothing. Without it, work them in order exactly as
+below. That file also states plainly what the layer costs, which is not nothing.
+
 ## 1. Backpressure
 
 Unattended work piles up faster than humans review it.
