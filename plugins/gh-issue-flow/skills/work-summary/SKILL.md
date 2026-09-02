@@ -233,10 +233,28 @@ real heading levels — this is the entire hierarchy:
 
 Bold for both flattens it and the reader loses the day boundary.
 
-Stream headings are the **display names from `workflow.json` → `workstreams`**, and
-nothing else. Never append a status — no "— live", no "— on staging", no "(prod)". Streams
-repeat under Yesterday and Today as needed; omit any stream with no work in *that*
-section.
+Stream headings are the **bare stream name** and nothing else. Never append a status — no
+"— live", no "— on staging", no "(prod)". Streams repeat under Yesterday and Today as
+needed; omit any stream with no work in *that* section.
+
+⚠️ **Derive the heading from `workflow.json` → `workstreams`; do not paste the value in.**
+Those values are descriptions written for a human reading the config, so they carry a
+descriptive tail a heading must not: `"Scholar App — teacher workspace (Next.js)"` is the
+config value, `_Scholar_` is the heading. Three rules cover every case:
+
+- **Cut at the first `—`, `(` or `,`**, then drop a redundant trailing noun
+  (`Scholar App` → `Scholar`). Two or three words at most.
+- **Entries sharing a prefix collapse into one heading.** `packages/db`,
+  `packages/models` and `packages/shared` are all `Shared — …`; they are one
+  `_Shared / repo-wide_` stream, not three.
+- **A single-stream repo has no `workstreams` key at all.** Use the repo's own short
+  name — `brightfold-gateway` → `_Gateway_`.
+
+Keep the derived names **stable across runs**. The reader scans for the same heading every
+day, and a stream that is `_Scholar_` on Monday and `_Scholar App_` on Tuesday reads as two
+different things. If a repo needs names that this derivation does not produce, pin them
+where the repo's other local conventions live rather than re-deriving differently each
+run.
 
 ### Which day is "Yesterday"
 
