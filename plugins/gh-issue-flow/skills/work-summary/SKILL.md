@@ -216,6 +216,14 @@ Triggered by "standup", or by a scheduled daily-update task. Everything above st
 first: **the standup is a rendering of the commit pull, not a different investigation.**
 Read it with `--all` and check merge status per commit (§ 3).
 
+🚨 **A standup is YOUR work, and only yours.** Keep the `--author` filter on, with every
+one of your identities (§ 3). This is the one output shape where dropping it is always
+wrong: you are reporting to the team, so a teammate's work in your update is at best noise
+and at worst you appearing to claim it. Never add a "Team:" bullet, never name what someone
+else landed — even when the commit pull surfaced it, and even when it is the most
+interesting thing in the window. If the user explicitly wants everyone's work, that is a
+different report and not this shape.
+
 > *Standup — {Ddd DD Mon}*
 >
 > *Yesterday*
@@ -269,9 +277,17 @@ run.
 
 ### Which day is "Yesterday"
 
-The **last working day**, not literally yesterday. On a Monday that is Friday — and then
-label the section `*Friday*`, not `*Yesterday*`. A Monday standup with an empty Yesterday
-because Sunday was empty is a formatting bug, not an honest report.
+The **last working day**, not literally yesterday.
+
+**Label it `*Yesterday*` whenever that is what it is** — which is most days. Only when the
+last working day is *not* the previous calendar day do you name the day instead: on a
+Monday the section is `*Friday*`, because that is when the work happened.
+
+⚠️ Never label it with a date — `*Tuesday 1 Sep*` is wrong even when the date is right. The
+reader wants the relationship to today, and the date is already in the header line.
+
+A Monday standup with an empty Yesterday because Sunday was empty is a formatting bug, not
+an honest report.
 
 ⚠️ **Never reach back more than one working day to fill it.** If the last working day was
 genuinely quiet, say so.
@@ -318,7 +334,18 @@ not just the subject line — the subject is usually the mechanism. Say what wou
 broken and for whom.
 
 **No PR numbers, file names, or jargon** in any Yesterday or Today bullet. (One carve-out,
-in Blockers below.)
+in Blockers below.) "Jargon" is stricter here than elsewhere in this skill — the standup
+reader is often non-technical, and these are the four kinds that leak in:
+
+| Don't write | Write |
+|---|---|
+| an internal path or service — `/ai-proxy`, `apps/admin` | what it does for someone — "the teacher app" |
+| a protocol or vendor — OIDC, SSE, CMEK, Terraform | the effect — "proves its identity", "the live activity stream" |
+| a config value — `district_ids = []` | the state in words — "no customer is switched on yet" |
+| a repo or branch name | the stream heading already says where |
+
+The test: **would someone outside engineering know what changed for them?** If the sentence
+only makes sense to someone who has read the diff, it is not finished.
 
 ### Selection — this is the part that goes wrong
 
@@ -397,8 +424,50 @@ or file names. Across repos, write `owner/repo#N`.
 Name the blocker in the same consequence-first voice as the bullets, and say **who or what
 would clear it** — that is the only reason the line exists.
 
+⚠️ **Not a roll-call.** "Six PRs open for review, oldest first: …" is a list, not a blocker
+section: it names no consequence, asks for nothing specific, and buries the one item that
+actually needs a person. Blockers get the same selection test and the same one-per-thread
+collapse as every other bullet — several issues stuck behind one unmade decision are **one**
+blocker naming the decision, not one line each.
+
 ⚠️ If the read-only lookups fail or are unavailable, write `- None.` and say the lookup
 failed **outside** the pasteable text. Never guess a blocker.
+
+### A complete example
+
+A full day's output. **This is the length** — the rules above describe it, this shows it.
+
+> *Standup — Wed 02 Sep*
+>
+> *Yesterday*
+> _Checkout_
+> - *Card retries* — a failed payment now retries on its own instead of dropping the order.
+>
+> _Admin console_
+> - *Refund history* — support can see every refund on an account without asking engineering.
+>
+> *Today*
+> _Checkout_
+> - *Guest orders* — people can buy without making an account. Not switched on for any store yet.
+> - *Duplicate charges* — closed a gap where a slow network could bill the same card twice.
+>
+> _Admin console_
+> - *Bulk export* — admins can pull a month of orders as a file (in progress).
+>
+> *Blockers*
+> - *Tax rates review* — the new tax table has been ready and unreviewed since Monday; someone on the team needs to look at it before it can merge.
+
+Six bullets total. Every one is a single line, leads with a bold keyword naming a subject,
+and says what a person can now do. No numbers, no service names, no repo names.
+
+**What the same day also contained, and why none of it is above:** a CI cache fix, a
+dependency bump, three review-fix commits on the guest-orders PR, a docs move, and a
+required-check rename. That is most of the commits and none of the bullets — the pull
+surfaced them and the selection test dropped them.
+
+Note also what the example does *not* do: no "Team:" line, though two teammates landed work
+in the same window; no "live in production" on the merged items; and one bullet carries
+`(in progress)` because that branch is not an ancestor of the integration ref.
 
 ---
 
