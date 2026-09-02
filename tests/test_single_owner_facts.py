@@ -98,11 +98,18 @@ OWNED: dict[str, tuple[str, int]] = {
     "Agents produce the branch and the PR; every state transition on the issue and "
     "the board stays with the session.":
         ("plugins/gh-issue-flow/reference/workflow-fanout.md", 1),
+
+    # The standup shape. It arrived here from a downstream copy that had already
+    # drifted from the task prompt driving it — a stale workstream path in one, the
+    # right one in the other. One owner is the whole point: a second copy is how the
+    # two disagree again.
+    "**Three sections, in this order, always all three present.**":
+        ("plugins/gh-issue-flow/skills/work-summary/SKILL.md", 1),
 }
 
 # Independent completeness check: NOT derived from len(OWNED), which would be
 # circular and pass over a silently emptied pin.
-EXPECTED_PINNED_CLAUSES = 8
+EXPECTED_PINNED_CLAUSES = 9
 
 
 def normalize(text: str) -> str:
