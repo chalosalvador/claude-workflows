@@ -138,7 +138,7 @@ effort in a prompt alone.
 
 ⚠️ **A subagent cannot fan out** — it has no Agent tool and spawns do not nest. **The
 parallelism has to live in the parent**: spawn the reviewer N times, one per lens, in
-one message. Gate the lens list on what the planner named; five max-effort reviewers
+one message. Gate the lens list on what the planner named; six max-effort reviewers
 on a styling change is pure waste.
 
 ⚠️ **Project agent discovery walks up from cwd only to the repository root.** An

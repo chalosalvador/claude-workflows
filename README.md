@@ -198,7 +198,8 @@ Full schema and every key's meaning:
 | `work-summary` | Plain-language summary of a date window from git history — daily, standup, weekly, or a rendered Slidev deck. |
 
 **Agents** — `issue-planner` (scoping plan, read-only, max effort) and `diff-reviewer`
-(adversarial single-lens review; spawn several in parallel from the parent).
+(adversarial single-lens review; spawn several in parallel from the parent, using the
+namespaced `gh-issue-flow:` name so a same-named local file cannot shadow them).
 
 **Shared** — [`shared/config.md`](plugins/gh-issue-flow/shared/config.md) (the three-layer
 config resolution) and [`shared/execution.md`](plugins/gh-issue-flow/shared/execution.md)

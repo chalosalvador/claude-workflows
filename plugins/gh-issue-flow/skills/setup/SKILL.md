@@ -220,7 +220,7 @@ will never notice when they silently are not running.
 | Agent | Runs at | Used by | Returns |
 |---|---|---|---|
 | `issue-planner` | `effort: max`, read-only | `next-issue`, `autopilot` | The scoping plan — and **REVIEW LENSES**, which decides the next step |
-| `diff-reviewer` | `effort: max`, read-only | `next-issue`, `autopilot` | Findings through one lens: `correctness`, `contract`, `scoping`, `tests`, `deploy` |
+| `diff-reviewer` | `effort: max`, read-only | `next-issue`, `autopilot` | Findings through one lens: `correctness`, `contract`, `scoping`, `safety`, `tests`, `deploy` |
 
 ### 🚨 Detect shadowing — do not just warn about it
 
@@ -253,9 +253,13 @@ For each of `issue-planner` and `diff-reviewer`, report explicitly:
 delete or rename it — it may be deliberate and it may be older and better. The user
 decides; you only make the invisible visible.
 
-⚠️ **The namespaced name is the reliable one.** `gh-issue-flow:issue-planner` always
-resolves to the plugin's copy; a bare `issue-planner` resolves to whichever wins. Prefer
-the namespaced form when spawning.
+🚨 **The namespaced name is the reliable one, and every skill here spawns it.**
+`gh-issue-flow:issue-planner` always resolves to the plugin's copy; a bare
+`issue-planner` resolves to whichever wins. This is not only a "wrong version" risk —
+the shadow observed here was a pre-generalization ancestor that hardcoded another repo's
+integration branch and carried no HANDOFF section, so a bare spawn would have diffed
+against a branch that does not exist and re-derived everything the plan already
+measured. **It would still have produced a confident, well-formatted review.**
 
 🚨 **Agent discovery happens at SESSION START.** Editing an agent file — or adding a new
 one — changes nothing for the session already running; the spawn fails with
@@ -275,9 +279,9 @@ Two things worth telling the user once, because they are not obvious:
 - **They pin `effort: max` regardless of the session's own effort**, so planning and
   review run at full reasoning even from a cheap session. Implementation does not — a
   skill cannot pin the main loop's effort.
-- 🚨 **A subagent cannot fan out.** `diff-reviewer` is spawned **N times from the parent
-  in one message**, one per lens. A single reviewer asked to "check everything" is a
-  different, weaker thing.
+- 🚨 **A subagent cannot fan out.** `gh-issue-flow:diff-reviewer` is spawned **N times
+  from the parent in one message**, one per lens. A single reviewer asked to "check
+  everything" is a different, weaker thing.
 
 ## 7. Report
 

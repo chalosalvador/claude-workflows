@@ -17,13 +17,23 @@ lens, then adjudicate the merged findings yourself. Typical lenses:
 |---|---|
 | `correctness` | Does this do what it says on every input? |
 | `contract` | Does it change a wire/API/schema contract, and is the other side updated? |
-| `scoping` | Is the blast radius what the diff implies? What else is affected? |
+| `scoping` | What else reaches the code this touches, that the diff does not touch? |
+| `safety` | Tenant predicates, credentials, secrets — is the blast radius contained? |
 | `tests` | Do the tests bite? Would they catch the bug they name? |
 | `deploy` | What happens on rollout, rollback, and a partial apply? |
+
+**`scoping` and `safety` are two questions, and they were one word until it cost
+something.** The table here said "blast radius"; the agent said "tenant and credential
+safety". A planner naming `scoping` off this table got an agent hunting for tenant
+predicates, found none on a repo with no tenants, and reported *no findings* — a clean
+run of the wrong question. Each name now means one thing in both files.
 
 Each gets **fresh context and max effort**, which an inline same-session review does
 not. Scale the lens list to the change — but do not under-scale: five-file plumbing
 changes still ship regressions.
+
+⚠️ **Spawn `gh-issue-flow:diff-reviewer`, never the bare name** — a shadowing file in
+`~/.claude/agents/` wins silently and returns a plausible review of the wrong thing.
 
 ⚠️ Parallelism must live in the **parent**; a subagent cannot fan out. See
 `parallel-agents.md` for what those agents share and can clobber.
@@ -35,13 +45,17 @@ changes still ship regressions.
 **Code written to satisfy a reviewer never got reviewed itself.**
 
 If adjudicating the findings introduced a new branch, gate, condition or code path,
-spawn **one** more reviewer (`correctness`, max effort) scoped to **just that delta**
-before committing. Not a fresh fan-out, not for test/comment/doc-only fixes, and **not
-a loop** — one conditional pass, then move on.
+spawn **one** more reviewer, max effort, scoped to **just that delta** before
+committing. Not a fresh fan-out, not for test/comment/doc-only fixes, and **not a
+loop** — one conditional pass, then move on.
 
-Measured: three max-effort lenses cleared a diff; a pre-apply gate was then added *in
-response to the deploy lens*, and a bot found a Medium bug in it. **That late code was
-the only part never adversarially reviewed.**
+**Run it as the lens that RAISED the finding.** The delta exists to establish that
+lens's property; asking a different question of it is how the pass goes through
+motions. Measured: three max-effort lenses cleared a diff; a pre-apply gate was then
+added *in response to the deploy lens*, and a bot found a Medium bug in it. **That late
+code was the only part never adversarially reviewed** — and a `correctness` pass over a
+gate that exists for rollout ordering would have been looking somewhere else. Use
+`correctness` when the finding was your own rather than a lens's.
 
 The delta pass keeps earning its keep. On another change `correctness` and `contract`
 both returned **no findings** — and `scoping` still found a real wrong-denial hole,
@@ -71,13 +85,15 @@ should have been. A PR-scoped bot caught it immediately.
 > questions. A guard's *coverage* is a claim about the whole system, and you cannot
 > verify it from the changed lines alone.
 
-**When a diff adds a guard, validation, or invariant, put this in the lens prompt
-verbatim — and answer it yourself before shipping:**
+**This is what the `scoping` lens is for, and the question is now in the agent
+itself** — `agents/diff-reviewer.md` carries it verbatim, so it fires whether or not
+the caller remembers to paste it. It was a paste-it-in instruction here for long
+enough to be worth saying plainly: **an instruction that depends on the caller
+remembering is not a control.**
 
-> What ELSE reaches the thing being guarded, that this diff does not touch? Enumerate
-> the callers: CLI overrides (`-var`, env vars, flags), other roots or modules
-> importing the same variable/function, alternate entry points, and fixtures that
-> supply their own values. For each, say whether the new guard covers it.
+So: **any diff that adds a guard, validation or invariant gets `scoping`**, whatever
+else the planner named — and **answer the question yourself before shipping** too. The
+lens can miss it; you are the layer that knows what the change was for.
 
 Then **decide the layer deliberately and write the split down in code**, because the
 next reader will otherwise see the gap as an oversight.

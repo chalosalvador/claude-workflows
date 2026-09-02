@@ -113,13 +113,19 @@ broke nothing and says nothing about whether the change is right.
 ### 5. REVIEW LENSES
 
 Which `diff-reviewer` lenses this diff can actually trip: `correctness`, `contract`,
-`scoping`, `tests`, `deploy`. **Name only those, one clause each on why**, and list the
-ones you skipped with the reason. This gates a parallel max-effort review — an unearned
-lens costs real tokens, a missing one costs a real bug.
+`scoping`, `safety`, `tests`, `deploy`. **Name only those, one clause each on why**, and
+list the ones you skipped with the reason. This gates a parallel max-effort review — an
+unearned lens costs real tokens, a missing one costs a real bug.
 
-⚠️ Every lens is scoped to the diff and blind to code it does not touch. If this change
-adds a guard or validation, tell the reviewer to answer: *what else reaches the thing
-being guarded that this diff does not touch?*
+`scoping` and `safety` are different questions and are skipped for different reasons:
+`scoping` asks what else reaches the code this diff touches; `safety` asks about tenant
+predicates, credentials and secrets. A diff with no tenant-scoped query still gets
+`scoping` if anything outside the diff calls into what it changed.
+
+🚨 **If this change adds a guard, validation or invariant, `scoping` is not optional** —
+name it, and name the callers you already know about so the reviewer starts from a list
+rather than a blank page. That lens carries the enumeration question itself; you do not
+need to restate it.
 
 ---
 
