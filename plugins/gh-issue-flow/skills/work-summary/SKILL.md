@@ -161,8 +161,19 @@ A squash merge re-lands the same work under a new hash and a PR-shaped subject, 
 feature commits and the merge commit both fall in the window. **One item per feature**,
 not one per commit.
 
-Match on the PR number in the subject (`(#123)`) and on subject similarity, and prefer
-the **merge** subject — it is the one written for a reader.
+One feature typically leaves **three** kinds of commit in the window:
+
+- the feature commit, carrying its PR number — `... (#6)`;
+- its review-fix commits — `Address PR review …`, `fix(...): … (PR #34 review)`;
+- a **double-numbered** merge — `... (#6) (#70)` — where the squash of a branch that
+  already had a number in its subject picks up the merge's number too.
+
+Match on the PR number in the subject and on subject similarity, and prefer the **merge**
+subject — it is the one written for a reader.
+
+**Drop pure merge commits** (`Merge pull request …`) **and review-nit commits outright.**
+Neither is its own deliverable, and a review-fix commit reported as a bullet is how a
+day's list fills up with work nobody outside the PR needed to hear about.
 
 ## 5. Write it
 
