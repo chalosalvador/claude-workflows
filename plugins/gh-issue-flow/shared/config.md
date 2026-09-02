@@ -118,34 +118,40 @@ single constant.
 
 **Fetch the board once per run, into a file. Every consumer reads that file.**
 
+Use `board_fetch` from [`../reference/board-query.md`](../reference/board-query.md) — a
+hand-written GraphQL query returning exactly what these skills read. ⚠️ **It is a shell
+function in that file, not a binary** — paste both `board_gql` and `board_fetch` into the
+shell (or `. ` a file you wrote them to) before calling it, or you get `command not
+found`:
+
 ```sh
 BOARD_JSON="${SCRATCH:-${TMPDIR:-/tmp}}/board-${user_config.board_number}.json"
-[ -s "$BOARD_JSON" ] || gh project item-list "${user_config.board_number}" \
-  --owner "${user_config.board_owner}" --limit 1000 --format json > "$BOARD_JSON"
+[ -s "$BOARD_JSON" ] || board_fetch \
+  "${user_config.board_owner}" "${user_config.board_number}" "$BOARD_JSON"
 ```
 
-🚨 **One board read per run.** MEASURED against a **6-item** board: `--limit 1000` costs
-**102 GraphQL points**, `--limit 100` also 102, `--limit 30` costs 31. GraphQL bills on
-what a query *could* return, not what it does — so the price tracks the **requested page
-size**, and a nearly-empty board costs the same 102 as a full one. For comparison, on the
-same run `gh issue view --comments` cost 2 and the REST spelling of it cost 0.
+🚨 **Do not use `gh project item-list` for this.** MEASURED on the same 6-item board in
+the same run: the CLI costs **102 GraphQL points**, `board_fetch` costs **3**. GraphQL
+bills on what a query could return, and the CLI asks for a maximal board whatever yours
+holds — `--limit 1000` and `--limit 100` both cost 102, `--limit 30` costs 31. There is no
+flag to narrow it. For scale, `gh issue view --comments` cost 2 on that same run, and its
+REST spelling cost 0.
 
-That makes a board pull **the most expensive call in this plugin by ~50x**, against the
-one budget with no REST alternative to spend instead. Two steps that both need the board
-are two `jq` passes over `$BOARD_JSON`, **never two fetches** — a skill that pulls twice
-burns 204 of your 5000 for identical bytes.
+`board_fetch` emits the same `{"items":[…]}` field names, so every `jq` pass below works
+against either. It was verified identical to the CLI on every key these skills read.
 
-⚠️ `gh` pages at 100, so a board over 100 cards costs ~102 **per page**. That part is
-inferred from the page-size relationship above, not measured — the test board fit in one
-page. Re-measure on a large board before quoting a number for one.
+🚨 **Still one board read per run.** Two steps that both need the board are two `jq`
+passes over `$BOARD_JSON`, **never two fetches**. Cheap is not free — and the rule also
+keeps the two steps agreeing with each other.
 
 ⚠️ **One exception: a read-back AFTER a write must re-fetch.** Verifying a mutation
-landed against JSON pulled *before* the mutation proves nothing. Pull to a second path
-for that — and read the eventual-consistency trap before trusting the result.
+landed against JSON pulled *before* the mutation proves nothing. Pull to a second path for
+that — and read the eventual-consistency trap before trusting the result.
 
-🚨 **`--limit 1000` is mandatory.** The default is 30 and silently drops the newest
-cards on any board bigger than that — it can return only `Done` rows and look like a
-legitimately empty queue.
+⚠️ **If you fall back to the CLI, `--limit 1000` is mandatory.** The default is 30 and
+silently drops the newest cards on any board bigger than that — it can return only `Done`
+rows and look like a legitimately empty queue. `board_fetch` paginates to the end on its
+own and needs no equivalent.
 
 Resolve field and option ids dynamically; **never hardcode them**:
 

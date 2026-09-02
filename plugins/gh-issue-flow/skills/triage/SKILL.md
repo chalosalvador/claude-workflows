@@ -69,8 +69,7 @@ for R in <owner/repo> <owner/repo>; do
 done > "$SCRATCH/open.json"
 
 BOARD_JSON="$SCRATCH/board.json"
-gh project item-list "$BOARD" --owner "$BOARD_OWNER" --limit 1000 --format json \
-  > "$BOARD_JSON"
+board_fetch "$BOARD_OWNER" "$BOARD" "$BOARD_JSON"      # 3 points, not 102 — see config.md
 ```
 
 ⚠️ That is this run's **only** board fetch — see [`shared/config.md`](../../shared/config.md)
@@ -255,7 +254,7 @@ after the writes, and count from *those*:
 
 ```sh
 # The one sanctioned second board fetch — $BOARD_JSON predates the writes:
-gh project item-list "$BOARD" --owner "$BOARD_OWNER" --limit 1000 --format json
+board_fetch "$BOARD_OWNER" "$BOARD" "$SCRATCH/board-after.json"
 gh issue list --repo <owner>/<repo> --state open --limit 300 --json number,labels,assignees
 ```
 

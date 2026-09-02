@@ -9,6 +9,7 @@ file, unless you are about to do the whole thing.
 | [`verification.md`](verification.md) | Before writing any claim of the form "X is clean / done / absent" into a commit message, PR body, or report. |
 | [`guard-tests.md`](guard-tests.md) | The change adds a guard, invariant, scan, or lint-style test that asserts something about the repo. |
 | [`mutation-harness.md`](mutation-harness.md) | You are about to mutation-prove a test, or you are reading a harness's numbers. |
+| [`board-query.md`](board-query.md) | A run is hitting the GraphQL budget, or you are changing what the board fetch returns. Holds the hand-written query that replaces `gh project item-list` at 3 points instead of 102. |
 | [`git-and-github.md`](git-and-github.md) | Checking diff scope, diagnosing CI-vs-local, writing a PR body, or merging. |
 | [`review-process.md`](review-process.md) | Before opening any PR. Also when adjudicating reviewer findings. |
 | [`parallel-agents.md`](parallel-agents.md) | Before spawning parallel reviewers, or before any worktree squash/reset. |
