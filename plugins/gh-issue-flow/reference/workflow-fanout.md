@@ -80,10 +80,15 @@ the results in JS afterwards.
 
 ## The script
 
-Model tiering per spawn follows [`../shared/execution.md`](../shared/execution.md)
-§ 3.1. Categorize-and-size is not where marginal reasoning converts into caught
-mistakes, so the cheap tier is the default here; the gate evidence is adjudicated by
-the session regardless.
+Written against the `workflow-authoring` reference, which is the authority on this API —
+read it before changing the script, rather than pattern-matching from here.
+
+⚠️ **No `model` or `effort` override here, deliberately.** The tier table in
+[`../shared/execution.md`](../shared/execution.md) § 3.1 keys off the issue's effort
+label — and this is the pass that *assigns* that label, so the rule has nothing to key
+off. Inheriting the session's model is the honest default until someone measures a
+cheaper tier against real verdicts. (A workflow script *can* set both per call, unlike
+an Agent-tool spawn; that asymmetry is § 3.1's, and it is not a reason to use it blind.)
 
 ```javascript
 export const meta = {
@@ -149,7 +154,7 @@ const results = await parallel(
 
      Issues to judge: ${JSON.stringify(b.issues)}
      All open issues, for section 3d duplicate comparison: ${JSON.stringify(args.index)}`,
-    { label: `triage:${b.label}`, phase: 'Deep pass', schema: ISSUE_VERDICT, model: 'sonnet' }
+    { label: `triage:${b.label}`, phase: 'Deep pass', schema: ISSUE_VERDICT }
   ))
 )
 
@@ -171,6 +176,8 @@ const missing = args.batches
   .map(i => `${i.repo}#${i.number}`)
   .filter(k => !got.has(k))
 
+if (missing.length) log(`NOT TRIAGED, no verdict returned: ${missing.join(', ')}`)
+
 return { verdicts, dupes, missing }
 ```
 
@@ -178,7 +185,8 @@ return { verdicts, dupes, missing }
 for five issues has silently dropped one, and a receipt counted off `verdicts.length`
 would never show it. Any issue in `missing` is **not triaged** — leave it untriaged for
 the next run and say so on the board-health line. Never let it reach § 5 with a guessed
-verdict.
+verdict. It is `log()`ged as well as returned, because a bounded run that does not
+announce what it dropped reads as a run that covered everything.
 
 ## Building the batches
 
@@ -239,7 +247,7 @@ findings: agents surface, the session adjudicates and acts.
 | Claim | How |
 |---|---|
 | The batch build produces newest-first batches of 5, capped at 25, with no `triaged` issue in them | `jq` against a 30-issue and a 28-issue fixture. It also caught the `.[0]` slurp bug above, which is why that ⚠️ is there. |
-| The script's pure-JS half behaves: verdicts merge across batches, `missing` catches a dropped issue **and** an agent that returns nothing, reciprocal dupes collapse to one pair, self-references and unconfident dupes are dropped | 7 assertions against a throwaway harness that stubs `agent()` and `parallel()` and runs the real script body |
+| The script's pure-JS half behaves: verdicts merge across batches, `missing` catches a dropped issue **and** an agent that returns nothing, the drop is announced via `log()`, a clean run logs nothing, reciprocal dupes collapse to one pair, self-references and unconfident dupes are dropped | 9 assertions against a throwaway harness that stubs `agent()`, `parallel()` and `log()` and runs the real script body |
 
 ⚠️ The harness was throwaway and is not tracked — the guard suite is Python and this is
 JS, and one optional layer does not earn a new file class in
