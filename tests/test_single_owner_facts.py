@@ -83,17 +83,26 @@ OWNED: dict[str, tuple[str, int]] = {
     "Never merge.":
         ("plugins/gh-issue-flow/skills/autopilot/SKILL.md", 1),
 
-    # The fan-out's boundary. This is the clause a caller would most naturally
+    # Triage's fan-out boundary. This is the clause a caller would most naturally
     # restate in the triage skill, and a softened copy there would licence a
     # distributed writer — which § 5's write ordering, its label-splitting trap
     # and its eventually-consistent read-back each independently cannot survive.
     "Every agent in the fan-out is read-only; the writes never leave the main session.":
         ("plugins/gh-issue-flow/reference/workflow-fanout.md", 1),
+
+    # Autopilot's fan-out boundary, which is DELIBERATELY NOT the same rule as the
+    # one above — its agents do write, to their own worktree and their own PR. The
+    # two live in one file so the difference is visible; pinning both is what stops
+    # a later edit from "unifying" them into one softer sentence that would either
+    # ban the PR write or licence a board write.
+    "Agents produce the branch and the PR; every state transition on the issue and "
+    "the board stays with the session.":
+        ("plugins/gh-issue-flow/reference/workflow-fanout.md", 1),
 }
 
 # Independent completeness check: NOT derived from len(OWNED), which would be
 # circular and pass over a silently emptied pin.
-EXPECTED_PINNED_CLAUSES = 7
+EXPECTED_PINNED_CLAUSES = 8
 
 
 def normalize(text: str) -> str:
