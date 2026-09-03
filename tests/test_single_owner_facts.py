@@ -121,11 +121,29 @@ OWNED: dict[str, tuple[str, int]] = {
     "— never as a backgrounded command whose result arrives as a notification.":
         ("plugins/gh-issue-flow/shared/execution.md", 1),
 
+    # The fatal-substitution ban. This shipped as a real bug: an UNSET userConfig option
+    # substitutes as its own literal placeholder text, so `${BOARD:-${user_config.x}}` is
+    # a `bad substitution` that kills the block on its first line — on exactly the
+    # "leave them blank" path the README documents as supported. § Layer 1 has been
+    # rewritten four times on this branch; these five lines are the only record of why
+    # the idiom is forbidden, and they read like ordinary shell to anyone who rewrites
+    # them. Softening or relocating this is how the bug returns.
+    "Never write `${BOARD:-${user_config.board_number}}` or any other parameter "
+    "expansion around a `${user_config.*}` placeholder.":
+        ("plugins/gh-issue-flow/shared/config.md", 1),
+
+    # Board precedence in the one skill that WRITES to a board. Its absence was the
+    # shipped defect: triage named `userConfig` as its board source, so the
+    # workflow.json override never reached it and repo B's cards would have been added
+    # to repo A's board. Deliberately short and arrow-free — the full sentence reds when
+    # `→` is rewritten as `->`, which is a legitimate reformat.
+    "`board` FIRST, and only then from `userConfig`":
+        ("plugins/gh-issue-flow/skills/triage/SKILL.md", 1),
 }
 
 # Independent completeness check: NOT derived from len(OWNED), which would be
 # circular and pass over a silently emptied pin.
-EXPECTED_PINNED_CLAUSES = 10
+EXPECTED_PINNED_CLAUSES = 12
 
 
 def normalize(text: str) -> str:

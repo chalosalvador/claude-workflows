@@ -124,8 +124,9 @@ provided — which lands squarely on the directory-source recipe above, since dr
 `./` source is how you undo it. `claude plugin update` is the one command that preserves
 config.
 
-⚠️ **What you lose is machine-wide** — there is one set of these values per person. Why
-`pluginConfigs` cannot be per-repo, with the measurement:
+⚠️ **What you lose is a machine-wide *default*.** Any repo that names its own board in
+`workflow.json` → `board` is unaffected, because that layer wins. Why `pluginConfigs`
+cannot be per-repo, with the measurement:
 [`README.md`](README.md#configuration-in-three-layers) § Layer 1.
 
 Two things this is not. It is not the same as the *"N userConfig options not yet set"*

@@ -10,8 +10,8 @@ layer answered when it matters.
 
 | Placeholder | Meaning |
 |---|---|
-| `${user_config.board_number}` | GitHub Projects v2 board number, e.g. `11` |
-| `${user_config.board_owner}` | Org or user that owns the board |
+| `${user_config.board_number}` | **Default** Projects v2 board number, e.g. `11` — a repo's `workflow.json` → `board` overrides it |
+| `${user_config.board_owner}` | **Default** board owner, same override |
 | `${user_config.status_in_progress}` | Status option name for work in flight — **defaults to `In Progress`** |
 | `${user_config.ready_label}` | Label marking an issue safe for unattended work — **defaults to `agent-ready`** |
 
@@ -23,8 +23,101 @@ to `~/.claude/settings.json` and lands there **even under `--scope project`** �
 `.claude/settings.json` is never consulted for it. So Layer 1 holds **one** value per
 machine and cannot by itself follow you between projects.
 
-**If `board_number` is empty, skip every board step** and work from issue labels
-alone. Say so once; do not fail.
+🚨 **That is why Layer 1 is only the DEFAULT board, never the answer.** A workspace that
+targets a different board sets it in that repo's `workflow.json` → `board`, which wins.
+Resolution order, every run:
+
+| Order | Source | Use when |
+|---|---|---|
+| 1 | `workflow.json` → `board` (§ Layer 2) | this repo names its own board — **always wins** |
+| 2 | `${user_config.board_number}` / `${user_config.board_owner}` | no repo-level board; the machine default |
+| 3 | neither is set | **no board** — label-only, see below |
+
+**Resolve it once at the top of a run, then substitute the resulting NUMBERS into every
+later command.** 🚨 **Do not try to carry it in a shell variable.** Each command runs in
+a fresh shell, so `$BOARD` set in one block is empty in the next — and an empty board
+number reads downstream exactly like "this repo has no board", which is how a boarded
+repo gets silently triaged label-only. `triage` § 1 shows the shape: literal
+`<board_number>` / `<board_owner>` placeholders you fill in.
+
+🚨 **Never write `${BOARD:-${user_config.board_number}}` or any other parameter expansion
+around a `${user_config.*}` placeholder.** MEASURED: an **unset** option is substituted
+as the *literal placeholder text*, and `${BOARD:-${user_config.board_number}}` is then a
+**fatal `bad substitution`** in both zsh and bash — the block dies on its first line, on
+exactly the "leave them blank" path the README documents as supported. Read the value,
+then decide in prose; do not make the shell do the fallback.
+
+**Step 1 — ask the repo, from its root.** A bare relative path is wrong in any cwd below
+the root.
+
+🚨 **`git rev-parse --show-toplevel` is NOT enough — in a worktree it returns the
+WORKTREE**, and `.claude/` is commonly gitignored, so `workflow.json` lives only in the
+main checkout and the override silently vanishes. MEASURED in a worktree of this repo:
+`--show-toplevel` → the worktree (no file); `--git-common-dir` → the main checkout. That
+is `autopilot`'s normal scheduled path, where an unattended run would then write to the
+machine-default board with nobody to check with. Look in both, worktree first:
+
+```sh
+WT=$(git rev-parse --show-toplevel) || { echo "NOT A GIT REPO — no repo board"; exit 1; }
+MAIN=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)") # main checkout
+WF=""
+for D in "$WT" "$MAIN"; do
+  [ -f "$D/.claude/workflow.json" ] && { WF="$D/.claude/workflow.json"; break; }
+done
+if [ -n "$WF" ]; then
+  jq -r '"number=\(.board.number // "-")  owner=\(.board.owner // "-")"' "$WF"
+  echo "src=$WF"
+else
+  echo "NO workflow.json in $WT or $MAIN"
+fi
+```
+
+⚠️ **The `|| { … exit 1; }` is not decoration either.** Without it, both `git rev-parse`
+calls fail, `WT` is empty and `dirname ""` is `.`, so the loop quietly tests
+`./.claude/workflow.json` and **adopts a board from whatever directory you happen to be
+in, at exit 0.** Measured: a stray file in a non-repo cwd yielded
+`number=999  owner=WRONG-ORG`.
+
+⚠️ **The `else` is not decoration — do not collapse this into a `for … done || echo`.**
+`continue` exits 0, so such a loop always "succeeds" and the fallback becomes dead code:
+the boardless case then prints **nothing at all**, which reads as a clean run rather than
+an unanswered question. Measured while writing this.
+
+In a normal checkout the two are identical and the loop reads it once.
+
+**Step 2 — read the machine default too.** ⚠️ **This file is never substituted** — the
+`${user_config.*}` placeholders in the table above reach you as literal text, so you
+cannot read Layer 1 by quoting one. Ask the settings file:
+
+```sh
+jq -r '.pluginConfigs["gh-issue-flow@claude-workflows"].options
+       | "default_number=\(.board_number // "-")  default_owner=\(.board_owner // "-")"' \
+   ~/.claude/settings.json 2>/dev/null || echo "default_number=-  default_owner=-"
+```
+
+**Step 3 — combine the two, whole-key, and say which layer answered.** Match on step 1's
+output first; only the last row needs step 2:
+
+| Step 1 printed | Board is | Say |
+|---|---|---|
+| `number=42  owner=acme` | **42 / acme** | "board 42, from this repo's `workflow.json`" |
+| `number=42  owner=-` (or the reverse) | **stop** | a half-written key is a config error, not a fallback — mixing a repo's number with a machine-default owner reads a board nobody configured |
+| `NO workflow.json in …` | step 2's default, **unverified** | "no `workflow.json` here — using the machine default `<n>`; if this repo should have one, **stop and check before any board write**" |
+| `number=-  owner=-` | step 2's default | "board `<n>`, the machine default — this repo names none" |
+| …and step 2 also printed `-` | **none** | label-only (below) |
+
+⚠️ **The provenance you report must name where the NUMBER came from, not merely that a
+file existed.**⚠️ **The provenance you report must name where the NUMBER came from, not merely that a
+file existed.** `setup` deliberately **omits** `board` when the repo uses the default, so
+"file present, no board key" is the *common* shape — reporting it as "from
+`workflow.json`" certifies the previous project's board as this repo's deliberate choice,
+which is worse than saying nothing.
+
+**Say which layer answered** whenever a board write is about to happen. Pointing a repo's
+triage at the previous project's board is silent and expensive to undo.
+
+**If BOTH are empty, skip every board step** and work from issue labels alone. Say so
+once; do not fail.
 
 ⚠️ **An empty Layer 1 is not proof the user chose the label-only path.**
 `claude plugin uninstall` empties `pluginConfigs` and the reinstall does not restore it,
@@ -49,6 +142,7 @@ The per-repo override. Read it from the repo root you are working in.
 ```json
 {
   "repos": ["acme/acme-api", "acme/acme-web"],
+  "board": { "number": 11, "owner": "acme" },
   "integrationBranch": "origin/dev",
   "mergeMethod": "squash",
   "specFlow": "openspec",
@@ -78,8 +172,13 @@ The per-repo override. Read it from the repo root you are working in.
 
 Every key is optional. Absent keys fall through to Layer 3.
 
-Five of them carry weight the others do not:
+Six of them carry weight the others do not:
 
+- **`board`** names the Projects v2 board **this repo** feeds, and it **overrides**
+  Layer 1. It is what lets one machine work several workspaces that target different
+  boards — set it in every repo whose board is not your machine default, and the skills
+  stop needing you to re-run the install between projects. `owner` is the board's owner,
+  which is **not** necessarily the repo's (§ Owners are per-repo). Absent → Layer 1.
 - **`repos`** is the repo list every multi-repo skill means by "every configured repo" —
   `triage`'s working set, `next-issue`'s theme sense, `work-summary`'s scope, and
   `autopilot`'s backpressure check all expand it. **Full `owner/repo`, never bare names**,
@@ -183,9 +282,9 @@ shell (or `. ` a file you wrote them to) before calling it, or you get `command 
 found`:
 
 ```sh
-BOARD_JSON="${SCRATCH:-${TMPDIR:-/tmp}}/board-${user_config.board_number}.json"
-[ -s "$BOARD_JSON" ] || board_fetch \
-  "${user_config.board_owner}" "${user_config.board_number}" "$BOARD_JSON"
+SCRATCH="${SCRATCH:-${TMPDIR:-/tmp}}"          # fresh shell: re-establish it
+BOARD_JSON="$SCRATCH/board-<board_number>.json"  # <-- the NUMBER you resolved, written in
+[ -s "$BOARD_JSON" ] || board_fetch "<board_owner>" "<board_number>" "$BOARD_JSON"
 ```
 
 🚨 **Do not use `gh project item-list` for this.** MEASURED on the same 6-item board in
@@ -214,8 +313,7 @@ own and needs no equivalent.
 Resolve field and option ids dynamically; **never hardcode them**:
 
 ```sh
-gh project field-list "${user_config.board_number}" \
-  --owner "${user_config.board_owner}" --format json
+gh project field-list "<board_number>" --owner "<board_owner>" --format json
 ```
 
 ⚠️ `gh api rate_limit` does **not** see the secondary limit that stops `gh project`.

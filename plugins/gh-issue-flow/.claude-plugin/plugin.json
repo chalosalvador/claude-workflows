@@ -2,7 +2,7 @@
   "name": "gh-issue-flow",
   "displayName": "GitHub Issue Flow",
   "description": "Board-driven issue workflow: triage, pick the next issue, plan it, implement it in a worktree, adversarially review the diff, open a PR, and drive it to green.",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "author": {
     "name": "Chalo Salvador"
   },
@@ -12,13 +12,13 @@
     "board_number": {
       "type": "string",
       "title": "GitHub Project number",
-      "description": "The Projects v2 board number these repos feed, e.g. 11. Leave empty to skip all board steps.",
+      "description": "DEFAULT Projects v2 board number, e.g. 11 — used only when a repo's .claude/workflow.json names no board of its own. Leave empty if you have no board; a repo that sets one still uses it.",
       "required": false
     },
     "board_owner": {
       "type": "string",
       "title": "Project owner",
-      "description": "The org or user that owns the board. May differ from the repo owner.",
+      "description": "DEFAULT board owner — the org or user, which may differ from the repo owner. A repo's .claude/workflow.json board.owner overrides it.",
       "required": false
     },
     "status_in_progress": {
