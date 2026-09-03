@@ -16,6 +16,12 @@ claude plugin validate . --strict
 CI runs all four as the `guards` job. Run them before pushing — `main` is protected, so a
 red gate means the PR simply cannot merge.
 
+⚠️ **A PR with NO checks is not a passing PR.** `guards` is required, so zero checks
+blocks a merge rather than allowing it — but the PR page looks clean either way, which is
+how a stacked PR once reached `MERGEABLE` having never run the gate. The workflow now
+triggers on every base, and on `edited` so that retargeting a PR re-runs it. **Look for a
+green `guards`, not for the absence of red.**
+
 ⚠️ The single-owner guard enumerates via `git ls-files`, i.e. the **index**. A new
 unstaged file is invisible to it. `git add` before trusting a local green.
 
