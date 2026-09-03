@@ -5,7 +5,8 @@ description: >-
   assigned to the current user or unassigned — then either (A) emit a ready-to-paste
   "start it in a new session" prompt, or (B) start it in the current session (scoping-
   plan comment + board In Progress, pause for OK, then implement → validate → parallel
-  diff review → PR → babysit CI and review threads to green). Use when asked "what's
+  diff review → PR → babysit CI and review threads to green, ending with a plain-words
+  summary of what was done and what to review or test). Use when asked "what's
   the next issue to work on", for a prompt to start an issue in a new session, or to
   "start" / "work on" the next issue now.
 ---
@@ -42,6 +43,7 @@ Mode B (Start now):
 - [ ] 5B. After OK: branch → spec change (if any) → implement → validate →
           parallel `gh-issue-flow:diff-reviewer` review → archive → commit → PR →
           babysit to green
+- [ ] 6B. End with the PR handoff summary (§ 6) — always, even if the run stopped early
 ```
 
 ## 1. Pick the issue
@@ -228,6 +230,8 @@ Same research (steps 1–3), executed as actions, with a hard checkpoint:
 - [ ] 7. Commit referencing "Fixes #<N>" (never commit secrets), open a PR.
 - [ ] 8. Babysit to green — CI **and** review threads. Reply, verify, then resolve.
 - [ ] 9. Set the card → Done only at merge. NEVER merge without go-ahead.
+- [ ] 10. End with the PR handoff summary — § 6 below. Not optional, not conditional
+         on the run having gone well.
 ```
 
 🚨 **Read every GitHub mutation back before reporting it.** `gh` exits 0 on writes the
@@ -254,9 +258,52 @@ cannot drift. **Read it — do not restate it from memory.**
 - **Deploy consequences** → § 7. If merging the integration branch deploys, the
   prompt's DEPLOY NOTE must say so.
 
+## 6. Always end with the PR handoff summary
+
+🚨 **Once a PR exists, the run's last words are this summary — every time.** Not only
+on a clean finish: a run that ends at red CI, hands back, or is cut short still ends
+with it and says where it stopped. It is the only part of the run the reviewer is
+guaranteed to read.
+
+Write it for a **teammate who did not watch the run** and has to review the PR now.
+Plain words, short sentences, bullets. No skill vocabulary — no "lenses", "gate",
+"delta re-review", "archive the change"; say what those did in ordinary English.
+Numbers instead of adjectives: "3 files", "2 new tests", not "several small changes".
+
+This is the **chat** handoff. It does not replace the PR body, and it is not posted to
+GitHub.
+
+### Shape
+
+One line first — the PR link and, in a sentence, what it does. Then these lists:
+
+- **What changed** — 3–6 bullets, one per real change, each naming the file or
+  directory. Behaviour, not diff mechanics: what the code does now that it did not.
+- **What to review** — the parts where a human's judgment is worth more than the
+  tests: the decision that could have gone the other way, the risky edge, anything
+  reviewers flagged that you argued back on. Say *why* each one deserves eyes.
+- **How to test it** — copy-pasteable commands, plus the by-hand check if the change
+  is visible to a user. Say what a passing run looks like.
+- **Still open** — anything left: red or missing checks, unresolved threads, work
+  deliberately left out of scope, an assumption you made because nobody was there to
+  ask. `Nothing` is a fine value here, and much better than silence.
+
+### Rules
+
+- **Honest over tidy.** If CI is red or a check never ran, that goes in `Still open`
+  in the first sentence of the bullet — never buried, never softened. Same for a
+  finding you rejected: name it and give the reason.
+- **Only what you verified.** Every claim here is read back from GitHub or from a
+  command you actually ran — see
+  [`../../reference/verification.md`](../../reference/verification.md). "Tests pass"
+  means you saw them pass in this run.
+- **Keep it short.** Roughly a screen. If a bullet needs a paragraph, the PR body or a
+  thread is the place for it; link there.
+
 ## Output
 
 - **Mode A:** emit the finished prompt as **one** fenced code block. At most one
-  sentence before it, naming the issue.
+  sentence before it, naming the issue. There is no PR yet, so § 6 does not apply.
 - **Mode B:** don't emit a prompt. Post the scoping-plan comment, set the board, then
   stop at the checkpoint with a short summary + the comment link and wait for the OK.
+  After the OK, the run's final output is the **§ 6 PR handoff summary**.
