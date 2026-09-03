@@ -44,6 +44,21 @@ unchanged, since it names the marketplace, not the repo.)*
 You will be prompted for your board number and owner. **Leave them blank if you have no
 project board** — the skills fall back to labels and `gh issue list`.
 
+**The two install paths differ here, and neither is broken.** From a terminal,
+`claude plugin install` prints a line like *"4 userConfig options not yet set"*.
+MEASURED: the terminal path prints that count. The in-session `/plugin install` does
+**not** — it may show a configuration step instead, or simply report the plugin enabled.
+⚠️ That second half is **read from the CLI, not yet confirmed by a run**; treat it as
+unverified. Either way, seeing neither a form nor a count is expected, not a failure.
+
+That count is **not an error**. It counts options declared but not stored — including
+the two that already carry working defaults (`status_in_progress` → `In Progress`,
+`ready_label` → `agent-ready`) — and **none of the four is required**. On the boardless
+path it is expected and nothing is wrong.
+
+⚠️ **What you enter here is stored per person, machine-wide** — why, and the
+measurement behind it, in [§ Configuration](#configuration-in-three-layers) below.
+
 To enable it for a whole team, commit this to the repo's `.claude/settings.json`:
 
 ```json
@@ -160,11 +175,12 @@ Missing the board or signing does not break anything — it narrows what the ski
 ## Configuration, in three layers
 
 **Layer 1 — `userConfig`** (prompted once, on install): board number, board owner, status
-names, the autopilot label. Per person.
+names, the autopilot label. Per person, one set per machine.
 
-⚠️ Claude Code reads `pluginConfigs` **only** from user-level settings — a project
-`.claude/settings.json` is ignored for it — so anything that varies *per repo* cannot
-live here.
+⚠️ Claude Code reads `pluginConfigs` **only** from user-level settings — MEASURED: it
+lands there even under `--scope project`, and a project `.claude/settings.json` is never
+consulted for it. So Layer 1 is **one set of values per machine**, and anything that
+varies per repo belongs in Layer 2.
 
 **Layer 2 — `.claude/workflow.json`** in each repo, written by `setup`:
 

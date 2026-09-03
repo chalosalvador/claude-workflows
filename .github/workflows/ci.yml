@@ -30,6 +30,11 @@ jobs:
       - name: No stray tracked files
         run: python3 tests/test_no_stray_files.py
 
+      # `claude plugin validate` is blind to the marketplace top-level version —
+      # measured: it exits 0 on a stale or even deleted one. This is that gap.
+      - name: Version numbers agree
+        run: python3 tests/test_version_agreement.py
+
       - name: Plugin + marketplace manifests
         run: |
           npm i -g @anthropic-ai/claude-code

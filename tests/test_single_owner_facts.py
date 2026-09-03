@@ -44,7 +44,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 # Only these trees are scanned. Anything outside is not this guard's business.
-SCAN_ROOTS = ("README.md", "plugins/")
+#
+# CLAUDE.md and CONTRIBUTING.md were added after this branch shipped a direct
+# self-contradiction between them in ONE commit — CLAUDE.md said `claude plugin tag`
+# validates two version fields while CONTRIBUTING.md said the gate checks two of three
+# and the top-level is unchecked — and both guards passed. They are the repo's two
+# highest-traffic prose files and nothing mechanical protected either. MEASURED:
+# widening costs nothing, 25 scanned files -> 27, no existing pin becomes a stray.
+SCAN_ROOTS = ("README.md", "CLAUDE.md", "CONTRIBUTING.md", "plugins/")
 
 # ─── THE PIN ────────────────────────────────────────────────────────────────
 # clause -> (owning file, exact count expected in that owner)
@@ -113,6 +120,7 @@ OWNED: dict[str, tuple[str, int]] = {
     "In an unattended run, the babysit loop runs in the foreground or through Monitor "
     "— never as a backgrounded command whose result arrives as a notification.":
         ("plugins/gh-issue-flow/shared/execution.md", 1),
+
 }
 
 # Independent completeness check: NOT derived from len(OWNED), which would be

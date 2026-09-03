@@ -306,6 +306,25 @@ Print three blocks, in this order:
 **Missing — and who can fix it.** The honest half. Separate what a human must do from
 what is merely absent:
 
+🚨 **An unset board is NOT a Missing row.** A blank `board_number` means the label-only
+path is in effect; filing it as a gap tells the user their setup failed when it may be
+exactly what they wanted. Report it as a **narrowing** instead — what the skills no longer claim — and
+link to § 5 rather than restating the fallback, which § 5 already owns. The count of
+unset `userConfig` options the install prints is the same shape: **not a gap you can
+close for them**, so do not file it as one.
+
+⚠️ **But you cannot tell a deliberate blank from a wiped one, so do not assert it was a
+choice.** `claude plugin uninstall` empties `pluginConfigs`, and nothing distinguishes
+the result from a user who never set a board. When the board resolves to nothing, report
+the narrowing **and** give the way back — the `--config` command and the
+**`/reload-plugins`** that must follow it are in
+[`shared/config.md`](../../shared/config.md) § Layer 1. **The reload is part of the fix,
+not an optional extra**: without it the command succeeds and the very next skill still
+resolves an empty board.
+
+Say it as *"no board is configured — if that is deliberate, nothing is wrong; if you
+expected one, here is how to restore it."*
+
 | Gap | Effect | Fix |
 |---|---|---|
 | No `Hold` Status option | No parked state; every Todo card is pickable | Board UI, one click |
