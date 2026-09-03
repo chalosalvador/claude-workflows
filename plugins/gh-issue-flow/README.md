@@ -68,7 +68,7 @@ different points in the branch lifecycle, one of them before the branch exists.
 
 ### Reference
 
-Nine docs of measured operational knowledge — see [their index](reference/README.md).
+Eleven docs of measured operational knowledge — see [their index](reference/README.md).
 Skills link into them at the moment each becomes relevant.
 
 The one idea underneath all of them: **silence, an empty result, and exit 0 are

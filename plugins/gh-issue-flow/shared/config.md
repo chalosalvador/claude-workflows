@@ -12,15 +12,33 @@ layer answered when it matters.
 |---|---|
 | `${user_config.board_number}` | GitHub Projects v2 board number, e.g. `11` |
 | `${user_config.board_owner}` | Org or user that owns the board |
-| `${user_config.status_in_progress}` | Status option name for work in flight |
-| `${user_config.ready_label}` | Label marking an issue safe for unattended work |
+| `${user_config.status_in_progress}` | Status option name for work in flight — **defaults to `In Progress`** |
+| `${user_config.ready_label}` | Label marking an issue safe for unattended work — **defaults to `agent-ready`** |
 
-⚠️ **Claude Code reads `pluginConfigs` only from user-level settings.** Project
-`.claude/settings.json` entries are ignored for it. So `userConfig` can hold
-per-person values and **cannot** hold anything that varies between repos.
+**None of the four is required**, and the two with defaults work unset — which is why the
+install's "N options not yet set" count is not an error.
+
+⚠️ **`pluginConfigs` is stored per person, not per repo.** MEASURED: `--config` writes
+to `~/.claude/settings.json` and lands there **even under `--scope project`** — a project
+`.claude/settings.json` is never consulted for it. So Layer 1 holds **one** value per
+machine and cannot by itself follow you between projects.
 
 **If `board_number` is empty, skip every board step** and work from issue labels
 alone. Say so once; do not fail.
+
+⚠️ **An empty Layer 1 is not proof the user chose the label-only path.**
+`claude plugin uninstall` empties `pluginConfigs` and the reinstall does not restore it,
+so a board that was configured yesterday can be silently gone today. When you report the
+boardless fallback, offer the way back rather than asserting a preference:
+
+```sh
+claude plugin install gh-issue-flow@claude-workflows \
+  --config board_number=<n> --config board_owner=<owner>
+```
+
+Then **`/reload-plugins`** — a subprocess write does not reach this session's memoized
+option values, so without it the very next resolution still reads empty.
+
 
 ---
 

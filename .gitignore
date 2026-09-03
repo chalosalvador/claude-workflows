@@ -4,3 +4,5 @@ node_modules/
 
 # local Slidev output when testing the deck template
 slides/
+__pycache__/
+*.pyc
