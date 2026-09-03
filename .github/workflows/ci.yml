@@ -1,8 +1,19 @@
 name: CI
 
 on:
+  # 🚨 NO `branches:` filter, deliberately. That filter matches the PR's BASE, so a
+  # stacked PR — one opened against another branch rather than `main` — never ran
+  # guards at all. MEASURED: PR #15 sat at zero checks while showing MERGEABLE, with
+  # `guards` a REQUIRED check. A green-looking PR page with no checks on it is the
+  # exact "silence reads as success" failure this repo's reference docs are about.
+  #
+  # `edited` is in the list because retargeting a PR fires that and nothing else —
+  # not `synchronize` — so without it, moving a stacked PR onto `main` still left it
+  # unchecked. It also fires on title/body edits, which re-runs a ~40s job for no
+  # reason; that is the accepted cost of the base-change signal, since GitHub has no
+  # narrower event for it.
   pull_request:
-    branches: [main]
+    types: [opened, synchronize, reopened, edited]
   push:
     branches: [main]
 
