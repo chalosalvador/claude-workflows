@@ -80,7 +80,7 @@ below. That file also states plainly what the layer costs, which is not nothing.
 Unattended work piles up faster than humans review it.
 
 ```sh
-for R in <owner/repo> <owner/repo>; do
+for R in <owner/repo> <owner/repo>; do     # workflow.json -> repos, expanded literally
   gh pr list --repo "$R" --state open --label agent-authored --json number,title,createdAt
 done
 ```

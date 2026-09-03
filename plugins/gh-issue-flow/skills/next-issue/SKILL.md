@@ -76,21 +76,31 @@ thread instead of cold-starting an unrelated one:
 # Strongest signal — what is mid-flight right now (same fetch, second pass):
 jq -r '.items[] | select(.status=="In Progress") | "#\(.content.number)\t\(.content.title)"' "$BOARD_JSON"
 
-# Recently merged work (last ~2 weeks), per repo — owners differ, resolve each:
+# Recently merged work (last ~2 weeks), per repo — owners differ, resolve each.
+# The repo list is workflow.json -> repos; absent, it is just the repo you are in.
 for NWO in <owner/repo> <owner/repo>; do
   gh pr list --repo "$NWO" --state merged --limit 20 --json number,title,mergedAt \
     --jq '.[] | "\(.number)\t\(.title)"'
-  git -C "${NWO#*/}" log --since="2 weeks ago" --oneline
 done
+
+# The commit log needs a real checkout. For the repo you are in, that is here:
+git log --since="2 weeks ago" --oneline
 ```
+
+⚠️ **Do not reach for `git -C <repo-name>`.** That guesses that every repo is a sibling
+directory named after itself, which is false in the ordinary case where you are already
+inside the only checkout — and it fails loudly there for no reason. Resolve a real path
+first, or skip the log for that repo and say so; the `gh pr list` half needs no working
+copy and carries most of the signal. See
+[`shared/config.md`](../../shared/config.md) § Repo scope.
 
 Name the **current theme(s)** in a phrase or two. Capture the subsystem, files/dirs,
 labels and track involved.
 
 ### Rank and present
 
-There are usually **dozens** of eligible cards and `item-list` does **not** return
-reliable manual board order — don't blindly grab the first row. Rank by:
+On an established board there are often dozens of eligible cards, and `item-list` does
+**not** return reliable manual board order — don't blindly grab the first row. Rank by:
 
 1. **Alignment with the current theme** — biggest weight. Boost a card if its body says
    "follow-up to" / "depends on" a just-merged issue, or it shares the subsystem, files,
@@ -102,6 +112,12 @@ Present the **top ~5** with a one-line "why it's aligned" note each, default to 
 one, and let the user choose. If they said "just give me the next one", take the
 default and continue. If no eligible cards exist, fall back to the top Todo card and
 **say** it is assigned to someone else.
+
+**No eligible cards and no Todo column at all** — a new repo, or a board that has just
+been emptied — is a legitimate answer, not a failure. Say `nothing in Todo` in one line,
+and offer the one useful next step: file the issue the user actually wants worked, or run
+`/gh-issue-flow:triage` if there are open issues that never reached the board. Do not
+invent work, and do not fall through to a Done or In Progress card.
 
 **Flag, don't silently proceed:** if the chosen issue's body says "sequenced after" /
 "blocked by" / "depends on #N", verify #N is closed/merged and note the blocker's real
@@ -155,7 +171,14 @@ the facts (branch, gate, spec flow, worktree) and let it choose the shape.
 
 ## 4A. Mode A — fill the template
 
-Use [`template.md`](template.md). Sections, in order: header line + URL → Repo →
+Use the bundled template — read it by absolute path, since from an installed copy the
+working tree is not on disk:
+
+```sh
+cat "${CLAUDE_PLUGIN_ROOT}/skills/next-issue/template.md"
+```
+
+Sections, in order: header line + URL → Repo →
 CONTEXT → DECIDE FIRST → SCOPE → VERIFY-FIRST → TESTS → VALIDATE → PROCESS →
 DEPLOY NOTE.
 

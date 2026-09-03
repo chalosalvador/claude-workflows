@@ -53,12 +53,26 @@ The window is a half-open day range: `--since` = `00:00` of the first day, `--un
 
 ## 2. Repo scope
 
-A workspace root holding several repos is usually **not itself a git repo** — always run
-with `git -C <repo>`.
-
-**Default: cover every configured repo** and group the output by repo. For a monorepo,
+**Default: cover every repo in `workflow.json` → `repos`** and group the output by repo.
+With no `repos` key that is **just the repo you are in**, which is the common case and a
+complete answer — say so rather than implying a wider sweep happened. For a monorepo,
 split by the paths in `workflow.json` → `workstreams`. Narrow only when the user names
 one.
+
+⚠️ **Resolve each repo to a real checkout path before reading its log.** A workspace root
+holding several repos is usually **not itself a git repo**, so `git -C <path>` is right
+there — but `<path>` must be proven, not guessed from the repo name
+([`shared/config.md`](../../shared/config.md) § Repo scope):
+
+```sh
+git rev-parse --show-toplevel                       # the repo you are in
+git -C "<candidate>" rev-parse --show-toplevel      # prove a sibling before using it
+```
+
+**A configured repo with no checkout here is a gap to report, not a quiet day.** It has
+no commits *to you*; that is not the same as no commits. List it under "not covered" with
+the reason — this is the same failure as the stale-workstream-path one below, and it
+reads identically in the output.
 
 ⚠️ **Read the workstream paths from config, not from memory.** An app that was split or
 renamed leaves the old path in every doc and half the skills; a stale path silently
@@ -491,7 +505,14 @@ than the format does:
 
 ### Build it
 
-1. **Fill [`deck-template.md`](deck-template.md)** into `slides/<name>.md`. Sections:
+1. **Fill the bundled template** into `slides/<name>.md`. It ships with the plugin, so
+   read it by absolute path — from an installed copy the working tree is not on disk:
+
+   ```sh
+   cat "${CLAUDE_PLUGIN_ROOT}/skills/work-summary/deck-template.md"
+   ```
+
+   Sections:
    cover → at a glance → one slide per workstream that moved → roadmap → close.
 2. **Copy the stylesheet** to `slides/style.css`:
 

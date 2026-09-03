@@ -218,10 +218,13 @@ announce what it dropped reads as a run that covered everything.
 
 ### Building the batches
 
-The session already has both inputs from § 1: `$SCRATCH/open.json` and `$BOARD_JSON`.
-Untriaged, newest first, in fives:
+The session already has both inputs from triage § 1: `open.json` and `board.json` under
+the run's scratch dir. ⚠️ **This is a fresh shell — re-establish the path**; a bare
+`$SCRATCH` expands to empty and the read fails on `/open.json`. Untriaged, newest first,
+in fives:
 
 ```sh
+SCRATCH="${SCRATCH:-${TMPDIR:-/tmp}}"
 jq -s --arg skill "<abs path to triage/SKILL.md>" '{
   skillPath: $skill,
   index: [ .[] | {repo, number, title, labels: [.labels[].name]} ],

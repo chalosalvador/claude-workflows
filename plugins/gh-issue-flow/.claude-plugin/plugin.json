@@ -2,7 +2,7 @@
   "name": "gh-issue-flow",
   "displayName": "GitHub Issue Flow",
   "description": "Board-driven issue workflow: triage, pick the next issue, plan it, implement it in a worktree, adversarially review the diff, open a PR, and drive it to green.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": {
     "name": "Chalo Salvador"
   },
