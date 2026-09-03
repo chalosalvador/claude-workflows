@@ -5,13 +5,13 @@
     "email": "chalo@monogram.io"
   },
   "description": "Board-driven engineering workflow skills, agents, and hard-won operational reference docs.",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "plugins": [
     {
       "name": "gh-issue-flow",
       "source": "./plugins/gh-issue-flow",
       "description": "Triage, pick, plan, implement, adversarially review, and ship issues off a GitHub Projects board.",
-      "version": "0.4.0",
+      "version": "0.5.0",
       "author": { "name": "Chalo Salvador" }
     }
   ]

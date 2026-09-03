@@ -62,9 +62,12 @@ collide across them** — always carry the repo alongside the number, and write
 cross-repo refs as `owner/repo#N`.
 
 **Nothing below is ambient — resolve each of these first.** The repo list comes from
-`workflow.json` → `repos` (absent → the repo you are in); the board number and owner
-from `userConfig`; `board_fetch` is a **shell function**, not a binary. All of it:
-[`shared/config.md`](../../shared/config.md) § Repo scope and § Board queries.
+`workflow.json` → `repos` (absent → the repo you are in). 🚨 **The board comes from
+`workflow.json` → `board` FIRST, and only then from `userConfig`** — this repo may not
+feed the board your machine defaults to, and writing to the wrong one is silent. Run the
+two-step resolution and report which layer answered:
+[`shared/config.md`](../../shared/config.md) § Layer 1. `board_fetch` is a **shell
+function**, not a binary — § Board queries in the same file. Repo list: § Repo scope.
 
 ⚠️ **Each command runs in a FRESH shell — nothing you set survives to the next block.**
 So every block below re-establishes `SCRATCH` and re-sources `board_fetch` rather than

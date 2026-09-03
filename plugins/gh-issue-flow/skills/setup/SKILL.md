@@ -86,6 +86,7 @@ repo with no CI. Test the directory first, or use `find`:
 
 | Fact | How |
 |---|---|
+| `board` | **Ask which board THIS repo feeds**, and write `{"number": N, "owner": "<owner>"}` whenever it is not the user's machine default. This is what lets one machine work several workspaces against different boards — see [`shared/config.md`](../../shared/config.md) § Layer 1 for the resolution order. Omit the key when the repo uses the default; do not write a copy of it. 🚨 **Both sub-keys or neither** — a `board` with `number` and no `owner` does not fall back, it stops every board step in a repo you just green-lit. If the owner is unknown, ask; if you cannot get it, write no `board` key. |
 | `repos` | The repo you are in (`gh repo view --json nameWithOwner`). **Ask whether other repos feed the same board** — if so, list them all, full `owner/repo`. One repo is the common answer and a perfectly good one; write the key anyway so the skills never have to guess. |
 | `integrationBranch` | `origin/` + the default branch — **after** the empty-repo check above. ⚠️ **Not always `main`** — if a `dev`/`develop` remote branch exists and is ahead of the default, the repo probably integrates there and releases from the default. **Ask; do not guess.** |
 | `validate` | **Read the CI workflow first** — `.github/workflows/*.yml`, the job that runs on PRs into the integration branch. Copy its step commands in order. Fall back to the toolchain only if there is no CI: `pyproject.toml`/`requirements.txt` → `ruff`/`pytest`; `package.json` → the lint/typecheck/test/build scripts that actually exist; `Cargo.toml` → `cargo clippy`/`cargo test`; `go.mod` → `go vet`/`go test ./...`. |
@@ -105,7 +106,8 @@ failure as a broken repo. Run them; report any that fail.
 Schema and key meanings: [`shared/config.md`](../../shared/config.md).
 
 Write **only** what you probed. Leave a key out rather than guessing it — an absent key
-falls through to Layer-3 probing, a wrong key is believed.
+falls through to Layer-3 probing, a wrong key is believed. ⚠️ **`board` is the exception
+to "leave a key out": it is both sub-keys or no key at all**, never a half. See § 2.
 
 Add `$comment` keys recording **where each value came from and when**. Every list in that
 file is a snapshot of something that moves; the comment is what tells the next reader to
@@ -306,8 +308,11 @@ Print three blocks, in this order:
 **Missing — and who can fix it.** The honest half. Separate what a human must do from
 what is merely absent:
 
-🚨 **An unset board is NOT a Missing row.** A blank `board_number` means the label-only
-path is in effect; filing it as a gap tells the user their setup failed when it may be
+🚨 **An unset board is NOT a Missing row.** ⚠️ And a blank `board_number` alone does
+**not** mean label-only — it only does when this repo's `workflow.json` names no board
+either. Resolve both layers before you say anything (§ Layer 1); a repo with
+`board: {number, owner}` set has a board no matter what Layer 1 holds. When both are
+genuinely empty, filing it as a gap tells the user their setup failed when it may be
 exactly what they wanted. Report it as a **narrowing** instead — what the skills no longer claim — and
 link to § 5 rather than restating the fallback, which § 5 already owns. The count of
 unset `userConfig` options the install prints is the same shape: **not a gap you can
@@ -324,6 +329,13 @@ resolves an empty board.
 
 Say it as *"no board is configured — if that is deliberate, nothing is wrong; if you
 expected one, here is how to restore it."*
+
+⚠️ **Say which layer answered for the board, and say it every run.** Layer 1 is a machine
+default and Layer 2 wins — the resolution order and the measurement behind it are in
+[`shared/config.md`](../../shared/config.md) § Layer 1. If this repo feeds a different
+board, the fix is `workflow.json` → `board`, written in § 3, **not** re-running the
+install. Report the board number in effect and where it came from; pointing a repo's
+triage at the previous project's board is silent and expensive to undo.
 
 | Gap | Effect | Fix |
 |---|---|---|

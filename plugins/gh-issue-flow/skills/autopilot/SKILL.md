@@ -20,7 +20,10 @@ back** rather than making a judgment call. A skipped issue costs a day. A confid
 wrong PR costs a teammate's afternoon and their trust in the routine.
 
 Resolve board, repos, branches and gate commands via
-[`shared/config.md`](../../shared/config.md).
+[`shared/config.md`](../../shared/config.md). 🚨 **Resolve the board from the MAIN
+checkout, not the worktree** — § Layer 1 shows the spelling; a worktree does not carry
+gitignored `.claude/`, and this routine normally starts inside one, unattended, with
+nobody to catch a write to the wrong board.
 
 ## 🚨 Two hard rules, no exceptions
 
@@ -99,6 +102,12 @@ jq -r --arg ready "$READY_LABEL" '.items[] | select(.status=="Todo")
             and ((.labels // []) | index("blocked") | not))
    | "#\(.content.number)\t\(.content.repository|sub(".*/";""))\tP:\(.priority // "-")\t\(.content.title)"' "$BOARD_JSON"
 ```
+
+🚨 **The board is not simply your `userConfig` default — resolve it first.** This repo may
+name its own board in `workflow.json` → `board`, which **wins** over the machine default,
+and writing to the wrong board is silent. Run the two-step resolution in
+[`shared/config.md`](../../shared/config.md) § Layer 1, use the numbers it yields, and
+**say which layer answered before any board write.**
 
 ⚠️ `$BOARD_JSON` is this run's single board fetch — see
 [`shared/config.md`](../../shared/config.md) § Board queries. Every later step that needs

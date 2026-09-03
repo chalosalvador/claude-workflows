@@ -56,8 +56,19 @@ the two that already carry working defaults (`status_in_progress` → `In Progre
 `ready_label` → `agent-ready`) — and **none of the four is required**. On the boardless
 path it is expected and nothing is wrong.
 
-⚠️ **What you enter here is stored per person, machine-wide** — why, and the
-measurement behind it, in [§ Configuration](#configuration-in-three-layers) below.
+⚠️ **What you enter here is a machine-wide DEFAULT, not a per-repo setting** — why, and
+the measurement behind it, in [§ Configuration](#configuration-in-three-layers) below.
+
+**So a workspace that targets a different board overrides it in that repo**, in
+`.claude/workflow.json`, which wins over this default:
+
+```json
+{ "board": { "number": 11, "owner": "acme" } }
+```
+
+`setup` asks for it and writes it. Several repos feeding one board is the other
+supported shape — list them in `workflow.json` → `repos`. Either way you set the machine
+default once and never re-run the install to switch projects.
 
 To enable it for a whole team, commit this to the repo's `.claude/settings.json`:
 
@@ -174,19 +185,21 @@ Missing the board or signing does not break anything — it narrows what the ski
 
 ## Configuration, in three layers
 
-**Layer 1 — `userConfig`** (prompted once, on install): board number, board owner, status
-names, the autopilot label. Per person, one set per machine.
+**Layer 1 — `userConfig`** (prompted once, on install): the **default** board number and
+owner, status names, the autopilot label. Per person, one set per machine — a repo's
+`workflow.json` → `board` overrides the board half.
 
 ⚠️ Claude Code reads `pluginConfigs` **only** from user-level settings — MEASURED: it
 lands there even under `--scope project`, and a project `.claude/settings.json` is never
 consulted for it. So Layer 1 is **one set of values per machine**, and anything that
-varies per repo belongs in Layer 2.
+varies per repo belongs in Layer 2. That is why the board here is only a default.
 
 **Layer 2 — `.claude/workflow.json`** in each repo, written by `setup`:
 
 ```json
 {
   "repos": ["acme/acme-api"],
+  "board": { "number": 11, "owner": "acme" },
   "integrationBranch": "origin/dev",
   "validate": ["uv run ruff check .", "uv run pytest tests"],
   "deployOnMerge": "merging this branch deploys staging and runs migrations",
@@ -195,8 +208,10 @@ varies per repo belongs in Layer 2.
 }
 ```
 
-`repos` is the set the multi-repo skills sweep — one entry is the normal answer. `dri`
-maps each area to its owner, and is what lets triage guarantee **0 unassigned**.
+`repos` is the set the multi-repo skills sweep — one entry is the normal answer. `board`
+overrides the Layer-1 default, so different workspaces can target different boards on one
+machine. `dri` maps each area to its owner, and is what lets triage guarantee
+**0 unassigned**.
 
 **Layer 3 — probe.** With no config at all the skills still work, deriving the branch
 from `gh repo view` and the gate from your CI workflow or toolchain. **The config file is
