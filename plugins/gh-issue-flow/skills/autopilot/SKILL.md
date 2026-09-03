@@ -407,6 +407,14 @@ checks **and** review threads — an old version of this step polled checks only
 bot's findings were never seen. Do not assume a babysit skill exists; do the loop
 inline, or arm a `Monitor` and let it wake you.
 
+🚨 **Never close a turn waiting on a backgrounded poll** —
+[`shared/execution.md`](../../shared/execution.md) § 5 has the rule and the measured
+run it comes from. This routine is the one that pays for it: nobody is awake to notice
+the notification never arrived, so the PR keeps whatever state the last foreground
+action left it in. **Whatever is true when your final foreground command returns is what
+a reviewer will find**, so reach a reportable end-state *before* the turn ends rather
+than promising one after it.
+
 **The 45-minute cap is a hard stop, from the first push.** It is what keeps an
 unattended run bounded, and bounded is the whole point of the caps and the backpressure
 rule. When it expires:
