@@ -86,6 +86,7 @@ repo with no CI. Test the directory first, or use `find`:
 
 | Fact | How |
 |---|---|
+| `repos` | The repo you are in (`gh repo view --json nameWithOwner`). **Ask whether other repos feed the same board** — if so, list them all, full `owner/repo`. One repo is the common answer and a perfectly good one; write the key anyway so the skills never have to guess. |
 | `integrationBranch` | `origin/` + the default branch — **after** the empty-repo check above. ⚠️ **Not always `main`** — if a `dev`/`develop` remote branch exists and is ahead of the default, the repo probably integrates there and releases from the default. **Ask; do not guess.** |
 | `validate` | **Read the CI workflow first** — `.github/workflows/*.yml`, the job that runs on PRs into the integration branch. Copy its step commands in order. Fall back to the toolchain only if there is no CI: `pyproject.toml`/`requirements.txt` → `ruff`/`pytest`; `package.json` → the lint/typecheck/test/build scripts that actually exist; `Cargo.toml` → `cargo clippy`/`cargo test`; `go.mod` → `go vet`/`go test ./...`. |
 | `preflight` | Anything the gate shells out to that no lockfile installs. |
@@ -164,8 +165,14 @@ loop, assert no label name contains a space.
 
 **Area labels are the user's taxonomy, not ours.** Ask what areas this repo has, create
 `area:<name>` for each, and record them in `workflow.json` → `areaLabels` with a
-one-line meaning, plus `dri` mapping each to its owner. Triage routes assignees off
-this map; without it, the integrity pass cannot guarantee "0 unassigned".
+one-line meaning, plus **`dri` mapping each area to the GitHub login that owns it**.
+Triage routes assignees off that map; without it, the integrity pass cannot guarantee
+"0 unassigned" and can only report the gap.
+
+**On a solo repo, `dri` is every area mapped to the one person** — write it out rather
+than leaving the key off. "There is only me" is a fact worth recording; an absent key
+reads as "not configured yet" to every later run. Both keys are in
+[`shared/config.md`](../../shared/config.md).
 
 ## 5. Board
 

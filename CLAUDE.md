@@ -100,7 +100,7 @@ refreshes skills; do not assume it re-resolves agents.
 
 ## The single-owner guard will block your commit. That is the point.
 
-`tests/test_single_owner_facts.py` pins six clauses to exactly one owning file. If you
+`tests/test_single_owner_facts.py` pins ten clauses to exactly one owning file. If you
 rewrite a section and the pinned clause stops existing, it fails with
 `0 means the owner lost it — did a rewrite drop the fact?`
 

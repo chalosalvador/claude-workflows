@@ -170,12 +170,17 @@ live here.
 
 ```json
 {
+  "repos": ["acme/acme-api"],
   "integrationBranch": "origin/dev",
   "validate": ["uv run ruff check .", "uv run pytest tests"],
   "deployOnMerge": "merging this branch deploys staging and runs migrations",
-  "areaLabels": { "area:backend": "what belongs here" }
+  "areaLabels": { "area:backend": "what belongs here" },
+  "dri": { "area:backend": "octocat" }
 }
 ```
+
+`repos` is the set the multi-repo skills sweep — one entry is the normal answer. `dri`
+maps each area to its owner, and is what lets triage guarantee **0 unassigned**.
 
 **Layer 3 — probe.** With no config at all the skills still work, deriving the branch
 from `gh repo view` and the gate from your CI workflow or toolchain. **The config file is
@@ -205,7 +210,7 @@ namespaced `gh-issue-flow:` name so a same-named local file cannot shadow them).
 config resolution) and [`shared/execution.md`](plugins/gh-issue-flow/shared/execution.md)
 (branch, validate, review, babysit, board, deploy — facts, not policy).
 
-**Reference** — nine docs of measured operational knowledge; see
+**Reference** — eleven docs of measured operational knowledge; see
 [its README](plugins/gh-issue-flow/reference/README.md).
 
 ## Develop

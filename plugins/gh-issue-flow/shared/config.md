@@ -30,6 +30,7 @@ The per-repo override. Read it from the repo root you are working in.
 
 ```json
 {
+  "repos": ["acme/acme-api", "acme/acme-web"],
   "integrationBranch": "origin/dev",
   "mergeMethod": "squash",
   "specFlow": "openspec",
@@ -51,6 +52,7 @@ The per-repo override. Read it from the repo root you are working in.
 
   "workstreams": { "apps/admin": "Admin console", "packages/db": "Shared — database" },
   "areaLabels": { "area:backend": "what belongs here" },
+  "dri": { "area:backend": "octocat" },
   "trackForArea": { "area:backend": "Backend" },
   "agentReadyForbiddenPaths": ["terraform/**", "migrations/**"]
 }
@@ -58,8 +60,16 @@ The per-repo override. Read it from the repo root you are working in.
 
 Every key is optional. Absent keys fall through to Layer 3.
 
-Three of them carry weight the others do not:
+Five of them carry weight the others do not:
 
+- **`repos`** is the repo list every multi-repo skill means by "every configured repo" —
+  `triage`'s working set, `next-issue`'s theme sense, `work-summary`'s scope, and
+  `autopilot`'s backpressure check all expand it. **Full `owner/repo`, never bare names**,
+  because two repos on one board can sit under different owners. Absent → § Repo scope.
+- **`dri`** maps each area label to the GitHub login that owns it, and it is what makes
+  triage's **0-unassigned** guarantee possible — without it the integrity pass has no
+  routing table and can only report the gap. Keep it beside `areaLabels`; an area with no
+  DRI is the same failure as no area label.
 - **`validate`** runs every time. **`validateWhenChanged`** maps a glob to a command run
   only when the diff touches it — keep slow or narrow gates here, not in `validate`.
 - **`ciOnly`** names a required check you must **not** attempt locally, *with the reason*.
@@ -96,6 +106,36 @@ gh repo view --json nameWithOwner,defaultBranchRef,squashMergeAllowed,rebaseMerg
 
 **Prefer copying from the CI workflow when it disagrees with anything else.** The
 workflow is what actually gates the PR.
+
+---
+
+## Repo scope
+
+`triage`, `next-issue`, `work-summary` and `autopilot` all operate over a **set** of
+repos. Resolve that set in this order and **say which answered**:
+
+1. `workflow.json` → `repos` — the explicit list, full `owner/repo`.
+2. No `repos` key → **the repo you are in**, and only that one:
+   `gh repo view --json nameWithOwner --jq .nameWithOwner`. This is the common case
+   and it is correct — do not go looking for siblings to widen the scope.
+3. The user named repos in the request → use exactly those, for this run only.
+
+⚠️ **A repo in `repos` is not necessarily checked out, and its checkout is not
+necessarily a sibling directory named after it.** `git -C <repo-name>` is a *guess*
+about someone's disk layout, and it fails in the ordinary single-repo case where you
+are already inside the only checkout. Before any `git -C`, resolve a real path — the
+current toplevel for the repo you are in, an explicit path the user gave, or a sibling
+that `git -C <path> rev-parse --show-toplevel` actually confirms:
+
+```sh
+git rev-parse --show-toplevel                       # the repo you are in
+git -C "<candidate>" rev-parse --show-toplevel      # prove a sibling before using it
+```
+
+**A repo with no resolvable checkout is not an error** — every issue, PR and board
+operation goes through `gh` and needs no working copy. Only commit-log reads do. Skip
+those for that repo and **say you skipped them**, rather than silently reporting it as
+a quiet day.
 
 ---
 

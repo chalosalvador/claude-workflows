@@ -61,20 +61,63 @@ Repos that feed one board may sit under **different owners**, and **issue number
 collide across them** — always carry the repo alongside the number, and write
 cross-repo refs as `owner/repo#N`.
 
+**Nothing below is ambient — resolve each of these first.** The repo list comes from
+`workflow.json` → `repos` (absent → the repo you are in); the board number and owner
+from `userConfig`; `board_fetch` is a **shell function**, not a binary. All of it:
+[`shared/config.md`](../../shared/config.md) § Repo scope and § Board queries.
+
+⚠️ **Each command runs in a FRESH shell — nothing you set survives to the next block.**
+So every block below re-establishes `SCRATCH` and re-sources `board_fetch` rather than
+trusting an earlier one. A bare `$SCRATCH` expands to empty and writes to `/open.json`,
+which fails with `read-only file system` — measured.
+
 ```sh
-for R in <owner/repo> <owner/repo>; do
-  gh issue list --repo "$R" --state open --limit 300 \
+SCRATCH="${SCRATCH:-${TMPDIR:-/tmp}}"
+
+for R in <owner/repo> <owner/repo>; do     # workflow.json -> repos, expanded literally
+  gh issue list --repo "$R" --state open --limit 1000 \
     --json number,title,body,labels,assignees,createdAt,url \
     --jq ".[] | {repo:\"$R\"} + ."
 done > "$SCRATCH/open.json"
 
+wc -l < "$SCRATCH/open.json"               # prove the pull is non-empty before trusting it
+```
+
+🚨 **`--limit 1000` is mandatory, and the count above is not decoration.** `gh issue
+list` defaults to **30** and truncates silently — and § 2's guarantee is *uncapped*, so a
+truncated pull turns "0 off-board, 0 unassigned" into a false claim about the issues it
+never saw. `wc -l` is the whole pull, so check it **per repo** when you sweep several —
+any single repo returning exactly the limit is still truncated: raise it and re-pull.
+
+**Zero open issues is a legitimate answer** — a new repo, or a genuinely clean one. Say
+`no open issues in <repos> — nothing to triage` in one line and stop. Do not report an
+empty board as a clean one; there is nothing to have cleaned.
+
+```sh
+# board_fetch is a SHELL FUNCTION defined in reference/board-query.md — paste both
+# `board_gql` and `board_fetch` into THIS shell (or `.` a file holding them) before
+# the call, or you get `command not found`.
+SCRATCH="${SCRATCH:-${TMPDIR:-/tmp}}"
 BOARD_JSON="$SCRATCH/board.json"
-board_fetch "$BOARD_OWNER" "$BOARD" "$BOARD_JSON"      # 3 points, not 102 — see config.md
+board_fetch "<board_owner>" "<board_number>" "$BOARD_JSON"   # 3 points, not 102 — see config.md
 ```
 
 ⚠️ That is this run's **only** board fetch — see [`shared/config.md`](../../shared/config.md)
 § Board queries. Every pass below is `jq` over `$BOARD_JSON`; the § 5 read-back is the one
 deliberate exception, because it has to see state written after this pull.
+
+### First run on an existing backlog
+
+§ 2 is uncapped by design, which on a repo with hundreds of open issues means hundreds
+of `item-add` and label writes in one go — every one of them a notification to whoever
+watches the repo.
+
+**On a first run against a repo with more than ~50 open issues, say the number and the
+write count out loud before writing anything, and offer `dry run` instead.** Then either
+proceed with the user's OK, or narrow the first pass to a subset — the newest N, or one
+area label — and let the rest drain over subsequent runs. The guarantee is per-run over
+what the run covers; **say which issues this run covered** rather than implying the whole
+backlog is clean.
 
 **Untriaged = open AND no `triaged` label.** That label is the idempotency key —
 without it every run re-litigates every open issue and spams the same comments. A
@@ -98,7 +141,7 @@ Per issue, ensure each — **fill blanks only; never overwrite a human's choice*
 
 | Invariant | How to satisfy |
 |---|---|
-| **On the board** | `gh project item-add "$BOARD" --owner "$BOARD_OWNER" --url <url>` |
+| **On the board** | `gh project item-add <board_number> --owner <board_owner> --url <url>` |
 | **Has an area label** | If missing, **determine and apply it** (§ 2a). This is the root-cause fix — don't route around a missing label, add it. |
 | **Assigned to a DRI** | From the area label via `workflow.json` → `dri`. Never leave an open issue unassigned. |
 | **Has a Track** | Mirror the area label to the Track field. |
@@ -266,9 +309,11 @@ state is worse than no receipt, because the next run and the autopilot both trus
 after the writes, and count from *those*:
 
 ```sh
-# The one sanctioned second board fetch — $BOARD_JSON predates the writes:
-board_fetch "$BOARD_OWNER" "$BOARD" "$SCRATCH/board-after.json"
-gh issue list --repo <owner>/<repo> --state open --limit 300 --json number,labels,assignees
+# Fresh shell: re-establish SCRATCH and re-source board_fetch (§ 1).
+SCRATCH="${SCRATCH:-${TMPDIR:-/tmp}}"
+# The one sanctioned second board fetch — board.json predates the writes:
+board_fetch "<board_owner>" "<board_number>" "$SCRATCH/board-after.json"
+gh issue list --repo <owner>/<repo> --state open --limit 1000 --json number,labels,assignees
 ```
 
 🚨 **Projects v2 writes are EVENTUALLY CONSISTENT — do not read back immediately.**

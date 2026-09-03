@@ -25,13 +25,27 @@ conversation resolution. That applies to the maintainer too. Branch, PR, merge.
 
 ## Testing a change to a **skill**
 
-Skills are read at invocation, so a local edit takes effect immediately:
+Use `--plugin-dir`, which serves the working tree directly:
 
 ```bash
 claude --plugin-dir ./plugins/gh-issue-flow
 ```
 
-`/reload-plugins` picks up further edits without a restart.
+Skills are read at invocation, so under `--plugin-dir` a local edit takes effect
+immediately, and `/reload-plugins` picks up further edits without a restart.
+
+🚨 **An INSTALLED plugin is a different thing entirely — it is a cached copy, and your
+edits do not reach it.** `claude plugin install` copies the plugin into
+`~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/` and serves from there.
+Nothing invalidates that cache while `plugin.json` → `version` is unchanged, and
+**`git checkout` does not change what it serves.** Both refresh commands report success
+and do nothing: `claude plugin marketplace update` refreshes only the manifest, and
+`claude plugin update` compares versions and yours did not change. See
+[`CLAUDE.md`](CLAUDE.md) for the measured incident — a four-day-old plugin served
+silently across 14 commits and 8 merged PRs.
+
+**So: use `--plugin-dir` to test. To test an install, uninstall and reinstall**, then
+restart.
 
 ## 🚨 Testing a change to an **agent** — read this before you waste a day
 
@@ -61,15 +75,25 @@ ls ~/.claude/agents/               # anything here with a matching name shadows 
 
 Then spawn `gh-issue-flow:issue-planner`, never a bare `issue-planner`.
 
-To serve your working tree rather than the published version:
+To test the **installed** path against your working tree rather than the published
+version, add the checkout as a directory source — then reinstall on every change you
+want to see, because the install is a copy, not a live view:
 
 ```bash
 claude plugin marketplace add ./
+claude plugin uninstall gh-issue-flow
 claude plugin install gh-issue-flow@claude-workflows
 ```
 
-⚠️ That makes the installed plugin follow **whatever branch is checked out**, in every
-session on your machine. Return the checkout to `main` when you are done.
+A restart is required to apply it, and agent discovery still happens at session start.
+
+## 🚨 Bump `version` in the same PR as any behaviour change
+
+`plugin.json` → `version`, **and** both `version` fields in
+`.claude-plugin/marketplace.json` — `claude plugin tag` validates that they agree.
+
+That bump is the only thing that gives `claude plugin update` anything to do. Skipping it
+is how eight consecutive PRs reached `main` without reaching a single running session.
 
 ## Build your own testbed
 
@@ -101,7 +125,7 @@ Several commits exist specifically to correct a claim that turned out to be wron
 that history is worth more than a clean-looking one.
 
 **The single-owner guard will block you, and that is the point.**
-`tests/test_single_owner_facts.py` pins six clauses to exactly one owning file. Rewrite a
+`tests/test_single_owner_facts.py` pins ten clauses to exactly one owning file. Rewrite a
 section and the pinned clause stops existing, and it fails with *"0 means the owner lost
 it — did a rewrite drop the fact?"* **Update `OWNED` in the same commit.** Do not route
 around it by deleting the entry — it has already caught its own pin going stale three
