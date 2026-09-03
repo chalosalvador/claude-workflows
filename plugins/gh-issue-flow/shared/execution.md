@@ -243,6 +243,35 @@ See [`../reference/git-and-github.md`](../reference/git-and-github.md).
 ⚠️ **Do not assume a `/babysit-prs` skill exists.** Do the loop inline, or arm a
 `Monitor` on the checks plus the unresolved-thread count and let it wake you.
 
+### 🚨 Never end a turn waiting on a backgrounded task
+
+**In an unattended run, the babysit loop runs in the foreground or through `Monitor` —
+never as a backgrounded command whose result arrives as a notification.** A background
+task reports by waking the session that started it, and a scheduled run's session may
+simply end at the turn boundary instead of waiting. The notification then has nobody to
+reach.
+
+MEASURED 2026-09-03, an autopilot routine on its own PRs: it backgrounded a 24-iteration
+CI poll and closed its turn with *"I'll be notified when it completes."* The poll stopped
+at **iteration 19 with the gate still `IN_PROGRESS`**, the session never resumed, and the
+PR was left **open and ready-for-review with an unverified gate and no report** — the
+exact end-state § 11's cap exists to prevent. Nothing errored. From outside it is
+indistinguishable from a run waiting on a permission prompt, which is how it was
+reported.
+
+Two shapes that are safe, and one that is not:
+
+| | Unattended | Why |
+|---|---|---|
+| Bounded foreground loop | ✅ | The turn cannot end before the loop does |
+| `Monitor` armed on the condition | ✅ | Wakes the session; survives the turn boundary |
+| `run_in_background` + "I'll be notified" | 🚨 **never** | Depends on a session that may not exist by then |
+
+**The rule is about who is awake to receive the result, not about polling cost.** An
+interactive session has a human who notices silence; an unattended one does not — so
+whatever the last foreground action leaves behind *is* the final state, and it has to be
+one a reviewer can act on.
+
 Read the repo's actual protection rather than trusting any written claim — this is
 the thing most likely to have moved:
 

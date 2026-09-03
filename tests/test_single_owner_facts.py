@@ -105,11 +105,19 @@ OWNED: dict[str, tuple[str, int]] = {
     # two disagree again.
     "**Three sections, in this order, always all three present.**":
         ("plugins/gh-issue-flow/skills/work-summary/SKILL.md", 1),
+
+    # The unattended babysit rule. execution.md § 5 owns it; autopilot § 11 links to
+    # it and states only the consequence. A restated copy there is how it would get
+    # softened into "prefer the foreground", which is not the rule — the rule is that
+    # a backgrounded wait has nobody to report to when a scheduled session ends.
+    "In an unattended run, the babysit loop runs in the foreground or through Monitor "
+    "— never as a backgrounded command whose result arrives as a notification.":
+        ("plugins/gh-issue-flow/shared/execution.md", 1),
 }
 
 # Independent completeness check: NOT derived from len(OWNED), which would be
 # circular and pass over a silently emptied pin.
-EXPECTED_PINNED_CLAUSES = 9
+EXPECTED_PINNED_CLAUSES = 10
 
 
 def normalize(text: str) -> str:
