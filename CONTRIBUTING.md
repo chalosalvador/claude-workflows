@@ -202,3 +202,5 @@ re-prove it; the must-stay-green half is what stops it reddening on ordinary ref
 **Facts live in one place.** `shared/execution.md` owns mechanics; skills own policy and
 link to it. If you find yourself pasting the same rule into two skills, it belongs in
 `shared/` — that is exactly the drift the guard exists to catch.
+
+<!-- ci trigger probe: base -->
