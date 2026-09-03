@@ -204,3 +204,4 @@ link to it. If you find yourself pasting the same rule into two skills, it belon
 `shared/` — that is exactly the drift the guard exists to catch.
 
 <!-- ci trigger probe: base -->
+<!-- ci trigger probe: head -->
