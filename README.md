@@ -18,7 +18,8 @@ triage ──▶ next-issue ──▶ plan ──▶ branch ──▶ [spec] ─
 - **`triage`** keeps the board honest: every open issue on-board, area-labeled, assigned,
   sized, prioritized — and the safe ones gated `agent-ready`.
 - **`next-issue`** picks the card that continues what the team is already doing, and
-  either hands you a paste-ready prompt or runs it here with a pause for your OK.
+  either hands you a paste-ready prompt or runs it here with a pause for your OK,
+  ending with a plain-words summary of what to review and test.
 - **`autopilot`** works the `agent-ready` queue unattended and opens reviewable PRs. It
   never merges.
 - **`work-summary`** turns a date window into a plain-language rollup.
@@ -229,7 +230,7 @@ Full schema and every key's meaning:
 |---|---|
 | `setup` | Probes the repo, writes `.claude/workflow.json`, creates the labels and board fields the rest depend on, reports every gap it cannot close. `check` mode changes nothing. |
 | `triage` | Uncapped integrity pass (0 off-board, 0 unassigned) + capped deep pass: category, effort, priority, duplicates, and the `agent-ready` gate. |
-| `next-issue` | Picks the theme-aligned Todo card, then either emits a paste-ready start prompt or runs the issue in-session with a pause for your OK. |
+| `next-issue` | Picks the theme-aligned Todo card, then either emits a paste-ready start prompt or runs the issue in-session with a pause for your OK — and, once the PR is open, ends with a plain-words summary of what to review and test. |
 | `autopilot` | Works the `agent-ready` queue unattended in a worktree, opens reviewable PRs, never merges. |
 | `work-summary` | Plain-language summary of a date window from git history — daily, standup, weekly, or a rendered Slidev deck. |
 

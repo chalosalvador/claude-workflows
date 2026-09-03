@@ -32,7 +32,7 @@ testbed run found four real bugs in this plugin that reading the code had not.
 |---|---|---|
 | [`setup`](skills/setup/SKILL.md) | `/gh-issue-flow:setup` | Bootstrap or check a repo. `check` mode changes nothing. |
 | [`triage`](skills/triage/SKILL.md) | `/gh-issue-flow:triage` | Uncapped integrity pass (0 off-board, 0 unassigned) + capped deep pass: category, effort, priority, duplicates, `agent-ready` gate. |
-| [`next-issue`](skills/next-issue/SKILL.md) | `/gh-issue-flow:next-issue` | Picks the theme-aligned card; emits a paste-ready prompt **or** runs it here with a pause for your OK. |
+| [`next-issue`](skills/next-issue/SKILL.md) | `/gh-issue-flow:next-issue` | Picks the theme-aligned card; emits a paste-ready prompt **or** runs it here with a pause for your OK, ending with a plain-words review/test summary. |
 | [`autopilot`](skills/autopilot/SKILL.md) | `/gh-issue-flow:autopilot` | Works the `agent-ready` queue unattended in a worktree. Opens reviewable PRs; **never merges**. |
 | [`work-summary`](skills/work-summary/SKILL.md) | `/gh-issue-flow:work-summary` | A date window as plain language — daily, standup, weekly, or a rendered Slidev deck. |
 
