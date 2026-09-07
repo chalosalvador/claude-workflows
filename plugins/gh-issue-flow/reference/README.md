@@ -15,6 +15,7 @@ file, unless you are about to do the whole thing.
 | [`parallel-agents.md`](parallel-agents.md) | Before spawning parallel reviewers, or before any worktree squash/reset. |
 | [`workflow-fanout.md`](workflow-fanout.md) | You are considering running the triage deep pass, or autopilot's two candidates, as parallel agents via the Workflow tool. Holds both scripts, and the two different write boundaries — which are not the same rule, and must not be merged. |
 | [`openspec.md`](openspec.md) | The repo has an `openspec/` directory — install, where the spec change sits in the flow, and what its validate does NOT assert. |
+| [`standup.md`](standup.md) | Writing a standup draft — the three-section shape, the selection test, and how Blockers is derived rather than invented. `work-summary` § Standup sends you here. |
 | [`shell-traps.md`](shell-traps.md) | Writing any shell loop, batch-edit script, or script that holds a credential. |
 | [`secrets-and-ci.md`](secrets-and-ci.md) | Provisioning a secret or environment variable — the rules true on every platform; the commands for *this* platform are in the repo's stack doc. Also green-local/red-CI. |
 

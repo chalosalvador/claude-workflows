@@ -111,7 +111,7 @@ OWNED: dict[str, tuple[str, int]] = {
     # right one in the other. One owner is the whole point: a second copy is how the
     # two disagree again.
     "**Three sections, in this order, always all three present.**":
-        ("plugins/gh-issue-flow/skills/work-summary/SKILL.md", 1),
+        ("plugins/gh-issue-flow/reference/standup.md", 1),
 
     # The unattended babysit rule. execution.md § 5 owns it; autopilot § 11 links to
     # it and states only the consequence. A restated copy there is how it would get

@@ -108,6 +108,7 @@ repo with no CI. Test the directory first, or use `find`:
 | `deployWorkflow` | The workflow file `deployOnMerge` was read from, so the next reader can re-derive it. While it is open, copy its `paths` / `paths-ignore` block verbatim — § 5b writes it into the stack doc § Deploy. |
 | `trackForArea` | Each `area:*` label → the board's Track option of the same name, from `field-list` (§ 5). Only when the board has a Track field. |
 | `agentReadyForbiddenPaths` | The infra, migration and workflow directories the deploy and protection probes found — the paths an unattended run must never touch. Record the migration directory and its apply command from the same read; § 5b writes those under the stack doc § Infra and migrations. |
+| `priorityCaps` | Never probed. Written as the default `{"legal": "P1"}` with a `$comment_priorityCaps` saying what it does and that `{}` turns it off — so the rule triage applies is visible in the file rather than implied by its absence. |
 | `schemaVersion` | Always the **Current schema** from [`shared/config.md`](../../shared/config.md) § Layer 2 → Schema. Never probed, never omitted. |
 
 **Verify each probed command actually runs before writing it into the config.** A gate

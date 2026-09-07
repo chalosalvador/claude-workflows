@@ -205,7 +205,8 @@ The per-repo override. Read it from the repo root you are working in.
   "areaLabels": { "area:backend": "what belongs here" },
   "dri": { "area:backend": "octocat" },
   "trackForArea": { "area:backend": "Backend" },
-  "agentReadyForbiddenPaths": ["terraform/**", "migrations/**"]
+  "agentReadyForbiddenPaths": ["terraform/**", "migrations/**"],
+  "priorityCaps": { "legal": "P1" }
 }
 ```
 
@@ -213,7 +214,7 @@ Every key is optional. Absent keys fall through to Layer 3.
 
 ### Schema
 
-**Current schema: 2.** A file with no `schemaVersion` is schema **0** — the shape that
+**Current schema: 3.** A file with no `schemaVersion` is schema **0** — the shape that
 shipped through plugin 0.5.x. `setup` writes the current number on bootstrap and
 `setup upgrade` moves an older file forward by adding what it lacks. **Since** is the
 schema a key arrived in; that column is the migration list, and it is what the drift
@@ -243,6 +244,7 @@ example above and `setup`'s probe list to the same key set.
 | `agentReadyForbiddenPaths` | 0 | § 2 | Paths an unattended run must never touch |
 | `$comment*` | 0 | § 3 | Provenance for the human reader; never read by a skill |
 | `stacks` | 2 | § 5b | The stack doc names this repo carries, one per file in `.claude/workflow/stacks/`; `[]` when the evidence names none |
+| `priorityCaps` | 3 | § 2 | Label → highest priority that label may carry, applied by `triage` § 3c. Absent means `{"legal": "P1"}`; `{}` turns caps off |
 
 ### Stack docs — `.claude/workflow/stacks/`
 

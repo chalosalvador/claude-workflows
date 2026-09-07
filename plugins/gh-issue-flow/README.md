@@ -78,7 +78,7 @@ unknown, and the skills say so rather than treating it as an all-clear.
 
 ### Reference
 
-Eleven docs of measured operational knowledge — see [their index](reference/README.md).
+Twelve docs of measured operational knowledge — see [their index](reference/README.md).
 Skills link into them at the moment each becomes relevant.
 
 The one idea underneath all of them: **silence, an empty result, and exit 0 are

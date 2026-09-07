@@ -227,7 +227,7 @@ credential, do a thing, give it back" script:
   failed add through cleanup, so an unconditional 🚨 fires when nothing is wrong — and
   an alarm that cries wolf is one the operator scrolls past. Three outcomes:
   removed / still there / cannot confirm.
-- **Grant calls are commonly IDEMPOTENT**, so add-then-remove silently revokes a
+- **The grant call was IDEMPOTENT on the platform measured — check yours**: add-then-remove silently revokes a
   binding the operator already had. Only remove what this run created.
 - **Tokens on argv are readable via `ps` by any user on the box.** Both
   `-d "access_token=$T"` and `-H "Authorization: Bearer $T"` count. Use

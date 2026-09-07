@@ -17,8 +17,9 @@ as verified.
 ## 🚨 A generated secret picks up a trailing byte on the way in
 
 `openssl rand -hex 32 | <store the secret from stdin>` stores **65 bytes ending `0a`**,
-not 64, on every platform whose CLI reads stdin verbatim — and most inject the payload
-into the runtime env just as verbatim. The service then holds `…\n` while every client
+not 64, on any platform whose CLI reads stdin verbatim. Measured on one, whose runtime
+also injected the payload verbatim; unverified elsewhere, so assume it until you have read
+yours back. The service then holds `…\n` while every client
 holds the bare value.
 
 For an HMAC signing secret that one byte is **401 on every request**, and nothing in any
@@ -42,7 +43,7 @@ The rules, whatever the store:
 
 ## 🚨 A provisioning CLI can store EMPTY and report success
 
-Measured on one hosting CLI, and the shape recurs: `printf 'val' | <cli> env add NAME`
+Measured on one hosting CLI — unverified elsewhere, and cheap to assume: `printf 'val' | <cli> env add NAME`
 created the variable **empty** and printed its next-steps help. No error. The same CLI
 defaulted new values to a **write-only** type, so the read-back returned `NAME=""`
 whether or not the value was set — a write-only value is indistinguishable from an
@@ -66,8 +67,8 @@ So, on any platform:
 
 ## 🚨 A CLI needing re-authentication fails with EMPTY output and exit 0
 
-Cloud CLIs print *"reauthentication failed, cannot prompt during non-interactive
-execution"* to **stderr**. Pipe that into `grep` or `jq` and you get **empty output and
+One cloud CLI (measured; the others are unverified and worth assuming the same) prints
+*"reauthentication failed, cannot prompt during non-interactive execution"* to **stderr**. Pipe that into `grep` or `jq` and you get **empty output and
 exit 0** — measured, where an empty result read exactly like *"this project has no such
 quota"*, a false and load-bearing conclusion.
 
