@@ -10,11 +10,12 @@ caused wasted work.
 python3 tests/test_single_owner_facts.py
 python3 tests/test_no_stray_files.py
 python3 tests/test_version_agreement.py
+python3 tests/test_config_schema.py
 claude plugin validate ./plugins/gh-issue-flow --strict
 claude plugin validate . --strict
 ```
 
-CI runs all four as the `guards` job. Everything is markdown and JSON — there is no
+CI runs all of them as the `guards` job. Everything is markdown and JSON — there is no
 build, no install step, no dependency.
 
 ## 🚨 `main` is protected. You cannot push to it.

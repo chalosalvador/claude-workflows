@@ -6,7 +6,9 @@ description: >-
   .claude/workflow.json; creates the labels triage and autopilot depend on; and verifies
   the project board has the fields they read. Reports every gap it cannot close itself.
   Use for "set up the workflow here", "onboard this repo", "why isn't triage working",
-  or as the first thing you run after installing this plugin.
+  or as the first thing you run after installing this plugin — and "upgrade the config"
+  / "bring workflow.json up to date" after a plugin update adds keys an existing repo
+  does not have yet.
 ---
 
 # Setup
@@ -19,6 +21,9 @@ Two modes, chosen from the user's wording:
 - **Bootstrap** (default, or "set up", "onboard") — probe, write, create, report.
 - **Check** ("check", "doctor", "why isn't X working", "what's missing") — probe and
   report only. **Changes nothing.** Run this first on a repo that already half-works.
+- **Upgrade** ("upgrade", "migrate the config", "bring workflow.json up to date", or the
+  drift line any skill prints) — an existing file, a newer plugin: add only the keys the
+  schema gained since the file was written. § 3 Upgrade mode.
 
 **Never overwrite without asking.** If `.claude/workflow.json` already exists, show the
 diff between it and what you would write, and let the user choose.
@@ -28,7 +33,7 @@ diff between it and what you would write, and let the user choose.
 ```
 - [ ] 1. Preconditions — gh auth, repo, signing
 - [ ] 2. Probe the repo (branch, gate, spec flow, merge method, protection)
-- [ ] 3. Write .claude/workflow.json  (bootstrap only)
+- [ ] 3. Write .claude/workflow.json  (bootstrap only) — or add its missing keys (upgrade only)
 - [ ] 4. Labels — create the ones the skills read  (bootstrap only)
 - [ ] 5. Board — verify the fields exist; create what gh can  (bootstrap only)
 - [ ] 6. Confirm the two agents loaded, and say what they are for
@@ -96,6 +101,12 @@ repo with no CI. Test the directory first, or use `find`:
 | `deployOnMerge` | Grep `.github/workflows/` for a workflow triggering on push to the integration branch that deploys. **Do not record "nothing happens" unless you looked.** Note that some hosts (Vercel, Netlify, Fly) deploy from the repo with no workflow at all — check for their config files too. |
 | `requiredChecks`, `protection` | `gh api repos/<owner>/<repo>/branches/<b>/protection` — this 404s if the branch is unprotected, which is itself the answer. |
 | `workstreams` | For a monorepo: the actual directories under `apps/`, `packages/`, `crates/`, etc. **Read the tree; never trust a README.** |
+| `validateWhenChanged` | A CI job gated by a `paths:` filter — its command keyed by that glob. Omit when CI has no such job. |
+| `ciOnly` | A required check that needs a service, secret or multi-GB download you cannot reproduce locally — its name, with the reason. Read the job's `services:` and `secrets.` uses. |
+| `deployWorkflow` | The workflow file `deployOnMerge` was read from, so the next reader can re-derive it. |
+| `trackForArea` | Each `area:*` label → the board's Track option of the same name, from `field-list` (§ 5). Only when the board has a Track field. |
+| `agentReadyForbiddenPaths` | The infra, migration and workflow directories the deploy and protection probes found — the paths an unattended run must never touch. |
+| `schemaVersion` | Always the **Current schema** from [`shared/config.md`](../../shared/config.md) § Layer 2 → Schema. Never probed, never omitted. |
 
 **Verify each probed command actually runs before writing it into the config.** A gate
 entry that errors on first use is worse than an absent one — the next session reads its
@@ -112,6 +123,42 @@ to "leave a key out": it is both sub-keys or no key at all**, never a half. See 
 Add `$comment` keys recording **where each value came from and when**. Every list in that
 file is a snapshot of something that moves; the comment is what tells the next reader to
 re-derive rather than trust.
+
+**Always write `schemaVersion`** — the current schema from
+[`shared/config.md`](../../shared/config.md) § Layer 2 → Schema. It is how every later
+run knows whether this file has kept up with the plugin.
+
+### Upgrade mode — an existing file, a newer plugin
+
+`claude plugin update` refreshes the plugin's code and tells no repo that its
+`workflow.json` is behind. This mode closes that gap, and the drift line every skill
+prints ([`shared/config.md`](../../shared/config.md) § Layer 1, step 4) is what sends
+you here.
+
+```
+- [ ] 1. Read the file. `.schemaVersion // 0` is where it stands; Current schema is
+         where it should be. Equal → say so in one line and stop.
+- [ ] 2. From the schema table, take every key whose Since is greater than the file's
+         version — PLUS any other key the file lacks that § 2 knows how to probe.
+- [ ] 3. Probe each exactly as § 2 does. Show the proposed keys with their sources and
+         ASK. A probe is a proposal, not a decision.
+- [ ] 4. Write ONLY the missing keys, each with a `$comment_<key>` naming the plugin
+         version, the source and the date. Set `schemaVersion` to the current schema.
+- [ ] 5. Re-run any formatter the repo applies to the file — a `$comment` usually says
+         which — then show the diff. It must touch nothing but the added keys.
+- [ ] 6. The file is usually tracked on a protected branch: branch, commit, open a PR.
+         Never merge it.
+- [ ] 7. Read it back: `jq .schemaVersion` equals the current schema and every proposed
+         key is present.
+```
+
+🚨 **Never touch an existing key** — not its value, not its formatting, not its comment.
+A human wrote it, possibly to override exactly what the probe would have found. If a
+probe disagrees with an existing value, **report** the disagreement in § 7; do not
+resolve it.
+
+**Check mode reports the same delta and writes nothing**: the drift line, then the keys
+upgrade would add and what each probe found.
 
 ⚠️ **Check whether `.claude/` is gitignored** before declaring the file shared:
 
@@ -309,6 +356,7 @@ Print three blocks, in this order:
 |---|---|---|
 | integrationBranch | `origin/dev` | `gh repo view` default branch |
 | validate | 3 commands | `.github/workflows/ci.yml` job `test` |
+| schemaVersion | 1 | current schema, `shared/config.md` § Layer 2 |
 
 **Created** — labels and board fields, with anything skipped because it already existed.
 
@@ -347,6 +395,7 @@ triage at the previous project's board is silent and expensive to undo.
 | Gap | Effect | Fix |
 |---|---|---|
 | No `Hold` Status option | No parked state; every Todo card is pickable | Board UI, one click |
+| `workflow.json` behind the schema | Keys the plugin gained are unknown here; skills run on defaults | `/gh-issue-flow:setup upgrade` |
 | `.claude/` is gitignored | Config is local-only; teammates get nothing | Add `!/.claude/workflow.json`, needs a PR |
 | No area labels yet | Triage cannot route assignees | Tell me your areas and I will create them |
 | Branch unprotected | Nothing blocks a red merge | Repo settings — a deliberate choice |

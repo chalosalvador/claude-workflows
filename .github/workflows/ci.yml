@@ -46,6 +46,11 @@ jobs:
       - name: Version numbers agree
         run: python3 tests/test_version_agreement.py
 
+      # `setup upgrade` can only add a key it knows how to probe. This holds the
+      # schema table, its example and setup's probe list to one key set.
+      - name: Config schema agrees
+        run: python3 tests/test_config_schema.py
+
       - name: Plugin + marketplace manifests
         run: |
           npm i -g @anthropic-ai/claude-code

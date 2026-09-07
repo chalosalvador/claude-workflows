@@ -66,6 +66,7 @@ for D in "$WT" "$MAIN"; do
 done
 if [ -n "$WF" ]; then
   jq -r '"number=\(.board.number // "-")  owner=\(.board.owner // "-")"' "$WF"
+  jq -r '"schema=\(.schemaVersion // 0)"' "$WF"        # step 4 compares this to Current schema
   echo "src=$WF"
 else
   echo "NO workflow.json in $WT or $MAIN"
@@ -132,6 +133,19 @@ claude plugin install gh-issue-flow@claude-workflows \
 Then **`/reload-plugins`** — a subprocess write does not reach this session's memoized
 option values, so without it the very next resolution still reads empty.
 
+**Step 4 — schema drift.** Step 1 also printed `schema=<n>`: the file's `schemaVersion`,
+`0` when absent. Compare it to **Current schema** in § Layer 2. When the file is behind,
+print exactly one line and carry on:
+
+> `workflow.json is at schema <n>; the plugin expects <current>. Missing: <every key in
+> the schema table whose Since is greater than n>. Run /gh-issue-flow:setup upgrade to
+> add them.`
+
+Carry on **with defaults** — every key is optional and an absent one falls through to
+Layer 3, so a behind file is never a failure. But say it every run. `claude plugin update`
+refreshes the plugin's code and tells no repo that its config is now behind; this line
+is the only thing that does.
+
 
 ---
 
@@ -141,6 +155,7 @@ The per-repo override. Read it from the repo root you are working in.
 
 ```json
 {
+  "schemaVersion": 1,
   "repos": ["acme/acme-api", "acme/acme-web"],
   "board": { "number": 11, "owner": "acme" },
   "integrationBranch": "origin/dev",
@@ -171,6 +186,38 @@ The per-repo override. Read it from the repo root you are working in.
 ```
 
 Every key is optional. Absent keys fall through to Layer 3.
+
+### Schema
+
+**Current schema: 1.** A file with no `schemaVersion` is schema **0** — the shape that
+shipped through plugin 0.5.x. `setup` writes the current number on bootstrap and
+`setup upgrade` moves an older file forward by adding what it lacks. **Since** is the
+schema a key arrived in; that column is the migration list, and it is what the drift
+line in § Layer 1 step 4 reads. `tests/test_config_schema.py` holds this table, the
+example above and `setup`'s probe list to the same key set.
+
+| Key | Since | Setup | Meaning |
+|---|---|---|---|
+| `schemaVersion` | 1 | always written | Which shape this file has; `0` when absent |
+| `repos` | 0 | § 2 | Every repo the multi-repo skills sweep, full `owner/repo` |
+| `board` | 0 | § 2 | This repo's Projects v2 board; overrides Layer 1 |
+| `integrationBranch` | 0 | § 2 | Remote ref to branch from and merge into |
+| `mergeMethod` | 0 | § 2 | `squash` / `rebase` / `merge`, from the repo's allowed set |
+| `specFlow` | 0 | § 2 | `openspec` when the directory exists, else absent |
+| `preflight` | 0 | § 2 | Machine-level deps the gate needs and no lockfile installs |
+| `validate` | 0 | § 2 | The gate, verbatim from CI, run every time |
+| `validateWhenChanged` | 0 | § 2 | Glob → command, run only when the diff touches it |
+| `ciOnly` | 0 | § 2 | Required checks not to attempt locally, each with the reason |
+| `requiredChecks` | 0 | § 2 | Check names protection requires |
+| `protection` | 0 | § 2 | `strict`, `enforceAdmins`, `conversationResolution` |
+| `deployOnMerge` | 0 | § 2 | What merging the integration branch does, in words |
+| `deployWorkflow` | 0 | § 2 | The workflow file `deployOnMerge` was read from |
+| `workstreams` | 0 | § 2 | Monorepo path → human name |
+| `areaLabels` | 0 | § 4 | `area:*` label → one-line meaning |
+| `dri` | 0 | § 4 | `area:*` label → GitHub login that owns it |
+| `trackForArea` | 0 | § 5 | `area:*` label → board Track option |
+| `agentReadyForbiddenPaths` | 0 | § 2 | Paths an unattended run must never touch |
+| `$comment*` | 0 | § 3 | Provenance for the human reader; never read by a skill |
 
 Six of them carry weight the others do not:
 
