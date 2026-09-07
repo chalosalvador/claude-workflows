@@ -150,6 +150,11 @@ Bail immediately if the issue now: is `blocked`/`legal`/`compliance`/`security`/
 needs infrastructure or a migration, touches secrets/env/runtime config, changes an
 analytics schema, needs two repos, or contains an unanswered product question.
 
+Read the stack doc § Infra and migrations for that verdict — from the **main checkout**
+(§ Layer 1 step 1 prints where it found the files), since this routine is usually
+inside a worktree where `.claude/` is gitignored. It names the apply commands and the
+ordering; `workflow.json` → `agentReadyForbiddenPaths` names the paths.
+
 **Also bail if you cannot name the files you are about to change** — that means you do
 not understand it yet, and understanding it is the human's call.
 
@@ -397,6 +402,9 @@ PR body must contain, in order:
 - **How it was verified** — the exact gate commands and their result, plus the
   mutation-check result for any new test
 - **Noticed, not fixed** — anything out of scope you saw
+- **For the stack doc** — a proposed, dated bullet for `.claude/workflow/stacks/<name>.md`
+  § Traps when the run measured something about the platform the doc does not say.
+  Proposed only; the reviewer commits it or drops it.
 - **Spec** — which change was archived, and whether specs were updated or the change
   carried `skip_specs` with what reason. On a `skip_specs` change **say plainly that the
   validate gate asserted nothing**, so the reviewer knows the justification is theirs to

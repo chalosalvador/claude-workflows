@@ -18,7 +18,11 @@ DESIGN — see plugins/gh-issue-flow/reference/guard-tests.md
 Positive case first: the guard refuses to pass on fewer than MIN_LINKS links, so
 a parser that matched nothing cannot report a clean tree. Targets must be in
 `git ls-files` (a directory counts if any tracked file is under it), so a link
-to an untracked file reds — that file will not ship. Anchors (`#…`) are stripped
+to an untracked file reds — that file will not ship. And a file under
+`plugins/<name>/` may only link inside `plugins/<name>/`: the installed copy is
+that directory alone, so a link that climbs out of it resolves here and nowhere
+a user runs it. MEASURED: without that rule the guard passed its own motivating
+case (`../../../tests/` from inside the plugin), exit 0. Anchors (`#…`) are stripped
 and not checked, and links inside fenced blocks or inline code spans are ignored as
 quoted examples; both are known gaps, stated here rather than hidden.
 
@@ -39,7 +43,7 @@ from pathlib import Path, PurePosixPath
 ROOT = Path(os.environ.get("LINK_GUARD_ROOT") or Path(__file__).resolve().parent.parent)
 
 # Refuse to pass on a suspiciously small parse. Independent of the real count.
-MIN_LINKS = 100   # measured 132 on 2026-09-07; K4 (parser matching nothing) yields 0
+MIN_LINKS = 100   # measured 130 at ecbd9c5 on 2026-09-07; K4 (parser matching nothing) yields 0
 
 LINK = re.compile(r"\]\(([^)\s]+)\)")
 SKIP = ("http://", "https://", "mailto:", "#")
@@ -55,9 +59,11 @@ def prose(text: str) -> str:
 
 
 def tracked() -> set[str]:
-    out = subprocess.run(
-        ["git", "-C", str(ROOT), "ls-files"], capture_output=True, text=True, check=True
-    ).stdout.split()
+    # -z: NUL-separated, unquoted. Whitespace-splitting the default output turns
+    # "a b.md" into two paths and leaves a non-ASCII name quoted and unmatched.
+    out = [p for p in subprocess.run(
+        ["git", "-C", str(ROOT), "ls-files", "-z"], capture_output=True, text=True, check=True
+    ).stdout.split("\0") if p]
     if not out:
         sys.exit("HARNESS BUG: git ls-files returned nothing")
     paths = set(out)
@@ -66,6 +72,12 @@ def tracked() -> set[str]:
         for i in range(1, len(parts)):
             paths.add("/".join(parts[:i]))
     return paths
+
+
+def plugin_root(rel: str) -> str | None:
+    """'plugins/<name>' for a file inside a plugin, else None."""
+    parts = rel.split("/")
+    return "/".join(parts[:2]) if len(parts) > 2 and parts[0] == "plugins" else None
 
 
 def main() -> int:
@@ -84,8 +96,11 @@ def main() -> int:
                 continue
             checked += 1
             resolved = os.path.normpath(os.path.join(os.path.dirname(rel), target))
+            plugin = plugin_root(rel)
             if resolved.startswith(".."):
                 broken.append(f"{rel}: {m.group(1)} escapes the repo")
+            elif plugin and not (resolved + "/").startswith(plugin + "/"):
+                broken.append(f"{rel}: {m.group(1)} → {resolved} is outside {plugin}/ and will not ship with the plugin")
             elif resolved not in files:
                 broken.append(f"{rel}: {m.group(1)} → {resolved} is not a tracked path")
 

@@ -200,9 +200,10 @@ while skipping them for the limit, so the command had nothing to do.
   the comment.
 - **Distinguish the two comment shapes by body, never by count.** The ack and
   real-review patterns are bot-specific: read them from the repo's stack doc § Review
-  bot. If that section is `UNVERIFIED`, read two of the bot's past comments and fill it
-  in before trusting any poll — a loop that cannot tell an ack from a review reports a
-  review that never happened.
+  bot. If that section is `UNVERIFIED`, the loop cannot tell them apart — say so in the
+  report, and propose the two patterns in the PR handoff from two of the bot's past
+  comments for a human to commit. You do not edit the stack doc. A loop that cannot tell
+  an ack from a review and polls anyway reports a review that never happened.
 - If you merge knowing a bot never looked, **say so** rather than letting an all-pass
   check board imply two reviews happened.
 

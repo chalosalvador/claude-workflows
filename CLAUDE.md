@@ -12,6 +12,7 @@ python3 tests/test_no_stray_files.py
 python3 tests/test_version_agreement.py
 python3 tests/test_config_schema.py
 python3 tests/test_links.py
+python3 tests/test_stack_headers.py
 claude plugin validate ./plugins/gh-issue-flow --strict
 claude plugin validate . --strict
 ```

@@ -44,15 +44,15 @@ Nothing is ever invented to fill a line. An honest `UNVERIFIED` is the point.
 <!-- Read by: triage § 4 gate, autopilot § 3, the `deploy` lens. -->
 - Migration directory and apply command: {{…}} — PROBED, or UNVERIFIED
 - Infra directory and apply command; is apply in the CD path: {{…}} — PROBED, or UNVERIFIED
-- Paths an unattended run must never touch: {{workflow.json → agentReadyForbiddenPaths}}
+- Paths an unattended run must never touch: see `workflow.json` → `agentReadyForbiddenPaths` — that key owns the list; it is not copied here
 - Ordering (migration ↔ image roll ↔ derived stores rebuilt): UNVERIFIED — fill in
 
 ## Review bot
 <!-- Read by: shared/execution.md § 5 (the babysit loop), review-process.md. -->
 - Bot: {{login}} — detected from {{config file / check name / comment author}} — PROBED {{date}}, or `none`
 - Check name in branch protection: {{…}} — or none
-- An acknowledgement comment matches: UNVERIFIED — fill in the pattern
-- A real review comment matches: UNVERIFIED — fill in the pattern
+- An acknowledgement comment matches: {{pattern}} — PROBED from {{comment URL}}, or UNVERIFIED when the bot has fewer than two comments
+- A real review comment matches: {{pattern}} — PROBED from {{comment URL}}, or UNVERIFIED
 - Rate limit and re-trigger behaviour: UNVERIFIED
 
 ## Reviewer invariants

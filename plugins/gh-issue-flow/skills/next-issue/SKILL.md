@@ -287,6 +287,10 @@ One line first — the PR link and, in a sentence, what it does. Then these list
 - **Still open** — anything left: red or missing checks, unresolved threads, work
   deliberately left out of scope, an assumption you made because nobody was there to
   ask. `Nothing` is a fine value here, and much better than silence.
+- **For the stack doc** — one proposed bullet for `.claude/workflow/stacks/<name>.md`
+  § Traps when this run measured something about the platform that the doc does not
+  say (a command that lied, an ordering that bit). Written out, dated, ready to paste;
+  you never edit the doc yourself. `Nothing` is the usual value.
 
 ### Rules
 

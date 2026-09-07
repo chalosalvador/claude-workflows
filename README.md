@@ -105,7 +105,8 @@ what merging deploys, how a secret is verified, which bot reviews PRs, which inv
 a reviewer checks — all of that lives in your repo, where it can be right.
 
 After a plugin update, `/gh-issue-flow:setup upgrade` adds the keys the config schema
-gained since your `workflow.json` was written, and touches nothing else. You do not have
+gained since your `workflow.json` was written and generates any stack doc that new
+evidence calls for. It touches nothing that already exists. You do not have
 to remember: every skill prints one line when the file is behind.
 
 ### 3. Try it

@@ -226,8 +226,10 @@ demoting a user does nothing while a team they belong to holds repo admin. And i
 *own* admin comes only from that team, lowering the team first is a self-lockout.
 Check both paths before changing either.
 
-🚨 **A repo transfer can change the identity a cloud trusts.** Identity federation binds
-on GitHub's OIDC subject, and a transfer can rewrite that subject to a different form;
-the failure surfaces only as impersonation 403s, far from the cause, on a workflow that
-ran yesterday. Which subject form this stack binds and what the transfer did to it belongs
-in the repo's stack doc § Traps.
+🚨 **A repo transfer changes the identity a cloud trusts.** MEASURED: a transfer after
+2026-07-15 silently moved GitHub's OIDC `sub` to the immutable `owner@id/repo@id` form.
+That is GitHub's behaviour and applies to every repo; the failure surfaces only as
+impersonation 403s, far from the cause, on a workflow that ran yesterday. Before any
+transfer, re-bind every federation trust that matches on the subject. Which bindings this
+stack has (a WIF `principal://` binding, an AWS trust policy condition) belongs in the
+repo's stack doc § Traps.

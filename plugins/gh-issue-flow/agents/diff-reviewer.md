@@ -62,8 +62,14 @@ contract is consumed by another, a response-shape, field-name, or auth change on
 one side without the other is a break even when both sides compile. Also
 read/write asymmetry: a field written but missing from a second store's read, a
 parity check, or a derived store (a view, an index, a cache) that has to be rebuilt in
-order against the rollout. The repo's stack doc § Reviewer invariants lists the
-cross-store parities this repo depends on; check each one that the diff touches.
+order against the rollout. The cross-store parities this repo depends on arrive in your
+HANDOFF's `Stack doc:` line, carried from the repo's stack doc § Reviewer invariants;
+check each one the diff touches. If the line says none were carried, look yourself in
+the **main checkout** (`$(dirname "$(git rev-parse --path-format=absolute
+--git-common-dir)")/.claude/workflow/stacks/*.md`) — never the bare relative path, because
+`.claude/` is usually gitignored in the worktree you were handed. With no doc, or an
+`UNVERIFIED` section, say so in one line; a clean pass with nothing checked is not a
+clean pass.
 
 **scoping** — Blast radius. What ELSE reaches the code this diff changes or
 guards, that the diff does not touch? Every other lens is scoped to the changed
@@ -83,12 +89,16 @@ enumerate each one:
 **"That file is not in the diff" is the reason a hole survives review, never a
 reason to stop looking.** A caller you cannot rule out is a finding.
 
-**safety** — Credential, secret and data-isolation safety. Start from the repo's
-`.claude/workflow/stacks/*.md` § Reviewer invariants — the predicate every query on
-isolated data must carry, the boundary every write must respect — and check each
-line against the diff. With no stack doc, or an `UNVERIFIED` section, say so in one
-line and fall back to what the code itself declares: row-level filters, ownership
-columns, auth scopes. Credential or env changes that remove a variable without a
+**safety** — Credential, secret and data-isolation safety. Start from your HANDOFF's
+`Stack doc:` line — the predicate every query on isolated data must carry, the boundary
+every write must respect, carried from the repo's stack doc § Reviewer invariants — and
+check each line against the diff. If it says none were carried, look yourself in the
+**main checkout** (`$(dirname "$(git rev-parse --path-format=absolute
+--git-common-dir)")/.claude/workflow/stacks/*.md`), never the bare relative path:
+`.claude/` is usually gitignored in the worktree you were handed, and a glob that matches
+nothing there reads exactly like "this repo declares no invariants". With no doc, or an
+`UNVERIFIED` section, say so in one line and fall back to what the code itself declares:
+row-level filters, ownership columns, auth scopes. Credential or env changes that remove a variable without a
 superset landing first (that wedges a container platform — no revision can boot).
 Secrets in code, logs, or fixtures.
 
@@ -97,7 +107,10 @@ that pass either way are not coverage. Also: cases the diff makes reachable that
 nothing exercises, and assertions on shape rather than behavior.
 
 **deploy** — Migration and rollout safety. Destructive vs. additive/nullable.
-Ordering between migration, backfill, and image roll. Check whether merging
+Ordering between migration, backfill, and image roll. Start from your HANDOFF's
+`Stack doc:` line — the § Deploy and § Infra and migrations lines the planner carried:
+what a merge runs, the ordering rules, what is not in the CD path — then verify against
+the live workflow; the doc is a snapshot and the workflow wins. Check whether merging
 the integration branch auto-deploys and runs migrations — read
 `.claude/workflow.json` -> `deployOnMerge`, or the repo's CD workflow, rather
 than assuming a merge is inert.
