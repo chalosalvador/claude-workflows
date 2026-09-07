@@ -91,6 +91,20 @@ Add or extend tests for what changed. **Mutation-check any new test**: break the
 it covers and confirm it fails. A test that passes against broken code is worse than
 no test — it reads as proof. **State the mutation result in the PR body.**
 
+🚨 **Gate the commit on the mutant's result; never print it and carry on.** MEASURED
+2026-09-07: a block ran the mutant, printed `7 passed`, restored the file, committed,
+pushed, and wrote `1 failed` into the PR body — a survived mutant shipped as a kill
+because nothing read the line. Spell it so a surviving mutant stops the block:
+
+```sh
+MUT=$(pytest tests/ -q 2>&1 | tail -1); <restore the file>
+case "$MUT" in *failed*) ;; *) echo "MUTANT SURVIVED — not committing"; exit 1;; esac
+```
+
+The mutant a reviewer hands you is a hypothesis too: the ordering in its example may
+let the broken code succeed by coincidence (a `pop()` mutant survives any test whose
+matching element is last). Run it; do not transcribe it.
+
 If the change adds a guard, invariant, or scan-style test, read
 [`../reference/guard-tests.md`](../reference/guard-tests.md) before writing it, and
 [`../reference/mutation-harness.md`](../reference/mutation-harness.md) before

@@ -182,6 +182,42 @@ directions: `VERIFY-FIRST`/`TESTS` fired on the code change and stayed silent on
 one; `RISKS` did the reverse. **Treat this as a compliance-and-quality result, not a cost
 result** — the saving is real only on easy issues.
 
+### Measured: unattended runs on the testbed, 2026-09-07
+
+Two full `triage` → `autopilot` runs on
+[`claude-workflows-testbed`](https://github.com/chalosalvador/claude-workflows-testbed)
+(plugin 0.8.1, same commit both times, board reset to pristine between them). Triage
+took ~3 min and 6 GraphQL points per run, and gated the same three of six issues
+`agent-ready` both times — the two-runs `agent-ready` disagreement the fan-out doc calls
+"the finding" did not occur. Autopilot took the two P2s (#2, a two-file code change;
+#3, a README fix) and skipped #6 on the cap of 2 both times.
+
+| | Run 1 — serial | Run 2 — Workflow layer (§ B) |
+|---|---|---|
+| Issues taken / skipped | #2, #3 / #6 (cap) | #2, #3 / #6 (cap) |
+| Lenses fired | #2: correctness, tests · #3: correctness, scoping | same four, same split — the plans named the same lenses |
+| Findings | 1 real per issue: a surviving `pop()` mutant (#2); a paragraph the fix made false (#3) | #2: 2 (a soft-delete mutant, a last-match mutant, both survived the builder's tests) · #3: 1 latent `reset.sh` trap, noted |
+| PRs | #10, #11 — both ready-for-review | #12, #13 — both ready-for-review |
+| Babysit end-state | green / 0 threads, both | green / 0 threads, both |
+| Wall-clock, first push → last PR green | 14 min 22 s (serial: 28 min from selection to report) | ~7 min (22 min from selection to report; workflow itself 17 min 52 s) |
+| Subagent tokens | 261,943 across 6 agents (2 planners, 4 lenses, all `sonnet`) | 485,392 across 10 agents (2 planners, 2 builders, 4 lenses, 2 shippers — all at the session model, see below) |
+| Main-session tokens | unmeasured — not exposed | unmeasured |
+
+The two token numbers are not like-for-like: run 1 ran its planners and lenses at
+`sonnet` and did the implementing and shipping in the main session (unmeasured); run 2's
+script passed no `model`, so all ten agents ran at fable, and two builders and two
+shippers are inside the count. Per agent in run 1: planners 43k and 49k; lenses 36k–48k each. The one-line docs fix
+(#3) cost 130k of subagent spend on its own — in line with the 110k measured above, and
+the reason a docs issue still gets only the two lenses its plan names.
+
+Two mechanism defects surfaced in run 1 and are fixed in 0.8.2: a `tests` lens rewrote
+the shared worktree in place to re-run mutants while the `correctness` lens was reading
+it (`agents/diff-reviewer.md` now forbids that), and a survived mutant was committed
+because the block printed the result instead of gating on it
+(`shared/execution.md` § 2.2). Run 2 also hit a third: the local `feat/<N>-*` branch
+from run 1 outlived its worktree and blocked `git worktree add -b`
+(`skills/autopilot/SKILL.md` § 5).
+
 ## Prerequisites
 
 | Need | Why | Check |

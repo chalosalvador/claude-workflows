@@ -334,6 +334,19 @@ for one delta path. If both plans name more lenses than that allows, run one iss
 through the workflow and leave the other for the next run; do not silently drop lenses to
 fit a budget.
 
+**`args` carries two things the script cannot discover.** `args.plugin` is the plugin's
+base directory — the path the Skill tool printed when autopilot was invoked, e.g.
+`~/.claude/plugins/cache/<marketplace>/gh-issue-flow/<version>` — and every prompt cites
+the skill files by that absolute path. MEASURED 2026-09-07: with the files named by bare
+name, all four builders and shippers resolved `autopilot/SKILL.md` and
+`shared/execution.md` from the workflow's **cwd**, which was the plugin's *source
+checkout* — a tree that already carried unmerged edits to § 2.2 — and not the installed
+version the session was running. In a consumer repo there is no such file at all. And
+`issue.model` is the § 3.1 tier for that issue's size label (`sonnet` for `effort:easy`);
+the script forwards it to the planner and the lenses, and omits `model` entirely when it
+is unset. Without it every agent inherits the session model — measured: ten agents at the
+session's tier on two `effort:easy` issues.
+
 **The planner gets no `schema`.** Its output shape is an allowlist it enforces itself, and
 forcing a structured return would fight it. Its text is passed downstream verbatim — the
 handoff [`../shared/execution.md`](../shared/execution.md) § 3.1 asks for — and the
@@ -415,13 +428,15 @@ const build = async (issue) => {
      Integration branch: ${issue.base}. Merging it ${issue.deployNote}.
      Gate: ${issue.gate}
      Worktree (READ-ONLY, do not edit): ${issue.worktree}`,
-    { agentType: 'gh-issue-flow:issue-planner', label: `plan:#${issue.number}`, phase: 'Plan' }
+    { agentType: 'gh-issue-flow:issue-planner', label: `plan:#${issue.number}`, phase: 'Plan',
+      ...(issue.model ? { model: issue.model } : {}) }   // shared/execution.md § 3.1 tier
   )
   if (!plan) return { issue, ...dead('Plan', 'the planner') }
 
   const built = await agent(
-    `Implement issue #${issue.number} per autopilot SKILL.md sections 6 to 8, in order:
-     the spec change first, then the code, then the full validation gate until green.
+    `Implement issue #${issue.number} per ${args.plugin}/skills/autopilot/SKILL.md
+     sections 6 to 8, in order: the spec change first, then the code, then the full
+     validation gate until green. Gate mechanics: ${args.plugin}/shared/execution.md § 2.
      ${rules(issue.worktree)}
 
      THE PLAN — treat as established; do not re-fetch what it already answers:
@@ -456,11 +471,12 @@ const ship = async (built, issue) => {
   // Barrier is correct here: the adjudicator weighs every lens's findings together.
   const findings = (await parallel(built.lenses.map(lens => () => agent(lensPrompt(lens), {
       agentType: 'gh-issue-flow:diff-reviewer', label: `review:${lens}#${issue.number}`,
-      phase: 'Review', schema: FINDINGS,
+      phase: 'Review', schema: FINDINGS, ...(issue.model ? { model: issue.model } : {}),
     })))).filter(Boolean).flatMap(r => r.findings)
 
-  const shipPrompt = (extra = '') => `Finish issue #${issue.number} per autopilot
-    SKILL.md sections 9 and 10. ${rules(issue.worktree)}
+  const shipPrompt = (extra = '') => `Finish issue #${issue.number} per
+    ${args.plugin}/skills/autopilot/SKILL.md sections 9 and 10, with
+    ${args.plugin}/shared/execution.md § 3 and § 4. ${rules(issue.worktree)}
 
     Findings to adjudicate: ${JSON.stringify(findings)}${extra}
 
@@ -568,7 +584,7 @@ Stated plainly, because the serial path does not pay these:
 |---|---|
 | The batch build produces newest-first batches of 5, capped at 25, with no `triaged` issue in them | `jq` against a 30-issue and a 28-issue fixture. It also caught the `.[0]` slurp bug above, which is why that ⚠️ is there. |
 | The script's pure-JS half behaves: verdicts merge across batches, `missing` catches a dropped issue **and** an agent that returns nothing, the drop is announced via `log()`, a clean run logs nothing, reciprocal dupes collapse to one pair, self-references and unconfident dupes are dropped | 9 assertions against a throwaway harness that stubs `agent()`, `parallel()` and `log()` and runs the real script body |
-| **B** — the autopilot script's control flow: a handback short-circuits before a single lens is spawned, a dead planner spends nothing after itself, new logic opens a draft and the delta lens runs **as the lens that raised it**, the finalizer flips it to ready, a dead finalizer leaves the PR a draft and reports a handback rather than a success, and `deltaReviewed` survives the finalizer overwriting `raisingLens` | 20 assertions against the same kind of harness, stubbing `agent()`, `parallel()`, `pipeline()` and `log()` |
+| **B** — the autopilot script's control flow: a handback short-circuits before a single lens is spawned, a dead planner spends nothing after itself, new logic opens a draft and the delta lens runs **as the lens that raised it**, the finalizer flips it to ready, a dead finalizer leaves the PR a draft and reports a handback rather than a success, and `deltaReviewed` survives the finalizer overwriting `raisingLens`; and, since 2026-09-07, that `args.plugin` reaches the builder and shipper prompts and `issue.model` reaches the planner and lenses but never the builder or shipper | 23 assertions against the same kind of harness, stubbing `agent()`, `parallel()`, `pipeline()` and `log()`; rebuilt for the `args.plugin` change and mutation-checked (dropping `...delta_ran` reds it) |
 
 ⚠️ **A harness can read a stale script and pass.** Regenerating B's harness in place
 failed silently once, so a green run was reporting on the previous version of the script.
@@ -581,20 +597,38 @@ JS, and these optional layers do not earn a new file class in the marketplace re
 `tests/` directory (which an installed plugin does not carry). Rebuild them if you
 change either script; each is about twenty lines of stubs.
 
-**Not measured** — everything that needs a live board and a real model:
+**Measured, B, live — 2026-09-07 on the testbed, plugin 0.8.1, one run of each path on
+the same two issues (#2, a two-file code change; #3, a README fix), board reset between
+them** (the full tables: the marketplace `README.md` § What a run costs):
 
-- No agent has produced a verdict or a PR through either path. The prompts are written
-  against the skills' sections, not tested against them.
-- **B has never run two worktrees concurrently.** The concurrency rules in it are carried
-  over from measured incidents in [`parallel-agents.md`](parallel-agents.md), not
-  re-measured under a workflow.
-- **No wall-clock or token number is claimed anywhere in this file**, deliberately. The
-  fan-out is asserted to be *parallel*, not to be *cheaper* — each agent re-reading repo
-  context could plausibly cost more in total tokens than the serial pass, and nobody has
-  priced it.
-- The 10-issue threshold in A, as flagged above.
-- B's agent arithmetic (6 per issue, 12 a run) is counted, not observed. A plan naming
-  more lenses changes it.
+| Claim | Result |
+|---|---|
+| B produces PRs through the real agents | Yes: PRs #12 and #13, both ready-for-review, GPG-signed, `agent-authored`, CI green, 0 threads. Same outcome as the serial run's #10 and #11. |
+| Two worktrees run concurrently | Yes. Both planners overlapped from launch; both worktrees were dirty at the same time from 19:49:57; issue #2 was in Review while #3 was still in Plan — the pipeline overlap, not just parallel planning. No stash, no `git add -A`, no cross-worktree write in any of the ten transcripts. |
+| No item dies silently | `results` had no null; 0 errors, 0 empty returns across 10 agents. |
+| Wall-clock | Workflow 17 min 52 s; selection → both PRs green and quiet **22 min 01 s** vs **27 min 54 s** serial. First push → last PR green ~7 min vs 14 min 22 s. Faster by about 6 minutes, on a repo whose CI takes 20 s. |
+| Tokens | **485,392** subagent tokens for 10 agents vs **261,943** for the serial run's 6 — but the serial run's planners and lenses ran at `sonnet` and its implement/ship work was the main session's, unmeasured, while B ran all ten at the session model and paid for two builders and two shippers besides. "One extra context payment per issue" is confirmed in kind, not priced like-for-like. |
+| Agent count | 10 for two issues naming two lenses each — the arithmetic above holds; the delta path was not taken (both shippers returned `newLogic: false`). |
+| Review quality | Not worse. B's `tests` lens on #2 killed a soft-delete mutant the serial run's lens had not tried; B's `scoping` on #3 found a latent `reset.sh` idempotency trap the serial run missed. Both `correctness` lenses were clean, with probes executed. |
+
+Three things broke on that run, all fixed in 0.8.2: the builders read the skill files
+from cwd rather than the installed plugin (`args.plugin`, above); no `model` tier reached
+any agent (`issue.model`, above); and one shipper wrote *"lenses run at `model: sonnet`"*
+into a PR body when the transcripts show fable — the rule from § 3.1 transcribed as an
+observation. The session corrected the body. A shipper cannot see which model it or its
+siblings ran at; the PR body should state the tier the *session* passed, or nothing.
+
+**Not measured** — still:
+
+- **A** has not run live: no agent has produced a triage verdict through the fan-out, and
+  the 10-issue threshold is asserted, not observed. The serial deep pass on the same
+  six-issue testbed produced identical verdicts on two consecutive runs, which is the
+  baseline any A measurement has to match.
+- B on more than two lenses per plan, on a plan that triggers the delta path, or on a repo
+  whose CI takes longer than its build. One run, one repo: the wall-clock gap is a
+  sample, not a rate.
+- B's cost against a serial run at the same model tier with the main session's own spend
+  counted. The number above compares different tiers and different accounting.
 
 The way to settle the rest is the A/B the layered design makes free — same board, same day,
 both paths, then compare:

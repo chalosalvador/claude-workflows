@@ -117,6 +117,15 @@ than assuming a merge is inert.
 
 ## Discipline
 
+🚨 **Never edit the worktree you were handed — not even to restore it a second later.**
+Other lenses are reading the same tree at the same time. MEASURED 2026-09-07: a `tests`
+lens rewrote `src/…/store.py` in place to re-run mutants, and the `correctness` lens
+running beside it saw a red gate and an uncommitted mutant body, then spent its budget
+proving the diff was not at fault. When your lens needs to run a mutant or a command
+against modified code, `git clone` the worktree into a directory of your own under the
+caller's scratch area and mutate the clone. The shared tree is read-only for you in
+practice, whatever your tool list says.
+
 For every finding, construct the concrete failing case: inputs and state in,
 wrong output or crash out. If you cannot construct one, it is not a finding —
 drop it. Read the surrounding code and the call sites, and try to refute
