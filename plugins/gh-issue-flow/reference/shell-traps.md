@@ -47,7 +47,8 @@ gh api "repos/{o}/{r}/labels/<name%20enc>" --jq '{name,description,color}' # a h
 gh api -X DELETE "repos/{o}/{r}/labels/<name%20enc>"                       # only then
 ```
 
-**After any label-add loop, read the labels back and assert none contain a space.**
+**After any label-add loop, read the labels back and assert none you added contain a
+space** — not none at all: GitHub's default `good first issue` and `help wanted` do.
 
 ### ⚠️ zsh applies HISTORY MODIFIERS to `$VAR:x`
 

@@ -78,6 +78,14 @@ Reserve the full reinstall — `claude plugin uninstall <plugin>` then
 `main` byte for byte. **A restart is required either way**, and see the agent-discovery
 trap below.
 
+🚨 **The Skill tool's plugin directory is resolved once too — MEASURED 2026-09-07.** In a
+session that had run `claude plugin update` from 0.5.1 through 0.8.0, invoking
+`/gh-issue-flow:setup` loaded `…/cache/claude-workflows/gh-issue-flow/0.5.2/skills/setup`
+— the update had moved the install three versions on and the session was still serving
+a copy from hours earlier. Neither `plugin update` nor `/reload-plugins` repointed it. So
+the version you just updated to is **not** what this session runs until you restart, and
+a measurement made through the Skill tool without a restart measures the old text.
+
 🚨 **That uninstall empties your `userConfig`, and the reinstall does not restore it** —
 board number and owner included. MEASURED: `claude plugin marketplace remove` wipes it
 too, which matters because testing unmerged work starts with `marketplace add ./`.

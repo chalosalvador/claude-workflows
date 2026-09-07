@@ -300,7 +300,8 @@ silently lost forever.
 ⚠️ **Pass each label as its own explicit `-f "labels[]=…"`, never a split shell
 variable** — the label endpoint auto-creates any label that does not exist, so an
 unsplit variable silently creates a junk label repo-wide. After any label-add loop,
-read the labels back and assert none contain a space. See
+read the labels back and assert none **you added** contain a space — GitHub's defaults
+`good first issue` and `help wanted` do, measured. See
 [`../../reference/shell-traps.md`](../../reference/shell-traps.md).
 
 Don't post a per-issue "I triaged this" comment. Labels are the record; comments are

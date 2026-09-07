@@ -155,10 +155,13 @@ you here.
          Never merge it.
 - [ ] 7. Read it back: `jq .schemaVersion` equals the current schema and every proposed
          key is present.
-- [ ] 8. Run § 5b in upgrade mode — always, even when step 1 found the keys current. It
-         adds a header the skeleton gained, or a doc for evidence that appeared since,
-         and says "nothing to add" otherwise. This is the only path that reaches an
-         existing repo's stack docs, so it does not depend on a schema bump.
+- [ ] 8. Run § 4 and § 5b — always, even when step 1 found the keys current. § 4 creates
+         any label the skills read that the repo lacks (idempotent: `gh label create`
+         exits 1 on an existing name, tolerate it). MEASURED: a repo upgraded from a
+         pre-0.5.2 setup was missing `legal`, `compliance` and `security`, which triage
+         applies and reads, because upgrade ran only the key steps. § 5b adds a header
+         the skeleton gained, or a doc for evidence that appeared since, and says
+         "nothing to add" otherwise. Neither depends on a schema bump.
 ```
 
 🚨 **Never touch an existing key** — not its value, not its formatting, not its comment.
@@ -231,7 +234,9 @@ gh label list --limit 200 --json name --jq '.[].name'
 🚨 **Pass each label as its own argument, never a split shell variable.** The labels API
 auto-creates any name it is handed, and under a shell that does not word-split, a
 variable holding two names becomes one junk label created repo-wide. After any label
-loop, assert no label name contains a space.
+loop, assert that no label **this run created** contains a space. Not every label:
+MEASURED, GitHub's own defaults `good first issue` and `help wanted` contain spaces, so a
+blanket check false-alarms on every fresh repo and trains you to ignore it.
 
 **Area labels are the user's taxonomy, not ours.** Ask what areas this repo has, create
 `area:<name>` for each, and record them in `workflow.json` → `areaLabels` with a
@@ -360,7 +365,10 @@ comments alone would have written "no review bot" for a repo that has one.
 { gh api "repos/<owner>/<repo>/issues/comments?sort=created&direction=desc&per_page=100" --jq '.[].user.login'
   gh pr list --repo <owner>/<repo> --state merged --limit 5 --json number --jq '.[].number' \
     | while read n; do gh api "repos/<owner>/<repo>/pulls/$n/reviews" --jq '.[].user.login'; done
-} | grep '\[bot\]$' | sort | uniq -c
+} | grep '\[bot\]$' | sort | uniq -c | grep . \
+  || echo "NO bot in the last 100 comments or the last 5 merged PRs' reviews -> Bot: none"
+# MEASURED on a repo with no bot: without the final `grep . || echo`, this printed nothing at
+# all — the same silent-empty result the rest of this plugin exists to prevent.
 # A config file only ANNOTATES. If it names a bot the scan did not see, the file is stale: report it, do not write it as the bot.
 ls .coderabbit.yaml .coderabbit.yml 2>/dev/null
 ```
