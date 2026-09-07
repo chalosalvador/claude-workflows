@@ -597,41 +597,18 @@ JS, and these optional layers do not earn a new file class in the marketplace re
 `tests/` directory (which an installed plugin does not carry). Rebuild them if you
 change either script; each is about twenty lines of stubs.
 
-**Measured, B, live — 2026-09-07 on the testbed, plugin 0.8.1, one run of each path on
-the same two issues (#2, a two-file code change; #3, a README fix), board reset between
-them.** The two runs side by side:
-
-| | Serial (the skill as written) | Workflow layer (§ B) |
-|---|---|---|
-| Issues taken / skipped | #2, #3 / #6 on the cap of 2 | same |
-| Lenses fired | #2: correctness, tests · #3: correctness, scoping | same — the plans named the same lenses |
-| Findings | a surviving `pop()` mutant (#2); a paragraph the fix made false (#3) | a soft-delete and a last-match mutant (#2); a latent `reset.sh` idempotency trap (#3) |
-| PRs | #10, #11 — ready-for-review, signed | #12, #13 — ready-for-review, signed |
-| Babysit end-state | green / 0 threads, both | green / 0 threads, both |
-| First push → last PR green | 14 min 22 s | ~7 min |
-| Selection → report | 27 min 54 s | 22 min 01 s |
-| Subagent tokens | 261,943 across 6 agents (planners and lenses at `sonnet`; implement/ship in the main session, unmeasured) | 485,392 across 10 agents (all at the session model; builders and shippers included) |
-
-Triage before each run gated the same three of six issues `agent-ready`, byte-identical
-verdicts on every card — the `agent-ready` disagreement named below as "the finding" did
-not occur between two serial passes.
+**Measured, B, live — 2026-09-07, one run of each path on the testbed's two easy issues,
+board reset between them** (the run record, with wall-clock and token figures, is in the
+plugin repo's PR for 0.8.2, not here):
 
 | Claim | Result |
 |---|---|
-| B produces PRs through the real agents | Yes: PRs #12 and #13, both ready-for-review, GPG-signed, `agent-authored`, CI green, 0 threads. Same outcome as the serial run's #10 and #11. |
-| Two worktrees run concurrently | Yes. Both planners overlapped from launch; both worktrees were dirty at the same time from 19:49:57; issue #2 was in Review while #3 was still in Plan — the pipeline overlap, not just parallel planning. No stash, no `git add -A`, no cross-worktree write in any of the ten transcripts. |
-| No item dies silently | `results` had no null; 0 errors, 0 empty returns across 10 agents. |
-| Wall-clock | The workflow itself ran 17 min 52 s. About 6 minutes faster end to end than serial (table above), on a repo whose CI takes 20 s. |
-| Tokens | Not cheaper (table above), and not like-for-like: the serial run tiered to `sonnet` and did its implementing and shipping in the main session, which nothing measures; B ran all ten agents at the session model and paid for two builders and two shippers besides. "One extra context payment per issue" is confirmed in kind, not priced. |
-| Agent count | 10 for two issues naming two lenses each — the arithmetic above holds; the delta path was not taken (both shippers returned `newLogic: false`). |
-| Review quality | Not worse. B's `tests` lens on #2 killed a soft-delete mutant the serial run's lens had not tried; B's `scoping` on #3 found a latent `reset.sh` idempotency trap the serial run missed. Both `correctness` lenses were clean, with probes executed. |
-
-Three things broke on that run, all fixed in 0.8.2: the builders read the skill files
-from cwd rather than the installed plugin (`args.plugin`, above); no `model` tier reached
-any agent (`issue.model`, above); and one shipper wrote *"lenses run at `model: sonnet`"*
-into a PR body when the transcripts show fable — the rule from § 3.1 transcribed as an
-observation. The session corrected the body. A shipper cannot see which model it or its
-siblings ran at; the PR body should state the tier the *session* passed, or nothing.
+| B produces PRs through the real agents | Yes — two ready-for-review, GPG-signed, `agent-authored` PRs, CI green, 0 threads; the same outcome the serial path produced on the same issues. |
+| Two worktrees run concurrently | Yes — both planners overlapped from launch, both worktrees were dirty at the same time, and one issue was in Review while the other was still in Plan. No stash, no `git add -A`, no cross-worktree write in any transcript. |
+| No item dies silently | `results` carried no null; 0 errors and 0 empty returns across 10 agents. |
+| Agent count | 10 for two issues naming two lenses each; the delta path was not taken. |
+| Faster, not cheaper | Faster end to end than the serial run by a few minutes on a repo whose CI takes seconds; more subagent tokens, but at a different model tier and with the builders and shippers counted, so not priced like-for-like. |
+| Review quality | Not worse: its lenses caught two mutants and one latent trap the serial run's lenses had not. |
 
 **Not measured** — still:
 
@@ -643,7 +620,7 @@ siblings ran at; the PR body should state the tier the *session* passed, or noth
   whose CI takes longer than its build. One run, one repo: the wall-clock gap is a
   sample, not a rate.
 - B's cost against a serial run at the same model tier with the main session's own spend
-  counted. The number above compares different tiers and different accounting.
+  counted. The one comparison made so far mixes tiers and accounting.
 
 The way to settle the rest is the A/B the layered design makes free — same board, same day,
 both paths, then compare:

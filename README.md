@@ -182,16 +182,6 @@ directions: `VERIFY-FIRST`/`TESTS` fired on the code change and stayed silent on
 one; `RISKS` did the reverse. **Treat this as a compliance-and-quality result, not a cost
 result** — the saving is real only on easy issues.
 
-**A full unattended run, measured (2026-09-07, plugin 0.8.1).** Triage plus autopilot on
-the testbed's two easy issues — a two-file code change and a README fix — took 28 minutes
-end to end on the serial path and 22 on the optional Workflow layer, and produced the same
-two reviewable PRs either way. Subagent spend was 262k tokens serial (planners and lenses
-at `sonnet`) and 485k with the Workflow layer (ten agents, all at the session model), so
-the concurrent path is faster and not cheaper. The comparison, what it does and does not
-settle, and what is still unmeasured:
-[`reference/workflow-fanout.md`](plugins/gh-issue-flow/reference/workflow-fanout.md)
-§ What is measured here.
-
 ## Prerequisites
 
 | Need | Why | Check |
