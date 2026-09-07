@@ -75,8 +75,11 @@ session claims the issues, **creates both worktrees itself**, and afterwards bab
 PRs together under one § 11 cap — which is the second reason to bother.
 
 Take that path only when the Workflow tool is in this session and § 2 actually selected
-two candidates; on one issue it buys nothing. Without it, work them in order exactly as
-below. That file also states plainly what the layer costs, which is not nothing.
+two candidates; on one issue it buys nothing. Hand the script the plugin's base directory
+(the path the Skill tool printed for this file) and the § 3.1 model tier per issue — its
+agents cannot find either on their own, measured. Without it, work them in order exactly
+as below. That file also states plainly what the layer costs, which is not nothing, and
+what one live run measured.
 
 ## 1. Backpressure
 
@@ -195,6 +198,25 @@ git worktree add ../.autopilot/<repo>-<N> -b feat/<N>-<slug> "$INTEGRATION"
 
 Prune stale ones first: `git worktree list` → `git worktree remove <path>` for any
 whose branch is merged or older than 7 days.
+
+⚠️ **A removed worktree leaves its local branch behind** (§ 12 keeps it on purpose), so
+the next run on the same issue fails at `-b feat/<N>-<slug>` with `a branch named …
+already exists`. MEASURED 2026-09-07 on the second run of the day. Before the `add`,
+check for it and decide from evidence, not by force:
+
+```sh
+git rev-parse --verify -q feat/<N>-<slug> && {
+  git fetch origin
+  git merge-base --is-ancestor feat/<N>-<slug> "$INTEGRATION" \
+    || git branch -r --contains feat/<N>-<slug> | grep -q . \
+    || { echo "local feat/<N>-<slug> has commits nowhere on origin — hand it back"; exit 1; }
+  git branch -D feat/<N>-<slug>
+}
+```
+
+A branch whose every commit is already on the remote — merged, or pushed to a PR that
+was closed — is safe to delete. One with unpushed commits is someone's work: handback.
+Never `-B` or `git worktree add --force` past it.
 
 ### 🚨 In case A, the base is a LOCAL branch and is probably stale
 
