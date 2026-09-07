@@ -9,11 +9,12 @@ Everything here is markdown and JSON. There is no build, no install, no dependen
 python3 tests/test_single_owner_facts.py
 python3 tests/test_no_stray_files.py
 python3 tests/test_version_agreement.py
+python3 tests/test_config_schema.py
 claude plugin validate ./plugins/gh-issue-flow --strict
 claude plugin validate . --strict
 ```
 
-CI runs all four as the `guards` job. Run them before pushing — `main` is protected, so a
+CI runs all of them as the `guards` job. Run them before pushing — `main` is protected, so a
 red gate means the PR simply cannot merge.
 
 ⚠️ **A PR with NO checks is not a passing PR.** `guards` is required, so zero checks
@@ -160,6 +161,14 @@ nothing can. Read them back yourself when it matters.
 That bump is the only thing that gives `claude plugin update` anything to do. Skipping it
 is how eight consecutive PRs reached `main` without reaching a single running session.
 
+### And bump the config schema when a PR adds a `workflow.json` key
+
+A plugin update reaches the code, not the repos already configured. So a new key needs
+three things in the same PR: a row in the schema table in `shared/config.md` § Layer 2
+with its **Since** set to a bumped **Current schema**, a probe for it in `setup` § 2, and
+`EXPECTED_KEYS` in `tests/test_config_schema.py` moved up by one. That guard reds on any
+of the three missing. `setup upgrade` is then what carries the key into an existing repo.
+
 ## Build your own testbed
 
 The maintainer's testbed is not writable by you. Making one takes about ten minutes and is
@@ -198,6 +207,11 @@ times, which is the behaviour it was built for.
 
 It is mutation-proven 11/11 (7 kill + 4 must-stay-green); the two board pins added later were proven 7/7 (3 kill + 4 must-stay-green) on top. If you change the guard itself,
 re-prove it; the must-stay-green half is what stops it reddening on ordinary reformatting.
+
+`tests/test_config_schema.py` is mutation-proven **11/11 (7 kill + 4 must-stay-green)**:
+a dropped row, an example key with no row, a Since above Current, a key setup never
+mentions, a missing Current line, a duplicate row and an emptied table all red; reversed
+rows, padded cells, a reworded Meaning and a legitimate schema bump stay green.
 
 **Facts live in one place.** `shared/execution.md` owns mechanics; skills own policy and
 link to it. If you find yourself pasting the same rule into two skills, it belongs in

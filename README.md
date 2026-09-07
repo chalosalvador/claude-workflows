@@ -98,6 +98,10 @@ labels the skills read, and checks your board has the fields they need. Then it 
 On a repo that already half-works, run `/gh-issue-flow:setup check` instead. It changes
 nothing and tells you what is missing.
 
+After a plugin update, `/gh-issue-flow:setup upgrade` adds the keys the config schema
+gained since your `workflow.json` was written, and touches nothing else. You do not have
+to remember: every skill prints one line when the file is behind.
+
 ### 3. Try it
 
 ```
