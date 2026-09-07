@@ -599,15 +599,30 @@ change either script; each is about twenty lines of stubs.
 
 **Measured, B, live — 2026-09-07 on the testbed, plugin 0.8.1, one run of each path on
 the same two issues (#2, a two-file code change; #3, a README fix), board reset between
-them** (the full tables: the marketplace `README.md` § What a run costs):
+them.** The two runs side by side:
+
+| | Serial (the skill as written) | Workflow layer (§ B) |
+|---|---|---|
+| Issues taken / skipped | #2, #3 / #6 on the cap of 2 | same |
+| Lenses fired | #2: correctness, tests · #3: correctness, scoping | same — the plans named the same lenses |
+| Findings | a surviving `pop()` mutant (#2); a paragraph the fix made false (#3) | a soft-delete and a last-match mutant (#2); a latent `reset.sh` idempotency trap (#3) |
+| PRs | #10, #11 — ready-for-review, signed | #12, #13 — ready-for-review, signed |
+| Babysit end-state | green / 0 threads, both | green / 0 threads, both |
+| First push → last PR green | 14 min 22 s | ~7 min |
+| Selection → report | 27 min 54 s | 22 min 01 s |
+| Subagent tokens | 261,943 across 6 agents (planners and lenses at `sonnet`; implement/ship in the main session, unmeasured) | 485,392 across 10 agents (all at the session model; builders and shippers included) |
+
+Triage before each run gated the same three of six issues `agent-ready`, byte-identical
+verdicts on every card — the `agent-ready` disagreement named below as "the finding" did
+not occur between two serial passes.
 
 | Claim | Result |
 |---|---|
 | B produces PRs through the real agents | Yes: PRs #12 and #13, both ready-for-review, GPG-signed, `agent-authored`, CI green, 0 threads. Same outcome as the serial run's #10 and #11. |
 | Two worktrees run concurrently | Yes. Both planners overlapped from launch; both worktrees were dirty at the same time from 19:49:57; issue #2 was in Review while #3 was still in Plan — the pipeline overlap, not just parallel planning. No stash, no `git add -A`, no cross-worktree write in any of the ten transcripts. |
 | No item dies silently | `results` had no null; 0 errors, 0 empty returns across 10 agents. |
-| Wall-clock | Workflow 17 min 52 s; selection → both PRs green and quiet **22 min 01 s** vs **27 min 54 s** serial. First push → last PR green ~7 min vs 14 min 22 s. Faster by about 6 minutes, on a repo whose CI takes 20 s. |
-| Tokens | **485,392** subagent tokens for 10 agents vs **261,943** for the serial run's 6 — but the serial run's planners and lenses ran at `sonnet` and its implement/ship work was the main session's, unmeasured, while B ran all ten at the session model and paid for two builders and two shippers besides. "One extra context payment per issue" is confirmed in kind, not priced like-for-like. |
+| Wall-clock | The workflow itself ran 17 min 52 s. About 6 minutes faster end to end than serial (table above), on a repo whose CI takes 20 s. |
+| Tokens | Not cheaper (table above), and not like-for-like: the serial run tiered to `sonnet` and did its implementing and shipping in the main session, which nothing measures; B ran all ten agents at the session model and paid for two builders and two shippers besides. "One extra context payment per issue" is confirmed in kind, not priced. |
 | Agent count | 10 for two issues naming two lenses each — the arithmetic above holds; the delta path was not taken (both shippers returned `newLogic: false`). |
 | Review quality | Not worse. B's `tests` lens on #2 killed a soft-delete mutant the serial run's lens had not tried; B's `scoping` on #3 found a latent `reset.sh` idempotency trap the serial run missed. Both `correctness` lenses were clean, with probes executed. |
 
