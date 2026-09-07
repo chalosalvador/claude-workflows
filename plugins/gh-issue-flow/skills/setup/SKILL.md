@@ -142,7 +142,14 @@ gh label create agent-ready     -d "Gated safe for unattended work"             
 gh label create agent-wip       -d "An unattended run has claimed this"                  -c 0052CC
 gh label create agent-blocked   -d "Unattended run handed it back — a human decides"     -c B60205
 gh label create agent-authored  -d "PR opened unattended"                                -c 1D76DB
+gh label create legal           -d "Legal / policy / contractual — priority caps at P1"   -c 5319E7
+gh label create compliance      -d "Needs a human owner — never agent-ready"              -c B60205
+gh label create security        -d "Needs a human owner — never agent-ready"              -c B60205
 ```
+
+The last three are the ones `triage` § 3c applies and `triage` § 4 / `autopilot` § 3
+read as disqualifiers. They were missing from this list, so a fresh repo had triage
+writing a label that did not exist.
 
 A new GitHub repo ships with `bug`, `documentation`, `duplicate`, `enhancement`,
 `good first issue`, `help wanted`, `invalid`, `question` and `wontfix` (verified) — so

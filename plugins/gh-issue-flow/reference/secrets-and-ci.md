@@ -59,18 +59,23 @@ string** and reports success-ish:
 back:**
 
 ```bash
-TOK=$(jq -r .token "$HOME/Library/Application Support/com.vercel.cli/auth.json")
+# VERCEL_TOKEN is a token YOU create (vercel.com/account/tokens), exported in the shell.
+# Never scrape another CLI's auth store: that token is broader than this job, and a
+# token on argv or on disk is readable by every process on the machine (shell-traps.md).
+: "${VERCEL_TOKEN:?export VERCEL_TOKEN first}"
 PROJ=$(jq -r .projectId .vercel/project.json); TEAM=$(jq -r .orgId .vercel/project.json)
 
 # read the true storage type (the CLI cannot show it):
-curl -s -H "Authorization: Bearer $TOK" \
+curl -s -H "Authorization: Bearer $VERCEL_TOKEN" \
   "https://api.vercel.com/v9/projects/$PROJ/env?teamId=$TEAM" \
   | jq -r '.envs[] | "\(.type)\t\(.key)"' | sort
 
-# create it verifiably:
-jq -n --arg v "$SECRET" '{key:"NAME",value:$v,type:"encrypted",target:["production","preview"]}' > /tmp/b.json
-curl -s -X POST -H "Authorization: Bearer $TOK" -H 'Content-Type: application/json' \
-  --data @/tmp/b.json "https://api.vercel.com/v10/projects/$PROJ/env?teamId=$TEAM"
+# create it verifiably. The value reaches jq through the ENVIRONMENT ($ENV.SECRET), not
+# argv, and reaches curl over STDIN, not a file — nothing lands on disk or in `ps`:
+export SECRET   # already set in this shell, never typed on a command line
+jq -n '{key:"NAME",value:$ENV.SECRET,type:"encrypted",target:["production","preview"]}' \
+  | curl -s -X POST -H "Authorization: Bearer $VERCEL_TOKEN" -H 'Content-Type: application/json' \
+      --data @- "https://api.vercel.com/v10/projects/$PROJ/env?teamId=$TEAM"
 ```
 
 **Match the sibling credential's type rather than the CLI default.**

@@ -129,6 +129,8 @@ git -C <repo> fetch --all
 
 START="2026-06-11 00:00"; END_EXCL="2026-06-12 00:00"
 AUTHORS=(--author="you@work.example" --author="you@personal.example")
+INTEGRATION="<integrationBranch>"   # workflow.json -> integrationBranch, e.g. origin/main.
+                                    # Set it HERE — a fresh shell has no value from an earlier block.
 
 # Single-stream repo, read from the REMOTE integration ref:
 git -C <repo> log "$INTEGRATION" "${AUTHORS[@]}" \
@@ -155,7 +157,7 @@ branch has to appear or the day reads as half-empty. Substitute `--all` for
 than trusting a branch name:
 
 ```bash
-git -C <repo> merge-base --is-ancestor <sha> "$INTEGRATION"   # exit 0 = merged
+git -C <repo> merge-base --is-ancestor <sha> "<integrationBranch>"   # exit 0 = merged
 ```
 
 Anything that is not an ancestor is un-merged and must be marked as such — see
