@@ -95,7 +95,10 @@ queue worse. Also flag any `agent-authored` PR open more than 5 days as stalled.
 ## 2. Select candidates (max 2)
 
 ```sh
-jq -r --arg ready "$READY_LABEL" '.items[] | select(.status=="Todo")
+# <ready_label> is user_config.ready_label (default agent-ready), written in LITERALLY.
+# A fresh shell has no $READY_LABEL, and an empty --arg selects nothing — which reads as
+# "empty queue, stop": the silent-empty failure shared/config.md § Layer 1 forbids.
+jq -r --arg ready "<ready_label>" '.items[] | select(.status=="Todo")
    | select((.labels // []) | index($ready))
    | select(((.labels // []) | index("agent-wip") | not)
             and ((.labels // []) | index("agent-blocked") | not)
@@ -179,6 +182,8 @@ branch: `git branch -m feat/<N>-<slug>`.
 **B. Run by hand from the main checkout.** Create one:
 
 ```sh
+INTEGRATION="<integrationBranch>"   # e.g. origin/main — resolved per shared/config.md. Set it in
+                                    # THIS block: a fresh shell carries nothing from an earlier one.
 git fetch origin
 git worktree add ../.autopilot/<repo>-<N> -b feat/<N>-<slug> "$INTEGRATION"
 ```
@@ -193,7 +198,9 @@ not move when you fetch.** Building on it produces a PR based on a checkout doze
 commits behind — a mistake already made once here on a five-commit-stale base.
 
 ```sh
+INTEGRATION="<integrationBranch>"   # literal, in this block — same rule as above
 git fetch origin
+[ -z "$(git status --porcelain)" ] || { echo "worktree is not clean — hand it back"; exit 1; }
 git rev-parse HEAD               # must equal ↓
 git rev-parse "$INTEGRATION"
 git reset --hard "$INTEGRATION"  # only in a FRESH worktree, nothing to lose

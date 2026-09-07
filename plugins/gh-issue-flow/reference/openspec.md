@@ -176,9 +176,13 @@ fix.
 ### Regenerating an archive on rebase
 
 ```sh
-git reset --hard HEAD~1        # drop the archive commit; the change dir returns
-git rebase <integrationBranch> # resolve only real code conflicts
-openspec archive <name> -y --json   # assert specsUpdated: true
+# ⚠️ `reset --hard` discards uncommitted work with no undo. Prove there is none, and
+# that HEAD is the archive commit and nothing else, BEFORE running it.
+[ -z "$(git status --porcelain)" ] || { echo "uncommitted changes — commit them first"; exit 1; }
+git show --stat --oneline HEAD          # must list ONLY the archive commit's openspec/ paths
+git reset --hard HEAD~1                 # drop the archive commit; the change dir returns
+git rebase <integrationBranch>          # resolve only real code conflicts
+openspec archive <name> -y --json       # assert specsUpdated: true
 ```
 
 Then **verify the fold by counting and by name**: requirement/scenario counts

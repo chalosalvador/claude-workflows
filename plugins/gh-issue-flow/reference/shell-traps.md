@@ -37,10 +37,17 @@ doesn't split, sends ONE label `"improvement effort:hard"`, and GitHub silently
 **creates that junk label repo-wide**. Exit 0, response looks fine. Measured: 4 junk
 labels born across 5 issues during one triage run.
 
-Pass each label as its own explicit `-f "labels[]=…"`. To repair:
-`gh api -X DELETE "repos/{o}/{r}/labels/<name%20enc>"` removes it from every issue at
-once. **After any label-add loop, read the labels back and assert none contain a
-space.**
+Pass each label as its own explicit `-f "labels[]=…"`. To repair, **read first, then
+delete.** The delete is repo-wide and has no undo — it strips the label from every issue
+carrying it — so prove it is the junk one and not something a human made:
+
+```sh
+gh api "repos/{o}/{r}/issues?labels=<name%20enc>&state=all" --jq 'length'  # who carries it
+gh api "repos/{o}/{r}/labels/<name%20enc>" --jq '{name,description,color}' # a human's label has a description
+gh api -X DELETE "repos/{o}/{r}/labels/<name%20enc>"                       # only then
+```
+
+**After any label-add loop, read the labels back and assert none contain a space.**
 
 ### ⚠️ zsh applies HISTORY MODIFIERS to `$VAR:x`
 
