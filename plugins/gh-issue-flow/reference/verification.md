@@ -170,8 +170,7 @@ passed green against exactly the mutation it existed to catch.
 
 Do not write "this needs credentials I don't have" or "the tooling can't reach that"
 without probing first. Measured: a verification was reported as honest-limited for
-lack of credentials when the ambient application-default credentials were valid the
-whole time.
+lack of credentials when the ambient cloud credentials were valid the whole time.
 
 Probe the tooling, then state the limit — or state the finding.
 

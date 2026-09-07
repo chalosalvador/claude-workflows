@@ -271,8 +271,8 @@ Apply it only when **every** positive condition holds:
 | Labels `blocked`, `epic`, `legal`, `compliance`, `security` — or Status `Hold` | Needs a human owner (or a human un-parking) by definition |
 | Body says "Blocked by: #n" / "depends on" / "sequenced after" (unresolved) | Ordering constraint an agent will miss |
 | Priority P0 | A P0 deserves a person right now, not a queue |
-| Touches infrastructure, migrations, or CI workflow files | Human-gated |
-| Involves secrets, env vars, runtime config, or a credential swap | ⚠️ A credential/env change needs a **superset first** or no revision can boot — and the tooling silently stores empty or newline-suffixed values ([`secrets-and-ci.md`](../../reference/secrets-and-ci.md)) |
+| Touches infrastructure, migrations, or CI workflow files | Human-gated, by kind. Concrete paths for this repo: `workflow.json` → `agentReadyForbiddenPaths`; the stack doc § Infra and migrations names the apply commands and ordering |
+| Involves secrets, env vars, runtime config, or a credential swap | ⚠️ A credential/env change needs a **superset first** or no revision can boot — and provisioning tools silently store empty or newline-suffixed values ([`secrets-and-ci.md`](../../reference/secrets-and-ci.md)); how *this* platform is verified is in the stack doc § Secrets and env |
 | Analytics schema or view change | Needs a materialized-view rebuild ordered against the image roll |
 | Needs a coordinated change in two repos | Two PRs, one breaking moment |
 | Requires touching shared staging or prod | Merging the integration branch may deploy |

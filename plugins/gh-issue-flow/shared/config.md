@@ -67,11 +67,26 @@ done
 if [ -n "$WF" ]; then
   jq -r '"number=\(.board.number // "-")  owner=\(.board.owner // "-")"' "$WF"
   jq -r '"schema=\(.schemaVersion // 0)"' "$WF"        # step 4 compares this to Current schema
+  jq -r '"stacks=\(.stacks // [] | join(",") | if . == "" then "-" else . end)"' "$WF"  # step 5
   echo "src=$WF"
 else
   echo "NO workflow.json in $WT or $MAIN"
 fi
+SD=""                                                   # the stack docs live beside it — same two places
+for D in "$WT" "$MAIN"; do
+  [ -d "$D/.claude/workflow/stacks" ] && { SD="$D/.claude/workflow/stacks"; break; }
+done
+if [ -n "$SD" ]; then
+  find "$SD" -maxdepth 1 -name '*.md' | sort | sed 's#.*/#stackdoc=#'
+else
+  echo "NO stacks dir in $WT or $MAIN"
+fi
 ```
+
+⚠️ **`find`, not a glob, for the stack docs.** MEASURED: `ls "$SD/"*.md` on an
+existing-but-empty directory is a zsh `no matches found` error at exit 0 — no listing, no
+sentinel, and the main checkout never tried. `find` prints nothing and the `else` still
+distinguishes "no directory" from "empty directory".
 
 ⚠️ **The `|| { … exit 1; }` is not decoration either.** Without it, both `git rev-parse`
 calls fail, `WT` is empty and `dirname ""` is `.`, so the loop quietly tests
@@ -146,6 +161,14 @@ Layer 3, so a behind file is never a failure. But say it every run. `claude plug
 refreshes the plugin's code and tells no repo that its config is now behind; this line
 is the only thing that does.
 
+**Step 5 — stack docs.** Step 1 printed `stacks=<names or ->` from `workflow.json` and
+one `stackdoc=<file>` line per file found. Reconcile them: every name must have a file
+and every file a name. A mismatch is a finding to report in one line — a name with no
+file means the doc never shipped (commonly `.claude/` gitignored, § Layer 2 → Stack
+docs); a file with no name means `setup upgrade` has not run since it was written. Then
+read only the files that are named. `stacks=-` at schema 2 is a deliberate "this repo
+detected no stack" (`"stacks": []`); `stacks=-` below schema 2 is covered by step 4.
+
 
 ---
 
@@ -155,7 +178,8 @@ The per-repo override. Read it from the repo root you are working in.
 
 ```json
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
+  "stacks": ["gcp-terraform"],
   "repos": ["acme/acme-api", "acme/acme-web"],
   "board": { "number": 11, "owner": "acme" },
   "integrationBranch": "origin/dev",
@@ -189,7 +213,7 @@ Every key is optional. Absent keys fall through to Layer 3.
 
 ### Schema
 
-**Current schema: 1.** A file with no `schemaVersion` is schema **0** — the shape that
+**Current schema: 2.** A file with no `schemaVersion` is schema **0** — the shape that
 shipped through plugin 0.5.x. `setup` writes the current number on bootstrap and
 `setup upgrade` moves an older file forward by adding what it lacks. **Since** is the
 schema a key arrived in; that column is the migration list, and it is what the drift
@@ -218,6 +242,58 @@ example above and `setup`'s probe list to the same key set.
 | `trackForArea` | 0 | § 5 | `area:*` label → board Track option |
 | `agentReadyForbiddenPaths` | 0 | § 2 | Paths an unattended run must never touch |
 | `$comment*` | 0 | § 3 | Provenance for the human reader; never read by a skill |
+| `stacks` | 2 | § 5b | The stack doc names this repo carries, one per file in `.claude/workflow/stacks/`; `[]` when the evidence names none |
+
+### Stack docs — `.claude/workflow/stacks/`
+
+**Everything stack-specific lives in the repo, not in this plugin.** What merging the
+integration branch actually does, how a secret is set and read back on this platform,
+which directories an unattended run must never touch, which bot reviews PRs and what its
+comments look like, which invariants a reviewer must check — all of that differs per
+repo, and the plugin's reference docs are stack-neutral on purpose. `setup` § 5b
+generates one markdown file per stack from what it probed, using the skeleton at
+`skills/setup/stack-template.md`; humans fill in what a probe cannot know.
+
+**`workflow.json` → `stacks` names them; the files live at
+`.claude/workflow/stacks/<name>.md`.** Both are written by `setup` § 5b in the same run,
+so the key is the inventory and the directory is the read-back: § Layer 1 step 1 prints
+both (it already looks in the worktree and then the main checkout, because `.claude/` is
+commonly gitignored in a worktree) and step 5 reconciles them. A name with no file, or a
+file with no name, is a one-line finding, never a silent skip. The key is what lets the
+drift line, `upgrade`, and `$comment_stacks` provenance carry stack docs exactly the way
+they carry every other key.
+
+**Skills read the section headers**, which is why the skeleton says to keep them exactly:
+
+| Section | Read by | For |
+|---|---|---|
+| Identity | `setup` read-back | the name, the evidence it came from, the date |
+| Deploy | `issue-planner` (into HANDOFF), [`execution.md`](execution.md) § 7, the `deploy` lens via HANDOFF | what a merge does, and the paths filter — as a **starting point**; § 7 still verifies against the live workflow |
+| Secrets and env | `triage` § 4, `autopilot` § 7 | why a credential change is human-gated here, and how a value is verified |
+| Infra and migrations | `triage` § 4, `autopilot` § 3, the `deploy` lens via HANDOFF | the apply commands and the ordering rules; the forbidden paths stay in `workflow.json` |
+| Review bot | [`execution.md`](execution.md) § 5 | which comment is an ack and which is a review |
+| Reviewer invariants | `issue-planner` (into HANDOFF), the `safety` and `contract` lenses via HANDOFF | the predicates and cross-store parities to check every diff against |
+| Traps | `issue-planner` (it reads the whole file); written only through the proposal line in `next-issue` § 6 and `autopilot` § 10 | measured incidents on this stack |
+
+**The planner reads the files once and carries the lines that apply into its HANDOFF
+`Stack doc:` field; the lenses read the HANDOFF, not the files.** That is
+[`execution.md`](execution.md) § 3.1 lever 1 applied, and it is also what keeps a lens
+spawned inside a worktree from missing a doc that sits in the main checkout.
+
+Three rules for a reader:
+
+- **A section marked `UNVERIFIED` is an unknown, not an all-clear.** Say "the stack doc
+  does not say" rather than proceeding as if the answer were "nothing".
+- **The doc is a snapshot.** For anything that decides a deploy claim, start from the
+  doc and verify against the live workflow ([`execution.md`](execution.md) § 7). A doc
+  that disagrees with the workflow is a finding to report, and the workflow wins.
+- **Agents do not edit stack docs.** A run that learns something says so in its PR
+  handoff — "add to `stacks/<name>.md` § Traps" — and a human commits it.
+
+**No stack docs at all** has two honest shapes, and § Layer 1 tells them apart: a file
+below schema 2 gets the drift line naming `stacks` as missing; a file at schema 2 with
+`"stacks": []` chose none, and step 5 says so in one line. Every skill still works from
+the generic rules; what it loses is the stack-specific half of each lens.
 
 Six of them carry weight the others do not:
 
@@ -266,6 +342,7 @@ gh repo view --json nameWithOwner,defaultBranchRef,squashMergeAllowed,rebaseMerg
 | `specFlow` | An `openspec/` directory at the repo root → `"openspec"`. Otherwise none. See [`../reference/openspec.md`](../reference/openspec.md). |
 | `mergeMethod` | `squashMergeAllowed` / `rebaseMergeAllowed` from `gh repo view`. |
 | `deployOnMerge` | Grep `.github/workflows/` for a workflow with `branches: [<integration>]` that deploys. **Do not assume a merge is inert.** |
+| `stacks` | The file names under `.claude/workflow/stacks/` (§ Layer 1 step 1 lists them). Nothing there → none. |
 | Required checks | `gh api repos/<owner>/<repo>/branches/<b>/protection` |
 
 **Prefer copying from the CI workflow when it disagrees with anything else.** The

@@ -18,7 +18,7 @@ lens, then adjudicate the merged findings yourself. Typical lenses:
 | `correctness` | Does this do what it says on every input? |
 | `contract` | Does it change a wire/API/schema contract, and is the other side updated? |
 | `scoping` | What else reaches the code this touches, that the diff does not touch? |
-| `safety` | Tenant predicates, credentials, secrets — is the blast radius contained? |
+| `safety` | Credentials, secrets, and the isolation invariants the repo's stack doc declares — is the blast radius contained? |
 | `tests` | Do the tests bite? Would they catch the bug they name? |
 | `deploy` | What happens on rollout, rollback, and a partial apply? |
 
@@ -198,8 +198,12 @@ while skipping them for the limit, so the command had nothing to do.
 - **A re-trigger alone does not undo a rate-limited skip — only a NEW COMMIT does.**
 - The wait window is **variable** (13 min in one case, 34 in another) — read it from
   the comment.
-- **Distinguish the two comment shapes by body, never by count:** an ack matches
-  `Review triggered`; a real review matches `Actionable comments|Walkthrough`.
+- **Distinguish the two comment shapes by body, never by count.** The ack and
+  real-review patterns are bot-specific: read them from the repo's stack doc § Review
+  bot. If that section is `UNVERIFIED`, the loop cannot tell them apart — say so in the
+  report, and propose the two patterns in the PR handoff from two of the bot's past
+  comments for a human to commit. You do not edit the stack doc. A loop that cannot tell
+  an ack from a review and polls anyway reports a review that never happened.
 - If you merge knowing a bot never looked, **say so** rather than letting an all-pass
   check board imply two reviews happened.
 

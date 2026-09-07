@@ -36,6 +36,13 @@ and then implemented by another agent. Write it for that reader.
   to change. **Every file and symbol you name must be one you have read** — never a
   guess.
 - Check the repo's `AGENTS.md` / `CLAUDE.md`; it is authoritative over anything else.
+- Read the repo's stack docs — the files `workflow.json` → `stacks` names under
+  `.claude/workflow/stacks/`, in the worktree first and then the main checkout, because
+  `.claude/` is often gitignored in a worktree. § Deploy and § Infra and migrations
+  decide RISKS; § Reviewer invariants decides whether `safety` is a lens this diff
+  needs. **Carry the lines that apply into HANDOFF's `Stack doc:` field** — the lenses
+  read that field, not the files, so a line you leave out is a line no reviewer sees. A
+  section marked `UNVERIFIED` is an unknown — put it under `Still unverified`.
 - If the repo has a spec flow, read its specs and its spec config — you have to name a
   **real** capability in SPEC IMPACT, and the capability list differs per repo.
   ⚠️ **Read it from the REMOTE integration branch**
@@ -78,6 +85,9 @@ Gate:              <commands> — result when run: <pass/fail>
 Environment:       <venv path / how to run it, if one exists>
 Already verified:  <what you measured, so nobody measures it twice>
 Still unverified:  <what you could NOT check — where reviewers should look>
+Stack doc:         <the § Deploy, § Infra and migrations and § Reviewer invariants lines
+                    that apply to THIS diff, verbatim — or "none carried: <no stack doc |
+                    section UNVERIFIED | nothing applies>". Never blank.>
 Noticed:           <real but out of scope. ONE line each, no analysis>
 ```
 
@@ -128,9 +138,10 @@ list the ones you skipped with the reason. This gates a parallel max-effort revi
 unearned lens costs real tokens, a missing one costs a real bug.
 
 `scoping` and `safety` are different questions and are skipped for different reasons:
-`scoping` asks what else reaches the code this diff touches; `safety` asks about tenant
-predicates, credentials and secrets. A diff with no tenant-scoped query still gets
-`scoping` if anything outside the diff calls into what it changed.
+`scoping` asks what else reaches the code this diff touches; `safety` asks about
+credentials, secrets and the isolation invariants the repo's stack docs declare. A diff
+with no isolation-scoped query still gets `scoping` if anything outside the diff calls
+into what it changed.
 
 🚨 **If this change adds a guard, validation or invariant, `scoping` is not optional** —
 name it, and name the callers you already know about so the reviewer starts from a list

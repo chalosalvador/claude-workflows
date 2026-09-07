@@ -322,7 +322,11 @@ passing one: a conflicting PR skips its workflow entirely. See
 ⚠️ **A passing bot check is not evidence of zero findings** — findings can fail to
 post as threads and sit in a collapsed section of its summary comment. Read the
 summary body. See
-[`../reference/review-process.md`](../reference/review-process.md).
+[`../reference/review-process.md`](../reference/review-process.md). Which comment is an
+acknowledgement and which is a review is bot-specific: the patterns are in the repo's
+stack doc § Review bot ([`config.md`](config.md) § Stack docs), and if that section is
+`UNVERIFIED` the loop cannot tell them apart — say so in the report rather than counting
+comments.
 
 Green CI and a green bot are **never** sufficient evidence a control holds — they are
 the floor, not the gate. Expect several rounds on anything security- or
@@ -348,7 +352,10 @@ call.
 
 ## 7. Deploy consequences
 
-**Read the workflow, not a written summary.** Determine, per repo:
+**Read the workflow, not a written summary.** The repo's stack doc § Deploy
+([`config.md`](config.md) § Stack docs) is where to *start* — it names the workflow and
+carries the paths filter as of the day it was generated — and the live workflow is what
+you verify against. Determine, per repo:
 
 ```sh
 grep -rl "branches:" .github/workflows/ | xargs grep -l "<integration-branch>"

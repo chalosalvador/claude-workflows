@@ -10,6 +10,8 @@ python3 tests/test_single_owner_facts.py
 python3 tests/test_no_stray_files.py
 python3 tests/test_version_agreement.py
 python3 tests/test_config_schema.py
+python3 tests/test_links.py
+python3 tests/test_stack_headers.py
 claude plugin validate ./plugins/gh-issue-flow --strict
 claude plugin validate . --strict
 ```
@@ -212,6 +214,23 @@ re-prove it; the must-stay-green half is what stops it reddening on ordinary ref
 a dropped row, an example key with no row, a Since above Current, a key setup never
 mentions, a missing Current line, a duplicate row and an emptied table all red; reversed
 rows, padded cells, a reworded Meaning and a legitimate schema bump stay green.
+
+`tests/test_links.py` is mutation-proven **7/7 (5 kill + 2 must-stay-green)**: a typo'd
+path, a link to an untracked file, a link escaping the repo, a link climbing out of the
+plugin directory to a marketplace-only path, and a parser that matches nothing all red;
+an anchor link and a mix of `./`, directory, `https:` and `#` links stay green. Its
+positive-case floor (`MIN_LINKS`) is a measured number. Two lessons from its own review:
+the first run reddened on two links quoted inside code spans, so it strips fences and
+spans first; and its first version passed the very `../../../tests/` link it was written
+for, because it checked the marketplace boundary and not the plugin's — the fifth kill
+case is that link.
+
+`tests/test_stack_headers.py` is mutation-proven **7/7 (5 kill + 2 must-stay-green)**: a
+renamed skeleton header, a renamed table row, a "§ Infra" short reference, demoted
+headers and an added header the table lacks all red; a reordered table and a mix of
+other § references with a full header name stay green. Its first version matched a
+reference greedily ("§ Infra before deciding") and let the short form through; the
+word-by-word comparison is the fix.
 
 **Facts live in one place.** `shared/execution.md` owns mechanics; skills own policy and
 link to it. If you find yourself pasting the same rule into two skills, it belongs in
