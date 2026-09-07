@@ -189,7 +189,7 @@ Every key is optional. Absent keys fall through to Layer 3.
 
 ### Schema
 
-**Current schema: 1.** A file with no `schemaVersion` is schema **0** — the shape that
+**Current schema: 2.** A file with no `schemaVersion` is schema **0** — the shape that
 shipped through plugin 0.5.x. `setup` writes the current number on bootstrap and
 `setup upgrade` moves an older file forward by adding what it lacks. **Since** is the
 schema a key arrived in; that column is the migration list, and it is what the drift
@@ -218,6 +218,55 @@ example above and `setup`'s probe list to the same key set.
 | `trackForArea` | 0 | § 5 | `area:*` label → board Track option |
 | `agentReadyForbiddenPaths` | 0 | § 2 | Paths an unattended run must never touch |
 | `$comment*` | 0 | § 3 | Provenance for the human reader; never read by a skill |
+| `.claude/workflow/stacks/` | 2 | § 5b | Directory of per-repo stack docs, one file per stack — not a key, but part of the shape `upgrade` carries forward |
+
+### Stack docs — `.claude/workflow/stacks/`
+
+**Everything stack-specific lives in the repo, not in this plugin.** What merging the
+integration branch actually does, how a secret is set and read back on this platform,
+which directories an unattended run must never touch, which bot reviews PRs and what its
+comments look like, which invariants a reviewer must check — all of that differs per
+repo, and the plugin's reference docs are stack-neutral on purpose. `setup` § 5b
+generates one markdown file per stack from what it probed, using the skeleton at
+`skills/setup/stack-template.md`; humans fill in what a probe cannot know.
+
+**Discovery is by directory.** Every `*.md` in `.claude/workflow/stacks/` is a stack doc;
+nothing in `workflow.json` lists them, so nothing can drift out of step. The directory
+is looked up the same way as `workflow.json` — worktree first, then the main checkout —
+because `.claude/` is commonly gitignored in a worktree:
+
+```sh
+WT=$(git rev-parse --show-toplevel) || { echo "NOT A GIT REPO"; exit 1; }
+MAIN=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
+for D in "$WT" "$MAIN"; do
+  [ -d "$D/.claude/workflow/stacks" ] && { ls "$D/.claude/workflow/stacks/"*.md; break; }
+done || echo "no stack docs"
+```
+
+**Skills read the section headers**, which is why the skeleton says to keep them exactly:
+
+| Section | Read by | For |
+|---|---|---|
+| Deploy | `issue-planner` RISKS, [`execution.md`](execution.md) § 7, the `deploy` lens | what a merge does, and the paths filter — as a **starting point**; § 7 still verifies against the live workflow |
+| Secrets and env | `triage` § 4, `autopilot` § 7 | why a credential change is human-gated here, and how a value is verified |
+| Infra and migrations | `triage` § 4, `autopilot` § 3, the `deploy` lens | the forbidden paths and the ordering rules |
+| Review bot | [`execution.md`](execution.md) § 5 | which comment is an ack and which is a review |
+| Reviewer invariants | the `safety` and `contract` lenses, `issue-planner` | the predicates and cross-store parities to check every diff against |
+| Traps | PR bodies, handoffs | measured incidents on this stack |
+
+Three rules for a reader:
+
+- **A section marked `UNVERIFIED` is an unknown, not an all-clear.** Say "the stack doc
+  does not say" rather than proceeding as if the answer were "nothing".
+- **The doc is a snapshot.** For anything that decides a deploy claim, start from the
+  doc and verify against the live workflow ([`execution.md`](execution.md) § 7). A doc
+  that disagrees with the workflow is a finding to report, and the workflow wins.
+- **Agents do not edit stack docs.** A run that learns something says so in its PR
+  handoff — "add to `stacks/<name>.md` § Traps" — and a human commits it.
+
+**No stack docs at all** is a normal state for a repo that has not run `setup` since
+schema 2, and the drift line in § Layer 1 step 4 says so. Every skill still works from
+the generic rules; what it loses is the stack-specific half of each lens.
 
 Six of them carry weight the others do not:
 

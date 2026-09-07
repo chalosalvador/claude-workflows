@@ -577,9 +577,9 @@ the current version contains. That is the same failure this repo keeps recording
 empty or stale read is indistinguishable from a good one.
 
 ⚠️ The harnesses were throwaway and are not tracked — the guard suite is Python and this is
-JS, and these optional layers do not earn a new file class in
-[`../../../tests/`](../../../tests). Rebuild them if you change either script; each is
-about twenty lines of stubs.
+JS, and these optional layers do not earn a new file class in the marketplace repo's
+`tests/` directory (which an installed plugin does not carry). Rebuild them if you
+change either script; each is about twenty lines of stubs.
 
 **Not measured** — everything that needs a live board and a real model:
 

@@ -51,6 +51,11 @@ jobs:
       - name: Config schema agrees
         run: python3 tests/test_config_schema.py
 
+      # Skills link to the owner of each fact instead of restating it. A link that
+      # points at a moved file silently drops the rule from the run.
+      - name: Relative links resolve
+        run: python3 tests/test_links.py
+
       - name: Plugin + marketplace manifests
         run: |
           npm i -g @anthropic-ai/claude-code

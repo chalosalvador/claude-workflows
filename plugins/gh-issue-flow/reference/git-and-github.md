@@ -37,7 +37,7 @@ message named directories that did not exist on the branch at all.
 check whether the base moved before assuming flake:**
 
 ```bash
-git fetch origin && git merge-base --is-ancestor origin/main HEAD
+git fetch origin && git merge-base --is-ancestor <integrationBranch> HEAD   # the remote ref — never `main` by assumption
 ```
 
 - To reproduce locally, **merge the base in first** — the local suite alone cannot
@@ -207,11 +207,13 @@ counts — a `-` in either column means binary.
 
 ## Merging
 
-- **Always `--squash`.** Read the state back afterwards (`gh pr view <n> --json
+- **Merge the way the repo says** — `workflow.json` → `mergeMethod`, probed from
+  `gh repo view` when absent. A repo that disallows squash rejects `--squash`; one that
+  requires linear history rejects a merge commit. Read the state back afterwards (`gh pr view <n> --json
   state,mergedAt,mergeCommit`) — see `verification.md` §1, `gh pr merge` exits 0 on
   merges that did not happen *and* exits 1 on merges that did.
-- **Branch off the remote ref explicitly**: `git checkout -b feat/x origin/main`.
-  Fetching is not pulling.
+- **Branch off the remote ref explicitly**: `git checkout -b feat/x <integrationBranch>`,
+  resolved per `shared/config.md` — never `main` by assumption. Fetching is not pulling.
 - ⚠️ Piping a `gh` command into `tail`/`head` makes the pipeline's exit status that of
   `tail`, so an `||` fallback never fires and a failure looks like success.
 
@@ -224,6 +226,8 @@ demoting a user does nothing while a team they belong to holds repo admin. And i
 *own* admin comes only from that team, lowering the team first is a self-lockout.
 Check both paths before changing either.
 
-🚨 **A repo transfer switches the OIDC subject.** A transfer after 2026-07-15 silently
-moves GitHub's OIDC `sub` to the immutable `owner@id/repo@id` form, breaking every WIF
-`principal://` binding. The failure surfaces only as impersonation 403s.
+🚨 **A repo transfer can change the identity a cloud trusts.** Identity federation binds
+on GitHub's OIDC subject, and a transfer can rewrite that subject to a different form;
+the failure surfaces only as impersonation 403s, far from the cause, on a workflow that
+ran yesterday. Which subject form this stack binds and what the transfer did to it belongs
+in the repo's stack doc § Traps.

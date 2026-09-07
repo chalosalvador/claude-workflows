@@ -36,6 +36,8 @@ diff between it and what you would write, and let the user choose.
 - [ ] 3. Write .claude/workflow.json  (bootstrap only) — or add its missing keys (upgrade only)
 - [ ] 4. Labels — create the ones the skills read  (bootstrap only)
 - [ ] 5. Board — verify the fields exist; create what gh can  (bootstrap only)
+- [ ] 5b. Stacks — name the stack(s), generate .claude/workflow/stacks/<name>.md from
+         what § 2 probed, list every UNVERIFIED section  (bootstrap + upgrade)
 - [ ] 6. Confirm the two agents loaded, and say what they are for
 - [ ] 7. Report: what is configured, what is missing, what only a human can do
 ```
@@ -139,7 +141,8 @@ you here.
 - [ ] 1. Read the file. `.schemaVersion // 0` is where it stands; Current schema is
          where it should be. Equal → say so in one line and stop.
 - [ ] 2. From the schema table, take every key whose Since is greater than the file's
-         version — PLUS any other key the file lacks that § 2 knows how to probe.
+         version — PLUS any other key the file lacks that § 2 knows how to probe. The
+         `.claude/workflow/stacks/` row means: run § 5b too.
 - [ ] 3. Probe each exactly as § 2 does. Show the proposed keys with their sources and
          ASK. A probe is a proposal, not a decision.
 - [ ] 4. Write ONLY the missing keys, each with a `$comment_<key>` naming the plugin
@@ -275,6 +278,75 @@ than implying the board is broken.
 ⚠️ **Never hardcode a field or option id** into `workflow.json` or anywhere else.
 Resolve them from `field-list` in the same run that uses them.
 
+## 5b. Stacks — the repo's own operational knowledge
+
+The plugin's reference docs are stack-neutral on purpose. What merging deploys, how a
+secret is provisioned and verified, which paths an unattended run must never touch,
+which bot reviews PRs and what its comments look like — all of that differs per repo,
+so it lives **in the repo**: `.claude/workflow/stacks/<name>.md`, one file per stack,
+discovered by directory. Which skill reads which section:
+[`shared/config.md`](../../shared/config.md) § Stack docs.
+
+Runs in **bootstrap and upgrade**. Check reports what it would generate and writes
+nothing.
+
+```
+- [ ] 1. Name the stack(s) from EVIDENCE — the table below. Never from a README.
+- [ ] 2. Copy the skeleton:  cat "${CLAUDE_PLUGIN_ROOT}/skills/setup/stack-template.md"
+- [ ] 3. Fill each section from what § 2 already probed. Every filled line carries its
+         source path and today's date. Anything no probe answered stays
+         `UNVERIFIED — fill in`. Nothing is invented to fill a line.
+- [ ] 4. Show the file and ASK. A stack name is a proposal; the user may rename it,
+         split it in two, or drop it.
+- [ ] 5. Write it. Read it back: every `##` header from the skeleton is present, exactly.
+- [ ] 6. List every UNVERIFIED section in § 7 Missing, with who can fill it.
+```
+
+**Naming.** A lowercase slug for the deploy target plus the infra tool, from what the
+repo contains — several may apply, and each gets its own file:
+
+| Evidence | Name |
+|---|---|
+| `vercel.json` or `.vercel/project.json` | `vercel` |
+| `fly.toml` | `fly` |
+| `netlify.toml` | `netlify` |
+| `gcloud run deploy` or `google-github-actions/*` in a workflow | `gcp-cloud-run` |
+| `aws ecs` / `aws-actions/*` in a workflow, or `serverless.yml` | `aws` |
+| `kubectl` / `helm` in a workflow, or a `k8s/` dir | `kubernetes` |
+| `*.tf` or `terraform/` | `terraform`, prefixed by the provider the `.tf` names: `gcp-terraform`, `aws-terraform` |
+| a `Dockerfile` alone | not a stack — it says nothing about where it runs |
+
+Read the workflow lines, not just the file names: a `Dockerfile` plus a workflow that
+runs `gcloud run deploy` is `gcp-cloud-run`. When the evidence names nothing, **write no
+stack doc and say so** — the generic reference docs still apply, and an invented stack
+is worse than none.
+
+**Filling from § 2.** Most of the Deploy and Infra sections are already known by the
+time you get here: `deployOnMerge` and `deployWorkflow` go under Deploy with the
+workflow's `paths` / `paths-ignore` copied verbatim; `agentReadyForbiddenPaths` and the
+migration directory go under Infra. Secrets and env gets whatever provisioning commands
+the workflows and scripts contain — `secrets.` references, `env add`, `secrets versions
+add` — as PROBED lines, and `UNVERIFIED` for the read-back, which no probe can know.
+
+**Review bot.** Detect, do not assume:
+
+```sh
+ls .coderabbit.yaml .coderabbit.yml 2>/dev/null                       # config file → that bot
+gh api repos/<owner>/<repo>/branches/<b>/protection --jq '.required_status_checks.contexts[]?'
+gh pr list --repo <owner>/<repo> --state merged --limit 5 --json number --jq '.[].number' \
+  | while read n; do gh api "repos/<owner>/<repo>/issues/$n/comments" --jq '.[].user.login'; done \
+  | grep '\[bot\]$' | sort | uniq -c                                  # who actually comments
+```
+
+Write the login and where it came from. The ack and real-review patterns are
+`UNVERIFIED` until a human pastes two of the bot's comments and writes the regexes —
+that is one of the Missing rows, and the babysit loop cannot tell an ack from a review
+without it.
+
+**Upgrade on a repo that already has stack docs**: add any `##` header the skeleton has
+and the file lacks, with its body `UNVERIFIED`. **Never touch a filled section**, and
+never rename a file — a human chose that name.
+
 ## 6. Confirm the agents
 
 The workflow's quality comes from two subagents, and a user who does not know they exist
@@ -356,7 +428,8 @@ Print three blocks, in this order:
 |---|---|---|
 | integrationBranch | `origin/dev` | `gh repo view` default branch |
 | validate | 3 commands | `.github/workflows/ci.yml` job `test` |
-| schemaVersion | 1 | current schema, `shared/config.md` § Layer 2 |
+| schemaVersion | 2 | current schema, `shared/config.md` § Layer 2 |
+| stacks | `gcp-cloud-run`, `terraform` | `.github/workflows/deploy.yml`, `terraform/` |
 
 **Created** — labels and board fields, with anything skipped because it already existed.
 
@@ -396,6 +469,8 @@ triage at the previous project's board is silent and expensive to undo.
 |---|---|---|
 | No `Hold` Status option | No parked state; every Todo card is pickable | Board UI, one click |
 | `workflow.json` behind the schema | Keys the plugin gained are unknown here; skills run on defaults | `/gh-issue-flow:setup upgrade` |
+| `stacks/<name>.md` § Review bot patterns UNVERIFIED | The babysit loop cannot tell an ack from a review | A human pastes two bot comments and writes the two regexes |
+| `stacks/<name>.md` § Reviewer invariants UNVERIFIED | The `safety` lens has nothing stack-specific to check | The person who owns the data model writes one line per invariant |
 | `.claude/` is gitignored | Config is local-only; teammates get nothing | Add `!/.claude/workflow.json`, needs a PR |
 | No area labels yet | Triage cannot route assignees | Tell me your areas and I will create them |
 | Branch unprotected | Nothing blocks a red merge | Repo settings — a deliberate choice |

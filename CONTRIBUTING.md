@@ -10,6 +10,7 @@ python3 tests/test_single_owner_facts.py
 python3 tests/test_no_stray_files.py
 python3 tests/test_version_agreement.py
 python3 tests/test_config_schema.py
+python3 tests/test_links.py
 claude plugin validate ./plugins/gh-issue-flow --strict
 claude plugin validate . --strict
 ```
@@ -212,6 +213,13 @@ re-prove it; the must-stay-green half is what stops it reddening on ordinary ref
 a dropped row, an example key with no row, a Since above Current, a key setup never
 mentions, a missing Current line, a duplicate row and an emptied table all red; reversed
 rows, padded cells, a reworded Meaning and a legitimate schema bump stay green.
+
+`tests/test_links.py` is mutation-proven **6/6 (4 kill + 2 must-stay-green)**: a typo'd
+path, a link to an untracked file, a link escaping the repo and a parser that matches
+nothing all red; an anchor link and a mix of `./`, directory, `https:` and `#` links stay
+green. Its positive-case floor (`MIN_LINKS`) is a measured number, and the first run of
+this guard reddened on two links quoted inside code spans — which is why it now strips
+fences and spans first.
 
 **Facts live in one place.** `shared/execution.md` owns mechanics; skills own policy and
 link to it. If you find yourself pasting the same rule into two skills, it belongs in

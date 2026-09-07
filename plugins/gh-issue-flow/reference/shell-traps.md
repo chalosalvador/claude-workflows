@@ -52,7 +52,7 @@ gh api -X DELETE "repos/{o}/{r}/labels/<name%20enc>"                       # onl
 ### ⚠️ zsh applies HISTORY MODIFIERS to `$VAR:x`
 
 `$SA:getIamPolicy` does **not** expand to `<sa>:getIamPolicy`. zsh reads `:g` / `:e`
-as parameter modifiers, so a Google API URL built that way produced
+as parameter modifiers, so a REST URL built that way produced
 
 ```
 .../serviceAccounts/comtIamPolicy      # `:e` took the "extension" of the email
@@ -214,12 +214,12 @@ temporary role grant, none visible in a static read. Generic to any "take a
 credential, do a thing, give it back" script:
 
 - **A piped read conflates "read failed" with "nothing found".**
-  `gcloud … get-iam-policy … | grep -qx "$ME"` produces no match in both cases, so an
+  `<read the policy> | grep -qx "$ME"` produces no match in both cases, so an
   unreadable policy takes the *no binding* branch → blind grant → cleanup revokes
   access that predated the run. ⚠️ Made **twice in one file**, the second time inside
   the branch added to fix the first. Capture output and `$?` **separately**; treat
   unknown as a stop, not a guess.
-- **Arm the cleanup BEFORE the call that creates the grant.** `add-iam-policy-binding`
+- **Arm the cleanup BEFORE the call that creates the grant.** A grant call
   is a multi-second round trip and the API can apply the binding before the CLI
   returns; a flag set *after* means Ctrl-C strands it. The flag means "this run MAY
   have created it".
@@ -227,7 +227,7 @@ credential, do a thing, give it back" script:
   failed add through cleanup, so an unconditional 🚨 fires when nothing is wrong — and
   an alarm that cries wolf is one the operator scrolls past. Three outcomes:
   removed / still there / cannot confirm.
-- **`add-iam-policy-binding` is IDEMPOTENT**, so add-then-remove silently revokes a
+- **Grant calls are commonly IDEMPOTENT**, so add-then-remove silently revokes a
   binding the operator already had. Only remove what this run created.
 - **Tokens on argv are readable via `ps` by any user on the box.** Both
   `-d "access_token=$T"` and `-H "Authorization: Bearer $T"` count. Use
@@ -237,8 +237,9 @@ credential, do a thing, give it back" script:
   execution continues, then it fires again on EXIT. Use `trap cleanup EXIT` plus
   `trap 'exit 130' INT` / `trap 'exit 143' TERM`.
 
-> ⚠️ `gcloud config get-value account` is **not** the identity that impersonates — ADC
-> is, and the two stores are independent.
+> ⚠️ The CLI's configured account and the identity a script actually impersonates can be
+> two independent stores. Which is which on this stack — and the commands above in this
+> stack's spelling — belongs in the repo's stack doc § Secrets and env.
 
 **Prose cannot hold this invariant.** The first version of the procedure was a comment
 saying *"put the removal in a `trap`, not a final line"* directly above commands with

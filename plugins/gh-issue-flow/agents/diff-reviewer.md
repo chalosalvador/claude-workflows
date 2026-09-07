@@ -61,8 +61,9 @@ state mutated where it's shared.
 contract is consumed by another, a response-shape, field-name, or auth change on
 one side without the other is a break even when both sides compile. Also
 read/write asymmetry: a field written but missing from a second store's read, a
-parity check, or an analytics view; a new column that needs a materialized view
-refreshed before the image rolls.
+parity check, or a derived store (a view, an index, a cache) that has to be rebuilt in
+order against the rollout. The repo's stack doc § Reviewer invariants lists the
+cross-store parities this repo depends on; check each one that the diff touches.
 
 **scoping** — Blast radius. What ELSE reaches the code this diff changes or
 guards, that the diff does not touch? Every other lens is scoped to the changed
@@ -82,10 +83,14 @@ enumerate each one:
 **"That file is not in the diff" is the reason a hole survives review, never a
 reason to stop looking.** A caller you cannot rule out is a finding.
 
-**safety** — Tenant and credential safety. Any query touching tenant-scoped
-data without its tenant predicate. Credential or env changes that remove a
-variable without a superset landing first (that wedges a container platform — no
-revision can boot). Secrets in code, logs, or fixtures.
+**safety** — Credential, secret and data-isolation safety. Start from the repo's
+`.claude/workflow/stacks/*.md` § Reviewer invariants — the predicate every query on
+isolated data must carry, the boundary every write must respect — and check each
+line against the diff. With no stack doc, or an `UNVERIFIED` section, say so in one
+line and fall back to what the code itself declares: row-level filters, ownership
+columns, auth scopes. Credential or env changes that remove a variable without a
+superset landing first (that wedges a container platform — no revision can boot).
+Secrets in code, logs, or fixtures.
 
 **tests** — Whether the added tests would fail if the change were reverted. Tests
 that pass either way are not coverage. Also: cases the diff makes reachable that

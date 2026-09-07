@@ -306,7 +306,8 @@ decision someone has to make.
 gate failure → § Handing it back. Credential and env changes are hand-work for a reason —
 the provisioning tools store empty values, trailing newlines and write-only types without
 erroring, and every failure surfaces far from the cause:
-[`../../reference/secrets-and-ci.md`](../../reference/secrets-and-ci.md).
+[`../../reference/secrets-and-ci.md`](../../reference/secrets-and-ci.md) for the rules,
+the repo's stack doc § Secrets and env for this platform's spelling.
 
 ## 8. Validation gate
 
