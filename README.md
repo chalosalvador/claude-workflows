@@ -257,7 +257,7 @@ config resolution) and [`shared/execution.md`](plugins/gh-issue-flow/shared/exec
 by the repo: deploy, secrets, infra, review bot, reviewer invariants, traps. Nothing
 stack-specific ships in the plugin.
 
-**Reference** — eleven docs of measured operational knowledge, stack-neutral; see
+**Reference** — twelve docs of measured operational knowledge, stack-neutral; see
 [its README](plugins/gh-issue-flow/reference/README.md).
 
 ## Develop

@@ -231,8 +231,13 @@ before deciding; **an effort label you guessed is worse than none.**
 `Critical→P0` · `High→P1` · `Medium→P2` · `Low→P3`.
 
 - 🚨 **P0 is code/technical-critical ONLY** — prod broken, data loss, active security
-  exposure, a customer blocked. Legal / policy / contractual items **cap at P1** no
-  matter how urgent they read, and take the `legal` label.
+  exposure, a customer blocked.
+- **Label caps come from `workflow.json` → `priorityCaps`**, a map of label → highest
+  priority that label may carry. **Absent, it means `{"legal": "P1"}`**: legal, policy
+  and contractual items take the `legal` label and cap at P1 no matter how urgent they
+  read — a lawyer's deadline is not an outage. A repo that wants no caps sets `{}`; a
+  repo with other human-gated categories adds them. Apply the cap after the verdict, and
+  say in the receipt when it moved a priority.
 - **Only fill blanks.** If a Priority is set, leave it and put the disagreement in the
   receipt with one line of reasoning. Priority is a human negotiation; silently
   overwriting it destroys trust in the whole routine.
@@ -273,7 +278,7 @@ Apply it only when **every** positive condition holds:
 | Priority P0 | A P0 deserves a person right now, not a queue |
 | Touches infrastructure, migrations, or CI workflow files | Human-gated, by kind. Concrete paths for this repo: `workflow.json` → `agentReadyForbiddenPaths`; the stack doc § Infra and migrations names the apply commands and ordering |
 | Involves secrets, env vars, runtime config, or a credential swap | ⚠️ A credential/env change needs a **superset first** or no revision can boot — and provisioning tools silently store empty or newline-suffixed values ([`secrets-and-ci.md`](../../reference/secrets-and-ci.md)); how *this* platform is verified is in the stack doc § Secrets and env |
-| Analytics schema or view change | Needs a materialized-view rebuild ordered against the image roll |
+| Changes a store that another store derives from — a view, an index, a sync target; the stack doc § Infra and migrations names them and their rebuild order | The derived store has to be rebuilt in order against the rollout, and an unattended run cannot sequence that. With no stack doc, any schema change is this row |
 | Needs a coordinated change in two repos | Two PRs, one breaking moment |
 | Requires touching shared staging or prod | Merging the integration branch may deploy |
 
