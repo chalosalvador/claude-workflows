@@ -9,7 +9,8 @@ file interprets, are [`config.md`](config.md) § Resolving `workflow.json`.
 
 ## Resolution
 
-🚨 **That is why Layer 1 is only the DEFAULT board, never the answer.** A workspace that
+🚨 **Layer 1 — the plugin's `userConfig`, one value per machine (config.md § Layer 1) — is
+only the DEFAULT board, never the answer.** A workspace that
 targets a different board sets it in that repo's `workflow.json` → `board`, which wins.
 Resolution order, every run:
 
