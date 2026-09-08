@@ -11,58 +11,58 @@ paths or hardcoded logins.
 Mirror this structure, level of specificity, and tone. Only the content changes.
 
 ```
-Implement GitHub issue #412 in the acme-api repo: "Carry the audit payload through
-the canonical envelope into the analytics feed".
+Implement GitHub issue #412 in the acme-api repo: "Carry the order note through the
+event envelope into the reporting store".
 https://github.com/acme/acme-api/issues/412
 
 Repo: acme-api/ (run from the repo root; it is its own git root). Use the .venv
 there. git fetch, then branch off origin/dev — the integration branch, NOT main.
 
-CONTEXT: Direct follow-up to #399 (merged, PR #401), which populated a structured
-before/after `payload` on admin-action audit events on the Postgres path. Today the
-canonical envelope drops `payload`, so once a tenant cuts over to the analytics
-feed, GET /api/audit?kind=admin_action returns `payload: null` — a silent
-regression. This issue carries `payload` end-to-end so both paths return IDENTICAL
-payloads. Decision-event payloads are unaffected.
+CONTEXT: Direct follow-up to #399 (merged, PR #401), which added a free-text `note`
+to cancelled-order events on the primary-database path. Today the event envelope
+drops `note`, so once a customer is switched to the reporting feed,
+GET /api/orders?kind=cancelled returns `note: null` — a silent regression. This
+issue carries `note` end-to-end so both stores return IDENTICAL values. Refund
+events are unaffected.
 
-DECIDE FIRST: Confirm product wants payload parity in production. Given #399 exists
-specifically to feed the before/after diff rendering, the answer is almost
-certainly YES — but post a short comment on #412 stating the decision + plan, and
-proceed with "carry it through" unless told otherwise.
+DECIDE FIRST: Confirm product wants note parity in production. Given #399 exists
+specifically to feed the cancellation-reason report, the answer is almost certainly
+YES — but post a short comment on #412 stating the decision + plan, and proceed with
+"carry it through" unless told otherwise.
 
 SCOPE:
-- Envelope: add a nullable generic-JSON `payload` to the canonical admin_action
-  event in api/events.py (build_admin_action_event) + the publisher path.
-- Analytics landing schema + view: add { name="payload", type="JSON",
-  mode="NULLABLE" }, mirroring the existing `metadata` column exactly.
-- Read path: surface it in the audit query, matching the Postgres shape.
-- NOT changing: decision events, the Postgres write path (#399 already did it).
+- Envelope: add a nullable string `note` to the cancelled-order event in
+  api/events.py (build_order_event) + the publisher path.
+- Reporting store: migration adding a nullable `note` column, mirroring the existing
+  `reason` column exactly — migrations/0042_order_note.sql.
+- Read path: surface it in the orders query, matching the primary store's shape.
+- NOT changing: refund events, the primary write path (#399 already did it).
 
-SPEC: change `412-audit-payload-analytics`, capability `audit-feed` (confirmed via
+SPEC: change `412-order-note-reporting`, capability `order-feed` (confirmed via
 `openspec list --specs`). Delta, not skip_specs.
   ## MODIFIED Requirements
-  ### Requirement: The audit feed SHALL return an identical payload on both stores
-  Grounded in api/events.py:build_admin_action_event and api/audit.py:query_audit.
-  #### Scenario: An admin action is read back from the analytics store
-  WHEN an admin_action event with a non-null payload is published
-  THEN GET /api/audit?kind=admin_action returns the same payload as Postgres
-Gate: `openspec validate 412-audit-payload-analytics --type change --strict` exits
-0 BEFORE any implementation.
+  ### Requirement: The order feed SHALL return an identical note on both stores
+  Grounded in api/events.py:build_order_event and api/orders.py:query_orders.
+  #### Scenario: A cancelled order is read back from the reporting store
+  WHEN a cancelled-order event with a non-null note is published
+  THEN GET /api/orders?kind=cancelled returns the same note as the primary store
+Gate: `openspec validate 412-order-note-reporting --type change --strict` exits 0
+BEFORE any implementation.
 
-VERIFY-FIRST: read api/events.py (build_admin_action_event — confirm payload is
-dropped today, not merely unused), api/audit.py (the read path's column list), and
-infra/analytics/schema.tf (the `metadata` column is the precedent to mirror). The
-Postgres writer in api/store.py must stay UNCHANGED — #399 owns it.
+VERIFY-FIRST: read api/events.py (build_order_event — confirm note is dropped
+today, not merely unused), api/orders.py (the read path's column list), and
+migrations/0041_order_reason.sql (the `reason` column is the precedent to mirror).
+The primary-store writer in api/store.py must stay UNCHANGED — #399 owns it.
 
-TESTS: parity test asserting the two stores return byte-identical payloads for the
-same event. Mirror tests/test_audit_parity.py. Mutation-check it: drop `payload`
-from the envelope and confirm the test reds — state the result in the PR body.
+TESTS: parity test asserting the two stores return byte-identical notes for the
+same event. Mirror tests/test_order_parity.py. Mutation-check it: drop `note` from
+the envelope and confirm the test reds — state the result in the PR body.
 
 VALIDATE (verbatim, from the repo's gate):
   command -v openspec && openspec --version
   .venv/bin/python -m pytest tests/ -q
   .venv/bin/ruff check api/ tests/
-  terraform fmt -check          # only because .tf changed
+  .venv/bin/python -m migrations check   # only because migrations/ changed
   openspec validate --all --strict
   ⚠️ That last one exits 0 on an empty root, never reads the archive, and is
   switched off entirely by skip_specs — do not report a bare green from it.
@@ -72,20 +72,21 @@ PROCESS:
    Progress. Then branch, then create the SPEC block's change directory and get its
    validate to exit 0 BEFORE writing code.
 2. Review with parallel gh-issue-flow:diff-reviewer subagents (effort: max, fresh
-   context — spawn the NAMESPACED name), one per lens: `correctness` (the payload can
-   be absent, null, or huge); `contract` (the envelope is consumed by the analytics
+   context — spawn the NAMESPACED name), one per lens: `correctness` (the note can
+   be absent, null, or huge); `contract` (the envelope is consumed by the reporting
    reader — a shape change is two coordinated PRs); `tests` (parity across two
-   stores); `deploy` (additive nullable column; infra is NOT in the CD workflow).
-   Skip `scoping` — this adds no guard, and every caller of the writer is in the diff.
-   Skip `safety` — no new tenant-scoped query. Commit before spawning them. Fix every
-   valid finding; explain any rejected in the PR body.
+   stores); `deploy` (additive nullable column; the migration runs in the staging
+   deploy, so it IS in the CD path). Skip `scoping` — this adds no guard, and every
+   caller of the writer is in the diff. Skip `safety` — no new account-scoped query
+   and no credential moves. Commit before spawning them. Fix every valid finding;
+   explain any rejected in the PR body.
 2b. If those fixes added NEW LOGIC — a branch, gate, condition, or code path — one
    more gh-issue-flow:diff-reviewer over just that delta, run as the lens that raised
    the finding. Once, not a loop. Skip for test/comment/doc-only fixes.
-2c. `openspec archive 412-audit-payload-analytics -y --json` as the LAST commit of
+2c. `openspec archive 412-order-note-reporting -y --json` as the LAST commit of
    this PR — never post-merge. Assert specsUpdated: true, then re-validate the
    folded tree.
-3. Branch feat/412-audit-payload-analytics; commit referencing "Fixes #412". Every
+3. Branch feat/412-order-note-reporting; commit referencing "Fixes #412". Every
    commit GPG-signed — if signing fails, stop. Never commit secrets.
 4. Open a PR, then drive CI + review-bot threads to green: reply, verify the reply
    posted, THEN resolve. Watch review THREADS as well as checks — a bot posts as a
@@ -98,10 +99,11 @@ PROCESS:
    run — never hardcode them. Keep the existing assignee, or assign yourself if
    unassigned.
 
-DEPLOY NOTE: includes an analytics schema change (additive, nullable, no tenant
-provisioned yet). Merging to `dev` DOES auto-deploy staging and run its migrations,
-so this ships to shared staging on merge. The infra change is NOT covered by that
-workflow: ask before applying it.
+DEPLOY NOTE: includes a schema migration (additive, nullable; no customer is routed
+to the reporting feed yet). Merging to `dev` DOES auto-deploy staging and run its
+migrations, so this ships to shared staging on merge. The reporting store's view
+definition is refreshed by a separate manual job that this workflow does not run:
+ask before running it.
 ```
 
 ---
