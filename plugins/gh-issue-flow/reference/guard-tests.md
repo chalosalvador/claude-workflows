@@ -1,7 +1,7 @@
 # Writing guard tests that survive adversarial review
 
 A **guard test** asserts an invariant about the repo itself rather than about a
-unit of behaviour: "no workflow hardcodes a WIF provider", "no module constructs
+unit of behaviour: "no workflow hardcodes an identity provider", "no module constructs
 this type with a caller-supplied `env`", "this runbook still says the dangerous
 thing is dangerous".
 
@@ -22,9 +22,9 @@ sequence.
 One real case defeated **three successive** property guards on the same code, each
 verified green:
 
-1. name-based ("is it called `wif_binding`?") → defeated by a fresh resource name
-2. type-based ("is it an IAM *member* resource?") → defeated by an authoritative
-   IAM *binding*, which is worse: it removes the scoped members on apply
+1. name-based ("is it called `identity_binding`?") → defeated by a fresh resource name
+2. type-based ("is it a *member* resource?") → defeated by an authoritative
+   *binding* resource, which is worse: on apply it removes every member it does not list
 3. substring ("does the expression mention the pinned local?") → defeated three
    ways at once — a decoy local whose name *contains* the pinned one; one
    legitimate element laundering a hardcoded sibling inside a `members = [...]`
@@ -202,7 +202,7 @@ misses the wrapped form:
 
 ```
 echo "# merging a change here triggers the gated"
-echo "# terraform-apply, which rolls the corresponding service."
+echo "# deploy job, which rolls the corresponding service."
 ```
 
 First line has one token, second has the other, neither has both → **the guard
@@ -345,14 +345,16 @@ Measured across five review lenses, a delta lens and a bot: **four findings, one
 shape** — each time the guard's predicate was right, its mutation was "killed", and
 it was pointed at something the real defect never touches.
 
-1. An invariant read `<cell>/terraform.tfvars`. The documented arming path is
-   `images.auto.tfvars`, which **overrides** it. The mutation had edited the file
-   the guard already read.
-2. Fixed by adding `*.auto.tfvars`… which omitted the **`.json`** forms Terraform
-   also auto-loads. Same evasion, one file extension over.
-3. Fixed by adding those… which globbed the two families as separate groups.
-   Terraform sorts them as ONE lexical sequence, so `a.auto.tfvars.json` loads
-   before `b.auto.tfvars` and the guard computed a different winner than Terraform.
+1. An invariant read the base variables file. The documented arming path is an
+   **auto-loaded override** file the tool applies on top of it. The mutation had
+   edited the file the guard already read.
+2. Fixed by adding the override glob… which omitted the second file extension the
+   tool also auto-loads. Same evasion, one file extension over.
+3. Fixed by adding those… which globbed the two families as separate groups. The
+   tool sorts them as ONE lexical sequence, so a `.json`-suffixed file loads before
+   a later plain one and the guard computed a different winner than the tool.
+   (Measured on Terraform's `*.auto.tfvars` / `*.auto.tfvars.json`; any tool with
+   ordered override files has the same shape.)
 4. A "never `:latest`" arm scanned the `docker push` **argument**. Every builder
    pushes an expression and builds the tag in a prior step, so it inspected text a
    tag structurally cannot appear in. The mutation that "killed" it had edited the
