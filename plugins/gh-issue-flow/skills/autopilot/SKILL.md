@@ -150,8 +150,9 @@ issues is the last thing that should be spending the GraphQL budget on a read it
 from the core one.
 
 Bail immediately if the issue now: is `blocked`/`legal`/`compliance`/`security`/`epic`,
-needs infrastructure or a migration, touches secrets/env/runtime config, changes an
-analytics schema, needs two repos, or contains an unanswered product question.
+needs infrastructure or a migration, touches secrets/env/runtime config, changes a
+store another store derives from (triage § 4 names the row), needs two repos, or contains
+an unanswered product question.
 
 Read the stack doc § Infra and migrations for that verdict — from the **main checkout**
 (config.md § Resolving `workflow.json` step 1 prints where it found the files), since this routine is usually
