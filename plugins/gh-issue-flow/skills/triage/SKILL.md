@@ -146,9 +146,16 @@ Per issue, ensure each — **fill blanks only; never overwrite a human's choice*
 | Invariant | How to satisfy |
 |---|---|
 | **On the board** | `gh project item-add <board_number> --owner <board_owner> --url <url>` |
-| **Has an area label** | If missing, **determine and apply it** (§ 2a). This is the root-cause fix — don't route around a missing label, add it. |
-| **Assigned to a DRI** | From the area label via `workflow.json` → `dri`. Never leave an open issue unassigned. |
-| **Has a Track** | Mirror the area label to the Track field. |
+| **Has an area label** | If missing, **determine and apply it** (§ 2a) from the `areaLabels` of **the repo the issue is in**. This is the root-cause fix — don't route around a missing label, add it. |
+| **Assigned to a DRI** | From the area label via **that repo's** `workflow.json` → `dri`. Never leave an open issue unassigned. |
+| **Has a Track** | Mirror the area label to the Track field, through that repo's `trackForArea`. |
+
+🚨 **The map is per repo.** For a sibling in `repos` the three maps come from the
+sibling's own `workflow.json` — its checkout, else the GitHub read in
+[`shared/config.md`](../../shared/config.md) § Repo scope — and never from this file. A
+sibling whose file cannot be read gets the board add and the Status only; report its
+unlabeled and unassigned issues in the receipt instead of routing them off this repo's
+map.
 | **Has a Status** | If none, set **Todo**. Never move an existing Status. |
 
 🚨 **Especially never move `Hold`** — it means a human parked the card by choice, and
@@ -180,7 +187,9 @@ should be near-empty; the goal is a real label, not a default dumping ground.**
 ⚠️ **The area label drives the assignee, so get boundaries between repos right.** A
 subject-matter word in a title does not override the repo: e.g. AI/classification work
 inside a backend service is a *backend* issue, not an *agents* one, however it reads.
-Write the repo-specific boundary rules into `workflow.json` → `dri` and follow them.
+Each repo's own `workflow.json` carries its boundary rules beside `dri` (a
+`$comment_dri`); read them from the file of the repo the issue is in and follow them.
+The candidates for an issue are the `areaLabels` of **its** repo, never a sibling's.
 
 ## 3. Deep pass — categorize, size, prioritize (CAPPED at 25)
 

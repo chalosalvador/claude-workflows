@@ -21,10 +21,15 @@ Two modes, chosen from the user's wording:
 - **Bootstrap** (default, or "set up", "onboard") — probe, write, create, report.
 - **Check** ("check", "doctor", "why isn't X working", "what's missing") — probe and
   report only. **Changes nothing.** Run this first on a repo that already half-works.
-  When `repos` names siblings whose checkouts resolve (§ Repo scope), check also diffs
-  the board-level keys — `board`, `areaLabels`, `dri`, `trackForArea`, `priorityCaps`
-  — across the files and reports any disagreement as a Missing row: two files feeding
-  one board with two DRI maps route the same area to two people.
+  When `repos` names siblings, check also reads each sibling's file — its checkout, else
+  the GitHub read in [`shared/config.md`](../../shared/config.md) § Repo scope — diffs
+  the two shared keys, `board` and `priorityCaps`, across the files and reports any
+  disagreement as a Missing row: two files feeding one board with two boards named
+  split the sweep. The area maps are per repo and are **not** diffed. Check instead
+  lists this repo's `area:*` labels (`gh label list --limit 200 --json name --jq
+  '.[].name'`) and reports every label with no `dri` entry in **this** file as a
+  Missing row, and every `dri` entry with no such label here as cleanup — that second
+  list is what a pre-0.12.0 union file shows, and it is not a failure.
 - **Upgrade** ("upgrade", "migrate the config", "bring workflow.json up to date", or the
   drift line any skill prints) — an existing file, a newer plugin: add only the keys the
   schema gained since the file was written. § 3 Upgrade mode.
@@ -98,7 +103,7 @@ repo with no CI. Test the directory first, or use `find`:
 | Fact | How |
 |---|---|
 | `board` | **Ask which board THIS repo feeds**, and write `{"number": N, "owner": "<owner>"}` whenever it is not the user's machine default. This is what lets one machine work several workspaces against different boards — see [`shared/board.md`](../../shared/board.md) § Resolution for the resolution order. Omit the key when the repo uses the default; do not write a copy of it. 🚨 **Both sub-keys or neither** — a `board` with `number` and no `owner` does not fall back, it stops every board step in a repo you just green-lit. If the owner is unknown, ask; if you cannot get it, write no `board` key. |
-| `repos` | The repo you are in (`gh repo view --json nameWithOwner`). **Ask whether other repos feed the same board** — if so, list them all, full `owner/repo`. One repo is the common answer and a perfectly good one; write the key anyway so the skills never have to guess. Listing a sibling widens the issue sweep only: its branch, gate and forbidden paths still come from **its** own file ([`shared/config.md`](../../shared/config.md) § Repo scope), so every repo keeps a file, and the board-level keys must agree across them. |
+| `repos` | The repo you are in (`gh repo view --json nameWithOwner`). **Ask whether other repos feed the same board** — if so, list them all, full `owner/repo`. One repo is the common answer and a perfectly good one; write the key anyway so the skills never have to guess. Listing a sibling widens the issue sweep only: its branch, gate and forbidden paths still come from **its** own file ([`shared/config.md`](../../shared/config.md) § Repo scope), so every repo keeps a file; `board` and `priorityCaps` must agree across them, and each file's `areaLabels`, `dri` and `trackForArea` name **only that repo's** areas. |
 | `integrationBranch` | `origin/` + the default branch — **after** the empty-repo check above. ⚠️ **Not always `main`** — if a `dev`/`develop` remote branch exists and is ahead of the default, the repo probably integrates there and releases from the default. **Ask; do not guess.** |
 | `validate` | **Read the CI workflow first** — `.github/workflows/*.yml`, the job that runs on PRs into the integration branch. Copy its step commands in order. Fall back to the toolchain only if there is no CI: `pyproject.toml`/`requirements.txt` → `ruff`/`pytest`; `package.json` → the lint/typecheck/test/build scripts that actually exist; `Cargo.toml` → `cargo clippy`/`cargo test`; `go.mod` → `go vet`/`go test ./...`. |
 | `preflight` | Anything the gate shells out to that no lockfile installs. |
@@ -243,6 +248,12 @@ blanket check false-alarms on every fresh repo and trains you to ignore it.
 one-line meaning, plus **`dri` mapping each area to the GitHub login that owns it**.
 Triage routes assignees off that map; without it, the integrity pass cannot guarantee
 "0 unassigned" and can only report the gap.
+
+**Only this repo's areas, described from this repo's point of view.** When a sibling in
+`repos` feeds the same board, its areas belong in **its** file, and every skill reads a
+repo's map from that repo's file ([`shared/config.md`](../../shared/config.md) § Repo
+scope). Do not copy a sibling's areas here, and do not word a meaning as "in this repo
+only" to fence off a sibling — the file's location already does that.
 
 **On a solo repo, `dri` is every area mapped to the one person** — write it out rather
 than leaving the key off. "There is only me" is a fact worth recording; an absent key
