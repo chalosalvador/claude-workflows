@@ -203,21 +203,28 @@ example above and `setup`'s probe list to the same key set.
 | `deployOnMerge` | 0 | § 2 | repo | What merging the integration branch does, in words |
 | `deployWorkflow` | 0 | § 2 | repo | The workflow file `deployOnMerge` was read from |
 | `workstreams` | 0 | § 2 | repo | Monorepo path → human name |
-| `areaLabels` | 0 | § 4 | board | `area:*` label → one-line meaning |
-| `dri` | 0 | § 4 | board | `area:*` label → GitHub login that owns it |
-| `trackForArea` | 0 | § 5 | board | `area:*` label → board Track option |
+| `areaLabels` | 0 | § 4 | repo | **This repo's** `area:*` labels → one-line meaning; a sibling's live in its own file |
+| `dri` | 0 | § 4 | repo | **This repo's** `area:*` labels → GitHub login that owns each here |
+| `trackForArea` | 0 | § 5 | repo | **This repo's** `area:*` labels → board Track option |
 | `agentReadyForbiddenPaths` | 0 | § 2 | repo | Paths an unattended run must never touch |
 | `$comment*` | 0 | § 3 | file | Provenance for the human reader; never read by a skill |
 | `deployTargets` | 4 | § 5b | repo | The deploy-target doc names this repo carries, one per file in `.claude/workflow/deploy-targets/`; `[]` when the evidence names none. Schema 3 called this `stacks`; `upgrade` renames the key and the directory |
 | `priorityCaps` | 3 | § 2 | board | Label → highest priority that label may carry, applied by `triage` § 3c. Absent means `{"legal": "P1"}`; `{}` turns caps off |
 
 **Scope is what `repos` cannot widen.** A `board` key describes the Projects v2 board
-every repo in `repos` feeds — `areaLabels`, `dri`, `trackForArea`, `priorityCaps` — and
-applies to every issue a run sweeps. A `repo` key describes **the repo this file lives
-in** and nothing else: its branch, gate, forbidden paths, deploy-target docs. A `file` key is
-about the file itself. So a run that sweeps a sibling from `repos` reads the sibling's
-board-level facts from this file and its repo-level facts **from the sibling's own
-`workflow.json`**, found through the sibling's checkout (§ Repo scope). MEASURED: with
+every repo in `repos` feeds — `board` and `priorityCaps`, nothing else — and applies to
+every issue a run sweeps. A `repo` key describes **the repo this file lives in** and
+nothing else: its branch, gate, forbidden paths, deploy-target docs, **and its area
+map** — `areaLabels`, `dri` and `trackForArea` name the `area:*` labels this repo
+carries, described from this repo's point of view, and no other repo's. A `file` key is
+about the file itself. So a run that sweeps a sibling from `repos` reads the two
+board-level facts from this file and everything else **from the sibling's own
+`workflow.json`** — its checkout when one resolves, else the file read from GitHub
+(§ Repo scope). A sibling's area map comes from the sibling's own `workflow.json`,
+never this one. Before 0.12.0 the three maps were board-scoped, which forced two files
+feeding one board to carry a byte-identical union of both repos' areas; a file that
+still carries the union keeps working — an entry for a label this repo does not have is
+never read for an issue here, and `setup check` lists it as cleanup. MEASURED: with
 both repos listed and one file, `work-summary` judged every ai-app commit against the
 gateway's `origin/dev` — a branch the sibling also has, 815 commits stale — and reported
 months of merged work as unmerged, silently.
@@ -289,7 +296,9 @@ Six of them carry weight the others do not:
   `triage`'s working set, `next-issue`'s theme sense, `work-summary`'s scope, and
   `autopilot`'s backpressure check all expand it. **Full `owner/repo`, never bare names**,
   because two repos on one board can sit under different owners. Absent → § Repo scope.
-- **`dri`** maps each area label to the GitHub login that owns it, and it is what makes
+- **`dri`** maps each of **this repo's** area labels to the GitHub login that owns it here
+  — a sibling's map is in the sibling's file, and one login owning one area in two repos
+  appears in both — and it is what makes
   triage's **0-unassigned** guarantee possible — without it the integrity pass has no
   routing table and can only report the gap. Keep it beside `areaLabels`; an area with no
   DRI is the same failure as no area label.
@@ -371,12 +380,32 @@ sweep:
 
 | You need the sibling's | Read it from |
 |---|---|
-| board-level facts — area, DRI, Track, priority caps | **this** file; they describe the shared board |
+| board, priority caps | **this** file; they describe the shared board |
+| area labels, DRI, Track — its area map | **the sibling's own** `.claude/workflow.json`: its checkout when one resolves, else the same file read from GitHub (below). Label, assign and set Track on a sibling's issue only from **its** map |
 | integration branch, gate, forbidden paths, deploy-target docs, workstreams | **the sibling's own** `.claude/workflow.json` (its checkout, worktree then main, per the block in § Resolving `workflow.json` run from that checkout) |
-| any of the above with no checkout | nothing — the sibling is **board-only** this run: sweep its issues for the integrity pass, never gate one `agent-ready`, never judge its merges, never pick it to implement, and say so once |
+| branch, gate, forbidden paths, docs with no checkout | nothing — the sibling is **board-only** this run: sweep its issues for the integrity pass, never gate one `agent-ready`, never judge its merges, never pick it to implement, and say so once |
 
-Two files that both list each other must agree on every board-level key. `setup check`
-compares them when both checkouts resolve and reports a disagreement as a Missing row.
+**Reading a sibling's file with no checkout** is a two-step read, because the file is
+current on the sibling's integration branch and you do not know that branch until you
+have read the file once:
+
+```sh
+ref=$(gh repo view <owner/repo> --json defaultBranchRef --jq .defaultBranchRef.name)
+gh api "repos/<owner>/<repo>/contents/.claude/workflow.json?ref=$ref" --jq .content | base64 -d
+# if the result's integrationBranch names another branch, read again at that ref
+```
+
+That read gives you the area map only — never run a gate or judge a merge from it. A
+404 means the sibling has no tracked file (most often `.claude/` is gitignored there,
+see `setup` § 3): then the sibling has no map this run either — add its issues to the
+board and set Status, report every unlabeled or unassigned one as a gap, and label
+nothing there. Never fall back to this file's map for a sibling's issue.
+
+Two files that both list each other must agree on `board` and `priorityCaps`; their area
+maps are per repo by design and are not compared. `setup check` diffs the two shared keys
+when both files can be read and reports a disagreement as a Missing row; for the map it
+checks **coverage** — every `area:*` label the repo has maps to a DRI in the repo's own
+file — and lists an entry with no matching label as cleanup, not as a failure.
 
 ---
 

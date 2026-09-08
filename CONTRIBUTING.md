@@ -207,7 +207,7 @@ it — did a rewrite drop the fact?"* **Update `OWNED` in the same commit.** Do 
 around it by deleting the entry — it has already caught its own pin going stale three
 times, which is the behaviour it was built for.
 
-It is mutation-proven 11/11 (7 kill + 4 must-stay-green); the two board pins added later were proven 7/7 (3 kill + 4 must-stay-green) on top, and the two ops-doc pins 8/8 (4 kill + 4 must-stay-green): a softened or inverted owner and an exact copy elsewhere red; a hard-wrap, moved emphasis, a move within the owner and a paraphrase elsewhere stay green. If you change the guard itself,
+It is mutation-proven 11/11 (7 kill + 4 must-stay-green); the two board pins added later were proven 7/7 (3 kill + 4 must-stay-green) on top, the two ops-doc pins 8/8 (4 kill + 4 must-stay-green), and the area-map pin 8/8 (4 kill + 4 must-stay-green — two mutants first read wrong because the harness matched the clause unwrapped while the owner hard-wraps it; match the wrapped text): a softened or inverted owner and an exact copy elsewhere red; a hard-wrap, moved emphasis, a move within the owner and a paraphrase elsewhere stay green. If you change the guard itself,
 re-prove it; the must-stay-green half is what stops it reddening on ordinary reformatting.
 
 `tests/test_config_schema.py` is mutation-proven **11/11 (7 kill + 4 must-stay-green)**:

@@ -154,11 +154,20 @@ OWNED: dict[str, tuple[str, int]] = {
     # every other site says what to do instead, not the rule again.
     "Agents do not edit deploy-target docs or `repo.md`.":
         ("plugins/gh-issue-flow/shared/config.md", 1),
+
+    # The area-map source. Until 0.12.0 the three maps were board-scoped and read from
+    # the STARTING file for every repo swept, which forced two files feeding one board to
+    # carry a byte-identical union — the "GATEWAY ONLY / AI-APP ONLY" wording that had to
+    # fence areas off inside a shared map was the symptom. Triage and setup each restate
+    # the consequence in their own words; the rule has one owner, and the drift the guard
+    # catches is "fall back to this file's map when the sibling's cannot be read".
+    "A sibling's area map comes from the sibling's own `workflow.json`, never this one.":
+        ("plugins/gh-issue-flow/shared/config.md", 1),
 }
 
 # Independent completeness check: NOT derived from len(OWNED), which would be
 # circular and pass over a silently emptied pin.
-EXPECTED_PINNED_CLAUSES = 14
+EXPECTED_PINNED_CLAUSES = 15
 
 
 def normalize(text: str) -> str:
