@@ -21,6 +21,10 @@ Two modes, chosen from the user's wording:
 - **Bootstrap** (default, or "set up", "onboard") — probe, write, create, report.
 - **Check** ("check", "doctor", "why isn't X working", "what's missing") — probe and
   report only. **Changes nothing.** Run this first on a repo that already half-works.
+  When `repos` names siblings whose checkouts resolve (§ Repo scope), check also diffs
+  the board-level keys — `board`, `areaLabels`, `dri`, `trackForArea`, `priorityCaps`
+  — across the files and reports any disagreement as a Missing row: two files feeding
+  one board with two DRI maps route the same area to two people.
 - **Upgrade** ("upgrade", "migrate the config", "bring workflow.json up to date", or the
   drift line any skill prints) — an existing file, a newer plugin: add only the keys the
   schema gained since the file was written. § 3 Upgrade mode.
@@ -94,7 +98,7 @@ repo with no CI. Test the directory first, or use `find`:
 | Fact | How |
 |---|---|
 | `board` | **Ask which board THIS repo feeds**, and write `{"number": N, "owner": "<owner>"}` whenever it is not the user's machine default. This is what lets one machine work several workspaces against different boards — see [`shared/board.md`](../../shared/board.md) § Resolution for the resolution order. Omit the key when the repo uses the default; do not write a copy of it. 🚨 **Both sub-keys or neither** — a `board` with `number` and no `owner` does not fall back, it stops every board step in a repo you just green-lit. If the owner is unknown, ask; if you cannot get it, write no `board` key. |
-| `repos` | The repo you are in (`gh repo view --json nameWithOwner`). **Ask whether other repos feed the same board** — if so, list them all, full `owner/repo`. One repo is the common answer and a perfectly good one; write the key anyway so the skills never have to guess. |
+| `repos` | The repo you are in (`gh repo view --json nameWithOwner`). **Ask whether other repos feed the same board** — if so, list them all, full `owner/repo`. One repo is the common answer and a perfectly good one; write the key anyway so the skills never have to guess. Listing a sibling widens the issue sweep only: its branch, gate and forbidden paths still come from **its** own file ([`shared/config.md`](../../shared/config.md) § Repo scope), so every repo keeps a file, and the board-level keys must agree across them. |
 | `integrationBranch` | `origin/` + the default branch — **after** the empty-repo check above. ⚠️ **Not always `main`** — if a `dev`/`develop` remote branch exists and is ahead of the default, the repo probably integrates there and releases from the default. **Ask; do not guess.** |
 | `validate` | **Read the CI workflow first** — `.github/workflows/*.yml`, the job that runs on PRs into the integration branch. Copy its step commands in order. Fall back to the toolchain only if there is no CI: `pyproject.toml`/`requirements.txt` → `ruff`/`pytest`; `package.json` → the lint/typecheck/test/build scripts that actually exist; `Cargo.toml` → `cargo clippy`/`cargo test`; `go.mod` → `go vet`/`go test ./...`. |
 | `preflight` | Anything the gate shells out to that no lockfile installs. |

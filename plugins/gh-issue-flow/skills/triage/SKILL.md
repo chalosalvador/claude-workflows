@@ -265,7 +265,7 @@ unattended agent can finish this issue and open a PR a human will want to review
 Apply it only when **every** positive condition holds:
 
 - [ ] `effort:easy`
-- [ ] Exactly one repo, and you can name the files it touches
+- [ ] Exactly one repo, and you can name the files it touches — for a sibling in `repos`, that means its checkout resolved and you read **its** `workflow.json` for `agentReadyForbiddenPaths` and its stack doc; a sibling with no checkout is board-only this run and never gets this label
 - [ ] Acceptance criteria concrete enough to write a test against
 - [ ] An existing test file or pattern to mirror — **or** it is a pure docs/copy change
 - [ ] No open product/design question in the body or comments
