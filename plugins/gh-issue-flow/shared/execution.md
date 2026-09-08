@@ -346,7 +346,7 @@ correctness-shaped, including holes each earlier fix just opened.
 
 ## 6. Board tracking
 
-Ids and queries: [`config.md`](config.md). Resolve field and option ids dynamically
+Ids and queries: [`board.md`](board.md). Resolve field and option ids dynamically
 every run; `--limit 1000` is mandatory.
 
 Every issue carries an assignee, a Priority, a Status and a Track (or that board's

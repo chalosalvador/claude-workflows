@@ -62,6 +62,8 @@ different points in the branch lifecycle, one of them before the branch exists.
 
 - [`shared/config.md`](shared/config.md) — the three-layer config resolution
   (`userConfig` → `workflow.json` → probe). **Read this first.**
+- [`shared/board.md`](shared/board.md) — board resolution and the one-fetch-per-run
+  query. Loaded only by the skills that touch a board.
 - [`shared/execution.md`](shared/execution.md) — branch, validate, review, babysit,
   board, deploy. Facts, not policy: skills own the policy, this owns the mechanics, so
   the two cannot drift.

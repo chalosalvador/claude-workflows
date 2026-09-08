@@ -130,7 +130,7 @@ OWNED: dict[str, tuple[str, int]] = {
     # them. Softening or relocating this is how the bug returns.
     "Never write `${BOARD:-${user_config.board_number}}` or any other parameter "
     "expansion around a `${user_config.*}` placeholder.":
-        ("plugins/gh-issue-flow/shared/config.md", 1),
+        ("plugins/gh-issue-flow/shared/board.md", 1),
 
     # Board precedence in the one skill that WRITES to a board. Its absence was the
     # shipped defect: triage named `userConfig` as its board source, so the

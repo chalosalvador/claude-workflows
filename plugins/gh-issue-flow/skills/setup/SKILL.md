@@ -93,7 +93,7 @@ repo with no CI. Test the directory first, or use `find`:
 
 | Fact | How |
 |---|---|
-| `board` | **Ask which board THIS repo feeds**, and write `{"number": N, "owner": "<owner>"}` whenever it is not the user's machine default. This is what lets one machine work several workspaces against different boards — see [`shared/config.md`](../../shared/config.md) § Layer 1 for the resolution order. Omit the key when the repo uses the default; do not write a copy of it. 🚨 **Both sub-keys or neither** — a `board` with `number` and no `owner` does not fall back, it stops every board step in a repo you just green-lit. If the owner is unknown, ask; if you cannot get it, write no `board` key. |
+| `board` | **Ask which board THIS repo feeds**, and write `{"number": N, "owner": "<owner>"}` whenever it is not the user's machine default. This is what lets one machine work several workspaces against different boards — see [`shared/board.md`](../../shared/board.md) § Resolution for the resolution order. Omit the key when the repo uses the default; do not write a copy of it. 🚨 **Both sub-keys or neither** — a `board` with `number` and no `owner` does not fall back, it stops every board step in a repo you just green-lit. If the owner is unknown, ask; if you cannot get it, write no `board` key. |
 | `repos` | The repo you are in (`gh repo view --json nameWithOwner`). **Ask whether other repos feed the same board** — if so, list them all, full `owner/repo`. One repo is the common answer and a perfectly good one; write the key anyway so the skills never have to guess. |
 | `integrationBranch` | `origin/` + the default branch — **after** the empty-repo check above. ⚠️ **Not always `main`** — if a `dev`/`develop` remote branch exists and is ahead of the default, the repo probably integrates there and releases from the default. **Ask; do not guess.** |
 | `validate` | **Read the CI workflow first** — `.github/workflows/*.yml`, the job that runs on PRs into the integration branch. Copy its step commands in order. Fall back to the toolchain only if there is no CI: `pyproject.toml`/`requirements.txt` → `ruff`/`pytest`; `package.json` → the lint/typecheck/test/build scripts that actually exist; `Cargo.toml` → `cargo clippy`/`cargo test`; `go.mod` → `go vet`/`go test ./...`. |
@@ -135,7 +135,7 @@ run knows whether this file has kept up with the plugin.
 
 `claude plugin update` refreshes the plugin's code and tells no repo that its
 `workflow.json` is behind. This mode closes that gap, and the drift line every skill
-prints ([`shared/config.md`](../../shared/config.md) § Layer 1, step 4) is what sends
+prints ([`shared/config.md`](../../shared/config.md) § Resolving `workflow.json`, step 2) is what sends
 you here.
 
 ```
@@ -444,12 +444,12 @@ Print three blocks, in this order:
 what is merely absent.
 
 🚨 **An unset board is a narrowing, not a Missing row.** Resolve both layers first
-([`shared/config.md`](../../shared/config.md) § Layer 1): `workflow.json` → `board` wins,
+([`shared/board.md`](../../shared/board.md) § Resolution): `workflow.json` → `board` wins,
 the machine default is second, and only when both are empty is the repo label-only. Say
 which layer answered, every run — pointing a repo's triage at the previous project's
 board is silent and expensive to undo. When neither is set, say *"no board is configured
 — if that is deliberate, nothing is wrong; if you expected one, here is how to restore
-it"* and give the way back from § Layer 1: the `--config` command **and** the
+it"* and give the way back from `board.md` § Resolution: the `--config` command **and** the
 `/reload-plugins` after it, without which the next skill still resolves empty. You cannot
 tell a deliberate blank from one `claude plugin uninstall` wiped, so never assert it was
 a choice. The install's "N options not yet set" count is the same shape: not a gap you
