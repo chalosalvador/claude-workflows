@@ -253,7 +253,7 @@ credential, do a thing, give it back" script:
 
 > ⚠️ The CLI's configured account and the identity a script actually impersonates can be
 > two independent stores. Which is which on this stack — and the commands above in this
-> stack's spelling — belongs in the repo's stack doc § Secrets and env.
+> stack's spelling — belongs in the repo's deploy-target doc § Secrets and env.
 
 **Prose cannot hold this invariant.** The first version of the procedure was a comment
 saying *"put the removal in a `trap`, not a final line"* directly above commands with

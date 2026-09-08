@@ -12,7 +12,7 @@ python3 tests/test_no_stray_files.py
 python3 tests/test_version_agreement.py
 python3 tests/test_config_schema.py
 python3 tests/test_links.py
-python3 tests/test_stack_headers.py
+python3 tests/test_doc_headers.py
 claude plugin validate ./plugins/gh-issue-flow --strict
 claude plugin validate . --strict
 ```
@@ -146,7 +146,7 @@ rewrite a section and the pinned clause stops existing, it fails with
 three times, which is the cost-is-the-feature behaviour it was built for. Do not route
 around it by deleting the entry.
 
-It is mutation-proven 11/11 (7 kill + 4 must-stay-green); the two board pins added later were proven 7/7 (3 kill + 4 must-stay-green) on top, and the two stack-doc pins 8/8 (4 kill + 4 must-stay-green). If you change it, re-prove it —
+It is mutation-proven 11/11 (7 kill + 4 must-stay-green); the two board pins added later were proven 7/7 (3 kill + 4 must-stay-green) on top, and the two ops-doc pins 8/8 (4 kill + 4 must-stay-green). If you change it, re-prove it —
 the must-stay-green half is what stops it reddening on reformatting.
 
 ⚠️ It enumerates via `git ls-files`, i.e. the **index**. A new unstaged file is invisible

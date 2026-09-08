@@ -141,7 +141,7 @@ The issue's repo is on its GitHub URL. Narrow to the workstream from `workflow.j
 
 If that repo is a sibling from `repos` rather than the one you are in, resolve its
 checkout ([`shared/config.md`](../../shared/config.md) § Repo scope) and run the
-resolution block there: the branch, gate, workstreams and stack docs for this issue are
+resolution block there: the branch, gate, workstreams and deploy-target docs for this issue are
 **the sibling's**, and a Mode A prompt must say "run from the <sibling> repo". No
 checkout → say so and stop; do not build a sibling's issue from this repo's config.
 
@@ -293,7 +293,7 @@ One line first — the PR link and, in a sentence, what it does. Then these list
 - **Still open** — anything left: red or missing checks, unresolved threads, work
   deliberately left out of scope, an assumption you made because nobody was there to
   ask. `Nothing` is a fine value here, and much better than silence.
-- **For the stack doc** — one proposed bullet for `.claude/workflow/stacks/<name>.md`
+- **For `repo.md`** — one proposed bullet for `.claude/workflow/repo.md`
   § Traps when this run measured something about the platform that the doc does not
   say (a command that lied, an ordering that bit). Written out, dated, ready to paste;
   you never edit the doc yourself. `Nothing` is the usual value.

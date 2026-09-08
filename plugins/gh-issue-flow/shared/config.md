@@ -30,7 +30,7 @@ only by the skills that touch a board. Every skill runs the step below.
 
 ---
 
-## Resolving `workflow.json` and the stack docs — every run
+## Resolving `workflow.json` and the deploy-target docs — every run
 
 **Step 1 — ask the repo, from its root.** A bare relative path is wrong in any cwd below
 the root.
@@ -51,24 +51,29 @@ for D in "$WT" "$MAIN"; do
 done
 if [ -n "$WF" ]; then
   jq -r '"number=\(.board.number // "-")  owner=\(.board.owner // "-")"' "$WF"
-  jq -r '"schema=\(.schemaVersion // 0)"' "$WF"        # step 4 compares this to Current schema
-  jq -r '"stacks=\(.stacks // [] | join(",") | if . == "" then "-" else . end)"' "$WF"  # step 5
+  jq -r '"schema=\(.schemaVersion // 0)"' "$WF"        # step 2 compares this to Current schema
+  jq -r '"targets=\(.deployTargets // [] | join(",") | if . == "" then "-" else . end)"' "$WF"  # step 3
   echo "src=$WF"
 else
   echo "NO workflow.json in $WT or $MAIN"
 fi
-SD=""                                                   # the stack docs live beside it — same two places
+SD=""                                                   # the deploy-target docs live beside it — same two places
 for D in "$WT" "$MAIN"; do
-  [ -d "$D/.claude/workflow/stacks" ] && { SD="$D/.claude/workflow/stacks"; break; }
+  [ -d "$D/.claude/workflow/deploy-targets" ] && { SD="$D/.claude/workflow/deploy-targets"; break; }
 done
 if [ -n "$SD" ]; then
-  find "$SD" -maxdepth 1 -name '*.md' | sort | sed 's#.*/#stackdoc=#'
+  find "$SD" -maxdepth 1 -name '*.md' | sort | sed 's#.*/#targetdoc=#'
 else
-  echo "NO stacks dir in $WT or $MAIN"
+  echo "NO deploy-targets dir in $WT or $MAIN"
 fi
+RD=""                                                   # the per-repo doc, same two places
+for D in "$WT" "$MAIN"; do
+  [ -f "$D/.claude/workflow/repo.md" ] && { RD="$D/.claude/workflow/repo.md"; break; }
+done
+[ -n "$RD" ] && echo "repodoc=$RD" || echo "NO repo.md in $WT or $MAIN"
 ```
 
-⚠️ **`find`, not a glob, for the stack docs.** MEASURED: `ls "$SD/"*.md` on an
+⚠️ **`find`, not a glob, for the deploy-target docs.** MEASURED: `ls "$SD/"*.md` on an
 existing-but-empty directory is a zsh `no matches found` error at exit 0 — no listing, no
 sentinel, and the main checkout never tried. `find` prints nothing and the `else` still
 distinguishes "no directory" from "empty directory".
@@ -94,13 +99,13 @@ Layer 3, so a behind file is never a failure. But say it every run. `claude plug
 refreshes the plugin's code and tells no repo that its config is now behind; this line
 is the only thing that does.
 
-**Step 3 — stack docs.** Step 1 printed `stacks=<names or ->` from `workflow.json` and
-one `stackdoc=<file>` line per file found. Reconcile them: every name must have a file
+**Step 3 — deploy-target docs.** Step 1 printed `targets=<names or ->` from `workflow.json` and
+one `targetdoc=<file>` line per file found. Reconcile them: every name must have a file
 and every file a name. A mismatch is a finding to report in one line — a name with no
-file means the doc never shipped (commonly `.claude/` gitignored, § Layer 2 → Stack
-docs); a file with no name means `setup upgrade` has not run since it was written. Then
-read only the files that are named. `stacks=-` at schema 2 is a deliberate "this repo
-detected no stack" (`"stacks": []`); `stacks=-` below schema 2 is covered by step 2.
+file means the doc never shipped (commonly `.claude/` gitignored, § Layer 2 →
+Deploy-target docs); a file with no name means `setup upgrade` has not run since it was written. Then
+read only the files that are named. `targets=-` at schema 2 is a deliberate "this repo
+detected no deploy target" (`"deployTargets": []`); `targets=-` below schema 2 is covered by step 2.
 
 
 ---
@@ -112,7 +117,7 @@ The per-repo override. Read it from the repo root you are working in.
 ```json
 {
   "schemaVersion": 2,
-  "stacks": ["gcp-terraform"],
+  "deployTargets": ["gcp-terraform"],
   "repos": ["acme/acme-api", "acme/acme-web"],
   "board": { "number": 11, "owner": "acme" },
   "integrationBranch": "origin/dev",
@@ -147,7 +152,7 @@ Every key is optional. Absent keys fall through to Layer 3.
 
 ### Schema
 
-**Current schema: 3.** A file with no `schemaVersion` is schema **0** — the shape that
+**Current schema: 4.** A file with no `schemaVersion` is schema **0** — the shape that
 shipped through plugin 0.5.x. `setup` writes the current number on bootstrap and
 `setup upgrade` moves an older file forward by adding what it lacks. **Since** is the
 schema a key arrived in; that column is the migration list, and it is what the drift
@@ -176,13 +181,13 @@ example above and `setup`'s probe list to the same key set.
 | `trackForArea` | 0 | § 5 | board | `area:*` label → board Track option |
 | `agentReadyForbiddenPaths` | 0 | § 2 | repo | Paths an unattended run must never touch |
 | `$comment*` | 0 | § 3 | file | Provenance for the human reader; never read by a skill |
-| `stacks` | 2 | § 5b | repo | The stack doc names this repo carries, one per file in `.claude/workflow/stacks/`; `[]` when the evidence names none |
+| `deployTargets` | 4 | § 5b | repo | The deploy-target doc names this repo carries, one per file in `.claude/workflow/deploy-targets/`; `[]` when the evidence names none. Schema 3 called this `stacks`; `upgrade` renames the key and the directory |
 | `priorityCaps` | 3 | § 2 | board | Label → highest priority that label may carry, applied by `triage` § 3c. Absent means `{"legal": "P1"}`; `{}` turns caps off |
 
 **Scope is what `repos` cannot widen.** A `board` key describes the Projects v2 board
 every repo in `repos` feeds — `areaLabels`, `dri`, `trackForArea`, `priorityCaps` — and
 applies to every issue a run sweeps. A `repo` key describes **the repo this file lives
-in** and nothing else: its branch, gate, forbidden paths, stack docs. A `file` key is
+in** and nothing else: its branch, gate, forbidden paths, deploy-target docs. A `file` key is
 about the file itself. So a run that sweeps a sibling from `repos` reads the sibling's
 board-level facts from this file and its repo-level facts **from the sibling's own
 `workflow.json`**, found through the sibling's checkout (§ Repo scope). MEASURED: with
@@ -190,47 +195,60 @@ both repos listed and one file, `work-summary` judged every ai-app commit agains
 gateway's `origin/dev` — a branch the sibling also has, 815 commits stale — and reported
 months of merged work as unmerged, silently.
 
-### Stack docs — `.claude/workflow/stacks/`
+### Deploy-target docs and `repo.md` — `.claude/workflow/`
 
-**Everything stack-specific lives in the repo, not in this plugin.** `setup` § 5b
-generates one file per stack from what it probed, using `skills/setup/stack-template.md`;
-humans fill in what a probe cannot know. `workflow.json` → `stacks` names the files, and
-that key is what lets the drift line, `upgrade` and `$comment_stacks` provenance carry
-stack docs like every other key. § Resolving `workflow.json` step 1 prints the names and the files it finds
-(worktree first, then the main checkout, because `.claude/` is commonly gitignored in a
-worktree); step 3 reconciles them, and a name with no file or a file with no name is a
-one-line finding, never a silent skip.
+**Everything stack-specific lives in the repo, not in this plugin**, in two kinds of file
+under `.claude/workflow/`:
 
-**Skills read the section headers**, which is why the skeleton says to keep them exactly:
+- **`deploy-targets/<name>.md` — one per place code gets deployed**, not per technology:
+  Vercel, Cloud Run, Terraform-applied infra, Fly, Kubernetes. Each holds what a merge
+  deploys, how a secret is set and read back there, and what applies migrations. A
+  database, a framework or an auth provider is not a target; it appears inside the
+  sections of the target that deploys it. `setup` § 5b generates these from
+  `skills/setup/deploy-target-template.md`; `workflow.json` → `deployTargets` names them,
+  and that key is what lets the drift line, `upgrade` and `$comment_deployTargets`
+  provenance carry them like every other key.
+- **`repo.md` — exactly one per repo**, from `skills/setup/repo-template.md`: which bot
+  reviews pull requests and how its comments look, the invariants a reviewer checks every
+  diff against, and the measured traps. These do not vary by target, which is why they
+  are not in the target docs — a repo with two targets would otherwise carry two copies
+  of its review-bot patterns.
 
-| Section | Read by | For |
-|---|---|---|
-| Identity | `setup` read-back | the name, the evidence it came from, the date |
-| Deploy | `issue-planner` (into HANDOFF), [`execution.md`](execution.md) § 7, the `deploy` lens via HANDOFF | what a merge does, and the paths filter — as a **starting point**; § 7 still verifies against the live workflow |
-| Secrets and env | `triage` § 4, `autopilot` § 7 | why a credential change is human-gated here, and how a value is verified |
-| Infra and migrations | `triage` § 4, `autopilot` § 3, the `deploy` lens via HANDOFF | the apply commands and the ordering rules; the forbidden paths stay in `workflow.json` |
-| Review bot | [`execution.md`](execution.md) § 5 | which comment is an ack and which is a review |
-| Reviewer invariants | `issue-planner` (into HANDOFF), the `safety` and `contract` lenses via HANDOFF | the predicates and cross-store parities to check every diff against |
-| Traps | `issue-planner` (it reads the whole file); written only through the proposal line in `next-issue` § 6 and `autopilot` § 10 | measured incidents on this stack |
+§ Resolving `workflow.json` step 1 prints the target names, the target files it finds and
+whether `repo.md` exists (worktree first, then the main checkout, because `.claude/` is
+commonly gitignored in a worktree); step 3 reconciles names with files, and a name with no
+file or a file with no name is a one-line finding, never a silent skip.
+
+**Skills read the section headers**, which is why both skeletons say to keep them exactly:
+
+| Section | File | Read by | For |
+|---|---|---|---|
+| Identity | target | `setup` read-back | the name, the evidence it came from, the date |
+| Deploy | target | `issue-planner` (into HANDOFF), [`execution.md`](execution.md) § 7, the `deploy` lens via HANDOFF | what a merge does, and the paths filter — as a **starting point**; § 7 still verifies against the live workflow |
+| Secrets and env | target | `triage` § 4, `autopilot` § 7 | why a credential change is human-gated here, and how a value is verified |
+| Infra and migrations | target | `triage` § 4, `autopilot` § 3, the `deploy` lens via HANDOFF | the apply commands and the ordering rules; the forbidden paths stay in `workflow.json` |
+| Review bot | repo.md | [`execution.md`](execution.md) § 5 | which comment is an ack and which is a review |
+| Reviewer invariants | repo.md | `issue-planner` (into HANDOFF), the `safety` and `contract` lenses via HANDOFF | the predicates and cross-store parities to check every diff against |
+| Traps | repo.md | `issue-planner` (it reads the whole file); written only through the proposal line in `next-issue` § 6 and `autopilot` § 10 | measured incidents on this repo |
 
 **The planner reads the files once and carries the lines that apply into its HANDOFF
-`Stack doc:` field; the lenses read the HANDOFF, not the files.** That is
+`Ops docs:` field; the lenses read the HANDOFF, not the files.** That is
 [`execution.md`](execution.md) § 3.1 lever 1 applied, and it is also what keeps a lens
 spawned inside a worktree from missing a doc that sits in the main checkout.
 
 Three rules for a reader:
 
-- **A section marked `UNVERIFIED` is an unknown, not an all-clear.** Say "the stack doc
+- **A section marked `UNVERIFIED` is an unknown, not an all-clear.** Say "the deploy-target doc
   does not say" rather than proceeding as if the answer were "nothing".
 - **The doc is a snapshot.** For anything that decides a deploy claim, start from the
   doc and verify against the live workflow ([`execution.md`](execution.md) § 7). A doc
   that disagrees with the workflow is a finding to report, and the workflow wins.
-- **Agents do not edit stack docs.** A run that learns something says so in its PR
-  handoff — "add to `stacks/<name>.md` § Traps" — and a human commits it.
+- **Agents do not edit deploy-target docs or `repo.md`.** A run that learns something says so in its PR
+  handoff — "add to `repo.md` § Traps" — and a human commits it.
 
-**No stack docs at all** has two honest shapes, and § Resolving `workflow.json` tells them apart: a file
-below schema 2 gets the drift line naming `stacks` as missing; a file at schema 2 with
-`"stacks": []` chose none, and step 3 says so in one line. Every skill still works from
+**No deploy-target docs at all** has two honest shapes, and § Resolving `workflow.json` tells them apart: a file
+below schema 2 gets the drift line naming `deployTargets` as missing; a file at schema 2 with
+`"deployTargets": []` chose none, and step 3 says so in one line. Every skill still works from
 the generic rules; what it loses is the stack-specific half of each lens.
 
 Six of them carry weight the others do not:
@@ -280,7 +298,7 @@ gh repo view --json nameWithOwner,defaultBranchRef,squashMergeAllowed,rebaseMerg
 | `specFlow` | An `openspec/` directory at the repo root → `"openspec"`. Otherwise none. See [`../reference/openspec.md`](../reference/openspec.md). |
 | `mergeMethod` | `squashMergeAllowed` / `rebaseMergeAllowed` from `gh repo view`. |
 | `deployOnMerge` | Grep `.github/workflows/` for a workflow with `branches: [<integration>]` that deploys. **Do not assume a merge is inert.** |
-| `stacks` | The file names under `.claude/workflow/stacks/` (§ Resolving `workflow.json` step 1 lists them). Nothing there → none. |
+| `deployTargets` | The file names under `.claude/workflow/deploy-targets/` (§ Resolving `workflow.json` step 1 lists them). Nothing there → none. |
 | Required checks | `gh api repos/<owner>/<repo>/branches/<b>/protection` |
 
 **Prefer copying from the CI workflow when it disagrees with anything else.** The
@@ -324,7 +342,7 @@ sweep:
 | You need the sibling's | Read it from |
 |---|---|
 | board-level facts — area, DRI, Track, priority caps | **this** file; they describe the shared board |
-| integration branch, gate, forbidden paths, stack docs, workstreams | **the sibling's own** `.claude/workflow.json` (its checkout, worktree then main, per the block in § Resolving `workflow.json` run from that checkout) |
+| integration branch, gate, forbidden paths, deploy-target docs, workstreams | **the sibling's own** `.claude/workflow.json` (its checkout, worktree then main, per the block in § Resolving `workflow.json` run from that checkout) |
 | any of the above with no checkout | nothing — the sibling is **board-only** this run: sweep its issues for the integrity pass, never gate one `agent-ready`, never judge its merges, never pick it to implement, and say so once |
 
 Two files that both list each other must agree on every board-level key. `setup check`
