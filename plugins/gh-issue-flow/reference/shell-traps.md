@@ -110,7 +110,9 @@ of which read as a clean run:
 - **An unguarded `WT=$(git rev-parse --show-toplevel)` in a non-repo cwd** leaves `WT`
   empty, `dirname ""` is `.`, and the loop quietly tests `./.claude/workflow.json` —
   measured: a stray file yielded `number=999  owner=WRONG-ORG`, at exit 0. Guard the
-  substitution: `WT=$(git rev-parse --show-toplevel) || { echo "NOT A GIT REPO"; exit 1; }`.
+  substitution: `WT=$(git rev-parse --show-toplevel) || { echo "NOT INSIDE A CHECKOUT — cd into a repo and rerun"; exit 1; }`
+  — and word the message as a location error, not an answer; an earlier "no repo board"
+  wording read as a verdict.
 
 ## `IFS=$'\t' read -r a b c` cannot parse a row with an empty MIDDLE column
 

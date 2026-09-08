@@ -43,7 +43,7 @@ is `autopilot`'s normal scheduled path, where an unattended run would then write
 machine-default board with nobody to check with. Look in both, worktree first:
 
 ```sh
-WT=$(git rev-parse --show-toplevel) || { echo "NOT A GIT REPO — no repo board"; exit 1; }
+WT=$(git rev-parse --show-toplevel) || { echo "NOT INSIDE A CHECKOUT — cd into a repo and rerun; nothing is resolved yet"; exit 1; }
 MAIN=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)") # main checkout
 WF=""
 for D in "$WT" "$MAIN"; do
@@ -85,6 +85,33 @@ boardless case printed nothing at all.
 [`../reference/shell-traps.md`](../reference/shell-traps.md) § A loop's fallback never fires.
 
 In a normal checkout the two are identical and the loop reads it once.
+
+**A workspace directory holding several checkouts is a supported starting point.**
+MEASURED 2026-09-08: both of a team's scheduled routines start in one, and both runs
+worked. The block cannot run *there* — a plain directory is not a git repo, so its first
+line prints `NOT INSIDE A CHECKOUT` and stops — and that line is a location error, never
+an answer about the board. `cd` into each repo you will sweep (§ Repo scope) and run the
+block inside it, once per repo; each run's `number=` / `schema=` / `targets=` lines are
+that repo's. An earlier wording of that line ended in "no repo board", which read as an
+answer and would have sent a run to the machine default; the message changed for that
+reason.
+
+🚨 **Fetch before you trust the file.** The block reads the working tree, which is
+whatever the checkout is parked on. MEASURED 2026-09-08: a shared checkout one commit
+behind its remote printed `schema=0  targets=-` for a repo whose remote was already at
+schema 4; ten minutes and one `git pull` later the same block printed `schema=4
+targets=vercel`. So `git fetch origin` first, then compare the working-tree file with the
+integration branch's copy — take `integrationBranch` from the working-tree file to know
+which ref to read:
+
+```sh
+IB=$(jq -r '.integrationBranch // empty' "$WF")            # e.g. origin/dev
+[ -n "$IB" ] && { git show "$IB:.claude/workflow.json" 2>/dev/null | jq -S . | diff -q - <(jq -S . "$WF") >/dev/null \
+  || echo "workflow.json differs from $IB — the checkout is parked or behind; use the $IB copy and say so"; }
+```
+
+A checkout parked on a feature branch, or left behind by another session, is the common
+cause; a stale reading is not a drift line's business and must not trigger `upgrade`.
 
 **Step 2 — schema drift.** Step 1 also printed `schema=<n>`: the file's `schemaVersion`,
 `0` when absent. Compare it to **Current schema** in § Layer 2. When the file is behind,
@@ -312,6 +339,9 @@ workflow is what actually gates the PR.
 repos. Resolve that set in this order and **say which answered**:
 
 1. `workflow.json` → `repos` — the explicit list, full `owner/repo`.
+   From a **workspace directory** that is not itself a git repo, first `cd` into any
+   checkout it holds and read *its* file; the block in § Resolving `workflow.json` cannot
+   run in a non-repo directory and says so.
 2. No `repos` key → **the repo you are in**, and only that one:
    `gh repo view --json nameWithOwner --jq .nameWithOwner`. This is the common case
    and it is correct — do not go looking for siblings to widen the scope.
