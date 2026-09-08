@@ -21,7 +21,7 @@ wrong PR costs a teammate's afternoon and their trust in the routine.
 
 Resolve board, repos, branches and gate commands via
 [`shared/config.md`](../../shared/config.md). 🚨 **Resolve the board from the MAIN
-checkout, not the worktree** — § Layer 1 shows the spelling; a worktree does not carry
+checkout, not the worktree** — [`shared/config.md`](../../shared/config.md) § Resolving `workflow.json` shows the spelling; a worktree does not carry
 gitignored `.claude/`, and this routine normally starts inside one, unattended, with
 nobody to catch a write to the wrong board.
 
@@ -100,7 +100,7 @@ queue worse. Also flag any `agent-authored` PR open more than 5 days as stalled.
 ```sh
 # <ready_label> is user_config.ready_label (default agent-ready), written in LITERALLY.
 # A fresh shell has no $READY_LABEL, and an empty --arg selects nothing — which reads as
-# "empty queue, stop": the silent-empty failure shared/config.md § Layer 1 forbids.
+# "empty queue, stop": the silent-empty failure shared/board.md § Resolution forbids.
 jq -r --arg ready "<ready_label>" '.items[] | select(.status=="Todo")
    | select((.labels // []) | index($ready))
    | select(((.labels // []) | index("agent-wip") | not)
@@ -112,11 +112,11 @@ jq -r --arg ready "<ready_label>" '.items[] | select(.status=="Todo")
 🚨 **The board is not simply your `userConfig` default — resolve it first.** This repo may
 name its own board in `workflow.json` → `board`, which **wins** over the machine default,
 and writing to the wrong board is silent. Run the two-step resolution in
-[`shared/config.md`](../../shared/config.md) § Layer 1, use the numbers it yields, and
+[`shared/board.md`](../../shared/board.md) § Resolution, use the numbers it yields, and
 **say which layer answered before any board write.**
 
 ⚠️ `$BOARD_JSON` is this run's single board fetch — see
-[`shared/config.md`](../../shared/config.md) § Board queries. Every later step that needs
+[`shared/board.md`](../../shared/board.md) § Board queries. Every later step that needs
 the board reads that file; only a post-write read-back re-fetches.
 
 **Repo scope.** When the caller names a repo — a scheduled routine pinned to one
@@ -154,7 +154,7 @@ needs infrastructure or a migration, touches secrets/env/runtime config, changes
 analytics schema, needs two repos, or contains an unanswered product question.
 
 Read the stack doc § Infra and migrations for that verdict — from the **main checkout**
-(§ Layer 1 step 1 prints where it found the files), since this routine is usually
+(config.md § Resolving `workflow.json` step 1 prints where it found the files), since this routine is usually
 inside a worktree where `.claude/` is gitignored. It names the apply commands and the
 ordering; `workflow.json` → `agentReadyForbiddenPaths` names the paths.
 

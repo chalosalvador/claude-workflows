@@ -174,7 +174,7 @@ gh api graphql -f query='{rateLimit{remaining}}' --jq .data.rateLimit.remaining
 
 MEASURED: that query costs **0 points**, so it can bracket a command to price it exactly:
 `before=$(probe); <command>; after=$(probe)`. That is how the numbers in
-[`../shared/config.md`](../shared/config.md) § Board queries were obtained.
+[`../shared/board.md`](../shared/board.md) § Board queries were obtained.
 
 ⚠️ An earlier note here attributed a `gh project` failure to a *secondary* Projects v2
 limit, on the strength of a clean `rate_limit` read. That reading was the stale-meter

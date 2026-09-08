@@ -66,8 +66,9 @@ cross-repo refs as `owner/repo#N`.
 `workflow.json` → `board` FIRST, and only then from `userConfig`** — this repo may not
 feed the board your machine defaults to, and writing to the wrong one is silent. Run the
 two-step resolution and report which layer answered:
-[`shared/config.md`](../../shared/config.md) § Layer 1. `board_fetch` is a **shell
-function**, not a binary — § Board queries in the same file. Repo list: § Repo scope.
+[`shared/board.md`](../../shared/board.md) § Resolution. `board_fetch` is a **shell
+function**, not a binary — § Board queries in the same file. Repo list:
+[`shared/config.md`](../../shared/config.md) § Repo scope.
 
 ⚠️ **Each command runs in a FRESH shell — nothing you set survives to the next block.**
 So every block below re-establishes `SCRATCH` and re-sources `board_fetch` rather than
@@ -105,7 +106,7 @@ BOARD_JSON="$SCRATCH/board.json"
 board_fetch "<board_owner>" "<board_number>" "$BOARD_JSON"   # 3 points, not 102 — see config.md
 ```
 
-⚠️ That is this run's **only** board fetch — see [`shared/config.md`](../../shared/config.md)
+⚠️ That is this run's **only** board fetch — see [`shared/board.md`](../../shared/board.md)
 § Board queries. Every pass below is `jq` over `$BOARD_JSON`; the § 5 read-back is the one
 deliberate exception, because it has to see state written after this pull.
 

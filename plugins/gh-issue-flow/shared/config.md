@@ -23,29 +23,14 @@ to `~/.claude/settings.json` and lands there **even under `--scope project`** �
 `.claude/settings.json` is never consulted for it. So Layer 1 holds **one** value per
 machine and cannot by itself follow you between projects.
 
-🚨 **That is why Layer 1 is only the DEFAULT board, never the answer.** A workspace that
-targets a different board sets it in that repo's `workflow.json` → `board`, which wins.
-Resolution order, every run:
+🚨 **So Layer 1 is only the DEFAULT board, never the answer** — a repo's `workflow.json` →
+`board` wins. The board half of resolution (the order, the machine default, the way back
+after a wipe, the fatal `${BOARD:-…}` idiom) is [`board.md`](board.md) § Resolution, read
+only by the skills that touch a board. Every skill runs the step below.
 
-| Order | Source | Use when |
-|---|---|---|
-| 1 | `workflow.json` → `board` (§ Layer 2) | this repo names its own board — **always wins** |
-| 2 | `${user_config.board_number}` / `${user_config.board_owner}` | no repo-level board; the machine default |
-| 3 | neither is set | **no board** — label-only, see below |
+---
 
-**Resolve it once at the top of a run, then substitute the resulting NUMBERS into every
-later command.** 🚨 **Do not try to carry it in a shell variable.** Each command runs in
-a fresh shell, so `$BOARD` set in one block is empty in the next — and an empty board
-number reads downstream exactly like "this repo has no board", which is how a boarded
-repo gets silently triaged label-only. `triage` § 1 shows the shape: literal
-`<board_number>` / `<board_owner>` placeholders you fill in.
-
-🚨 **Never write `${BOARD:-${user_config.board_number}}` or any other parameter expansion
-around a `${user_config.*}` placeholder.** MEASURED: an **unset** option is substituted
-as the *literal placeholder text*, and `${BOARD:-${user_config.board_number}}` is then a
-**fatal `bad substitution`** in both zsh and bash — the block dies on its first line, on
-exactly the "leave them blank" path the README documents as supported. Read the value,
-then decide in prose; do not make the shell do the fallback.
+## Resolving `workflow.json` and the stack docs — every run
 
 **Step 1 — ask the repo, from its root.** A bare relative path is wrong in any cwd below
 the root.
@@ -96,54 +81,7 @@ boardless case printed nothing at all.
 
 In a normal checkout the two are identical and the loop reads it once.
 
-**Step 2 — read the machine default too.** ⚠️ **This file is never substituted** — the
-`${user_config.*}` placeholders in the table above reach you as literal text, so you
-cannot read Layer 1 by quoting one. Ask the settings file:
-
-```sh
-jq -r '.pluginConfigs["gh-issue-flow@claude-workflows"].options
-       | "default_number=\(.board_number // "-")  default_owner=\(.board_owner // "-")"' \
-   ~/.claude/settings.json 2>/dev/null || echo "default_number=-  default_owner=-"
-```
-
-**Step 3 — combine the two, whole-key, and say which layer answered.** Match on step 1's
-output first; only the last row needs step 2:
-
-| Step 1 printed | Board is | Say |
-|---|---|---|
-| `number=42  owner=acme` | **42 / acme** | "board 42, from this repo's `workflow.json`" |
-| `number=42  owner=-` (or the reverse) | **stop** | a half-written key is a config error, not a fallback — mixing a repo's number with a machine-default owner reads a board nobody configured |
-| `NO workflow.json in …` | step 2's default, **unverified** | "no `workflow.json` here — using the machine default `<n>`; if this repo should have one, **stop and check before any board write**" |
-| `number=-  owner=-` | step 2's default | "board `<n>`, the machine default — this repo names none" |
-| …and step 2 also printed `-` | **none** | label-only (below) |
-
-⚠️ **The provenance you report must name where the NUMBER came from, not merely that a
-file existed.**⚠️ **The provenance you report must name where the NUMBER came from, not merely that a
-file existed.** `setup` deliberately **omits** `board` when the repo uses the default, so
-"file present, no board key" is the *common* shape — reporting it as "from
-`workflow.json`" certifies the previous project's board as this repo's deliberate choice,
-which is worse than saying nothing.
-
-**Say which layer answered** whenever a board write is about to happen. Pointing a repo's
-triage at the previous project's board is silent and expensive to undo.
-
-**If BOTH are empty, skip every board step** and work from issue labels alone. Say so
-once; do not fail.
-
-⚠️ **An empty Layer 1 is not proof the user chose the label-only path.**
-`claude plugin uninstall` empties `pluginConfigs` and the reinstall does not restore it,
-so a board that was configured yesterday can be silently gone today. When you report the
-boardless fallback, offer the way back rather than asserting a preference:
-
-```sh
-claude plugin install gh-issue-flow@claude-workflows \
-  --config board_number=<n> --config board_owner=<owner>
-```
-
-Then **`/reload-plugins`** — a subprocess write does not reach this session's memoized
-option values, so without it the very next resolution still reads empty.
-
-**Step 4 — schema drift.** Step 1 also printed `schema=<n>`: the file's `schemaVersion`,
+**Step 2 — schema drift.** Step 1 also printed `schema=<n>`: the file's `schemaVersion`,
 `0` when absent. Compare it to **Current schema** in § Layer 2. When the file is behind,
 print exactly one line and carry on:
 
@@ -156,13 +94,13 @@ Layer 3, so a behind file is never a failure. But say it every run. `claude plug
 refreshes the plugin's code and tells no repo that its config is now behind; this line
 is the only thing that does.
 
-**Step 5 — stack docs.** Step 1 printed `stacks=<names or ->` from `workflow.json` and
+**Step 3 — stack docs.** Step 1 printed `stacks=<names or ->` from `workflow.json` and
 one `stackdoc=<file>` line per file found. Reconcile them: every name must have a file
 and every file a name. A mismatch is a finding to report in one line — a name with no
 file means the doc never shipped (commonly `.claude/` gitignored, § Layer 2 → Stack
 docs); a file with no name means `setup upgrade` has not run since it was written. Then
 read only the files that are named. `stacks=-` at schema 2 is a deliberate "this repo
-detected no stack" (`"stacks": []`); `stacks=-` below schema 2 is covered by step 4.
+detected no stack" (`"stacks": []`); `stacks=-` below schema 2 is covered by step 2.
 
 
 ---
@@ -213,7 +151,7 @@ Every key is optional. Absent keys fall through to Layer 3.
 shipped through plugin 0.5.x. `setup` writes the current number on bootstrap and
 `setup upgrade` moves an older file forward by adding what it lacks. **Since** is the
 schema a key arrived in; that column is the migration list, and it is what the drift
-line in § Layer 1 step 4 reads. `tests/test_config_schema.py` holds this table, the
+line in § Resolving `workflow.json` step 2 reads. `tests/test_config_schema.py` holds this table, the
 example above and `setup`'s probe list to the same key set.
 
 | Key | Since | Setup | Meaning |
@@ -247,9 +185,9 @@ example above and `setup`'s probe list to the same key set.
 generates one file per stack from what it probed, using `skills/setup/stack-template.md`;
 humans fill in what a probe cannot know. `workflow.json` → `stacks` names the files, and
 that key is what lets the drift line, `upgrade` and `$comment_stacks` provenance carry
-stack docs like every other key. § Layer 1 step 1 prints the names and the files it finds
+stack docs like every other key. § Resolving `workflow.json` step 1 prints the names and the files it finds
 (worktree first, then the main checkout, because `.claude/` is commonly gitignored in a
-worktree); step 5 reconciles them, and a name with no file or a file with no name is a
+worktree); step 3 reconciles them, and a name with no file or a file with no name is a
 one-line finding, never a silent skip.
 
 **Skills read the section headers**, which is why the skeleton says to keep them exactly:
@@ -279,9 +217,9 @@ Three rules for a reader:
 - **Agents do not edit stack docs.** A run that learns something says so in its PR
   handoff — "add to `stacks/<name>.md` § Traps" — and a human commits it.
 
-**No stack docs at all** has two honest shapes, and § Layer 1 tells them apart: a file
+**No stack docs at all** has two honest shapes, and § Resolving `workflow.json` tells them apart: a file
 below schema 2 gets the drift line naming `stacks` as missing; a file at schema 2 with
-`"stacks": []` chose none, and step 5 says so in one line. Every skill still works from
+`"stacks": []` chose none, and step 3 says so in one line. Every skill still works from
 the generic rules; what it loses is the stack-specific half of each lens.
 
 Six of them carry weight the others do not:
@@ -331,7 +269,7 @@ gh repo view --json nameWithOwner,defaultBranchRef,squashMergeAllowed,rebaseMerg
 | `specFlow` | An `openspec/` directory at the repo root → `"openspec"`. Otherwise none. See [`../reference/openspec.md`](../reference/openspec.md). |
 | `mergeMethod` | `squashMergeAllowed` / `rebaseMergeAllowed` from `gh repo view`. |
 | `deployOnMerge` | Grep `.github/workflows/` for a workflow with `branches: [<integration>]` that deploys. **Do not assume a merge is inert.** |
-| `stacks` | The file names under `.claude/workflow/stacks/` (§ Layer 1 step 1 lists them). Nothing there → none. |
+| `stacks` | The file names under `.claude/workflow/stacks/` (§ Resolving `workflow.json` step 1 lists them). Nothing there → none. |
 | Required checks | `gh api repos/<owner>/<repo>/branches/<b>/protection` |
 
 **Prefer copying from the CI workflow when it disagrees with anything else.** The
@@ -381,55 +319,6 @@ single constant.
   keeps working in `gh` while silently failing every owner-string match.
 - **Issue numbers collide across repos.** A bare `#N` resolves same-repo; always
   write `owner/repo#N` when referring across.
-
----
-
-## Board queries
-
-**Fetch the board once per run, into a file. Every consumer reads that file.**
-
-Use `board_fetch` from [`../reference/board-query.md`](../reference/board-query.md) — a
-hand-written GraphQL query returning exactly what these skills read. ⚠️ **It is a shell
-function in that file, not a binary** — paste both `board_gql` and `board_fetch` into the
-shell (or `. ` a file you wrote them to) before calling it, or you get `command not
-found`:
-
-```sh
-SCRATCH="${SCRATCH:-${TMPDIR:-/tmp}}"          # fresh shell: re-establish it
-BOARD_JSON="$SCRATCH/board-<board_number>.json"  # <-- the NUMBER you resolved, written in
-[ -s "$BOARD_JSON" ] || board_fetch "<board_owner>" "<board_number>" "$BOARD_JSON"
-```
-
-🚨 **Do not use `gh project item-list` for this.** MEASURED: 102 GraphQL points against
-`board_fetch`'s 3 on the same board, and no CLI flag narrows it — the numbers, why, and
-the proof that the two outputs agree on every key the skills read are in
-[`../reference/board-query.md`](../reference/board-query.md).
-
-🚨 **Still one board read per run.** Two steps that both need the board are two `jq`
-passes over `$BOARD_JSON`, **never two fetches**. Cheap is not free — and the rule also
-keeps the two steps agreeing with each other.
-
-⚠️ **One exception: a read-back AFTER a write must re-fetch.** Verifying a mutation
-landed against JSON pulled *before* the mutation proves nothing. Pull to a second path for
-that — and read the eventual-consistency trap before trusting the result.
-
-⚠️ **If you fall back to the CLI, `--limit 1000` is mandatory.** The default is 30 and
-silently drops the newest cards on any board bigger than that — it can return only `Done`
-rows and look like a legitimately empty queue. `board_fetch` paginates to the end on its
-own and needs no equivalent.
-
-Resolve field and option ids dynamically; **never hardcode them**:
-
-```sh
-gh project field-list "<board_number>" --owner "<board_owner>" --format json
-```
-
-⚠️ `gh api rate_limit` does **not** see the secondary limit that stops `gh project`.
-A clean meter does not mean the call will work — believe the error. There is no REST
-fallback for Projects v2.
-
-⚠️ An issue's `projectItems` comes back **empty** for a repo in a different org from
-the board. Reverse lookups must go through `gh project item-list`, not the issue.
 
 ---
 

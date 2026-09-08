@@ -57,11 +57,11 @@ current GitHub user OR unassigned).** Resolve the user dynamically —
 🚨 **The board is not simply your `userConfig` default — resolve it first.** This repo may
 name its own board in `workflow.json` → `board`, which **wins** over the machine default,
 and writing to the wrong board is silent. Run the two-step resolution in
-[`shared/config.md`](../../shared/config.md) § Layer 1, use the numbers it yields, and
+[`shared/board.md`](../../shared/board.md) § Resolution, use the numbers it yields, and
 **say which layer answered before any board write.**
 
 ⚠️ **`$BOARD_JSON` is the one board fetch this run gets** — see
-[`shared/config.md`](../../shared/config.md) § Board queries for it. This step and the
+[`shared/board.md`](../../shared/board.md) § Board queries for it. This step and the
 theme sense below are two `jq` passes over that same file, not two `item-list` calls.
 
 ```sh

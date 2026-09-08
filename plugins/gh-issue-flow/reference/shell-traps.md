@@ -101,7 +101,7 @@ not own the shell the next command runs in.
 
 ## A loop's fallback never fires, and an empty `$(git rev-parse)` adopts the cwd
 
-Two shapes measured on the board-resolution block in `shared/config.md` § Layer 1, both
+Two shapes measured on the file-lookup block in `shared/config.md` § Resolving `workflow.json`, both
 of which read as a clean run:
 
 - **`for … done || echo "none"` never prints "none".** `continue` exits 0, so the loop
