@@ -11,7 +11,7 @@ python3 tests/test_no_stray_files.py
 python3 tests/test_version_agreement.py
 python3 tests/test_config_schema.py
 python3 tests/test_links.py
-python3 tests/test_stack_headers.py
+python3 tests/test_doc_headers.py
 claude plugin validate ./plugins/gh-issue-flow --strict
 claude plugin validate . --strict
 ```
@@ -207,7 +207,7 @@ it — did a rewrite drop the fact?"* **Update `OWNED` in the same commit.** Do 
 around it by deleting the entry — it has already caught its own pin going stale three
 times, which is the behaviour it was built for.
 
-It is mutation-proven 11/11 (7 kill + 4 must-stay-green); the two board pins added later were proven 7/7 (3 kill + 4 must-stay-green) on top, and the two stack-doc pins 8/8 (4 kill + 4 must-stay-green): a softened or inverted owner and an exact copy elsewhere red; a hard-wrap, moved emphasis, a move within the owner and a paraphrase elsewhere stay green. If you change the guard itself,
+It is mutation-proven 11/11 (7 kill + 4 must-stay-green); the two board pins added later were proven 7/7 (3 kill + 4 must-stay-green) on top, and the two ops-doc pins 8/8 (4 kill + 4 must-stay-green): a softened or inverted owner and an exact copy elsewhere red; a hard-wrap, moved emphasis, a move within the owner and a paraphrase elsewhere stay green. If you change the guard itself,
 re-prove it; the must-stay-green half is what stops it reddening on ordinary reformatting.
 
 `tests/test_config_schema.py` is mutation-proven **11/11 (7 kill + 4 must-stay-green)**:
@@ -225,10 +225,11 @@ spans first; and its first version passed the very `../../../tests/` link it was
 for, because it checked the marketplace boundary and not the plugin's — the fifth kill
 case is that link.
 
-`tests/test_stack_headers.py` is mutation-proven **7/7 (5 kill + 2 must-stay-green)**: a
+`tests/test_doc_headers.py` is mutation-proven **8/8 (6 kill + 2 must-stay-green)**: a
 renamed skeleton header, a renamed table row, a "§ Infra" short reference, demoted
-headers and an added header the table lacks all red; a reordered table and a mix of
-other § references with a full header name stay green. Its first version matched a
+headers, an added header the table lacks, and a header present in both skeletons all
+red; a reordered table and a mix of other § references with full header names stay
+green. Its first version matched a
 reference greedily ("§ Infra before deciding") and let the short form through; the
 word-by-word comparison is the fix.
 

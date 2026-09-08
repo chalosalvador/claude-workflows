@@ -40,7 +40,7 @@ diff between it and what you would write, and let the user choose.
 - [ ] 3. Write .claude/workflow.json  (bootstrap only) — or add its missing keys (upgrade only)
 - [ ] 4. Labels — create the ones the skills read  (bootstrap only)
 - [ ] 5. Board — verify the fields exist; create what gh can  (bootstrap only)
-- [ ] 5b. Stacks — name the stack(s), generate .claude/workflow/stacks/<name>.md from
+- [ ] 5b. Stacks — name the stack(s), generate .claude/workflow/deploy-targets/<name>.md from
          what § 2 probed, list every UNVERIFIED section  (bootstrap + upgrade)
 - [ ] 6. Confirm the two agents loaded, and say what they are for
 - [ ] 7. Report: what is configured, what is missing, what only a human can do
@@ -109,9 +109,9 @@ repo with no CI. Test the directory first, or use `find`:
 | `workstreams` | For a monorepo: the actual directories under `apps/`, `packages/`, `crates/`, etc. **Read the tree; never trust a README.** |
 | `validateWhenChanged` | A CI job gated by a `paths:` filter — its command keyed by that glob. Omit when CI has no such job. |
 | `ciOnly` | A required check that needs a service, secret or multi-GB download you cannot reproduce locally — its name, with the reason. Read the job's `services:` and `secrets.` uses. |
-| `deployWorkflow` | The workflow file `deployOnMerge` was read from, so the next reader can re-derive it. While it is open, copy its `paths` / `paths-ignore` block verbatim — § 5b writes it into the stack doc § Deploy. |
+| `deployWorkflow` | The workflow file `deployOnMerge` was read from, so the next reader can re-derive it. While it is open, copy its `paths` / `paths-ignore` block verbatim — § 5b writes it into the deploy-target doc § Deploy. |
 | `trackForArea` | Each `area:*` label → the board's Track option of the same name, from `field-list` (§ 5). Only when the board has a Track field. |
-| `agentReadyForbiddenPaths` | The infra, migration and workflow directories the deploy and protection probes found — the paths an unattended run must never touch. Record the migration directory and its apply command from the same read; § 5b writes those under the stack doc § Infra and migrations. |
+| `agentReadyForbiddenPaths` | The infra, migration and workflow directories the deploy and protection probes found — the paths an unattended run must never touch. Record the migration directory and its apply command from the same read; § 5b writes those under the deploy-target doc § Infra and migrations. |
 | `priorityCaps` | Never probed. Written as the default `{"legal": "P1"}` with a `$comment_priorityCaps` saying what it does and that `{}` turns it off — so the rule triage applies is visible in the file rather than implied by its absence. |
 | `schemaVersion` | Always the **Current schema** from [`shared/config.md`](../../shared/config.md) § Layer 2 → Schema. Never probed, never omitted. |
 
@@ -148,13 +148,13 @@ you here.
 - [ ] 2. From the schema table, take every key whose Since is greater than the file's
          version — PLUS any other key the file lacks that § 2 knows how to probe.
 - [ ] 3. Probe each exactly as § 2 does. Show the proposed keys with their sources and
-         ASK. A probe is a proposal, not a decision. `stacks` is the exception: § 5b
+         ASK. A probe is a proposal, not a decision. `deployTargets` is the exception: § 5b
          both probes it and writes its files, so hand that key to § 5b.
 - [ ] 4. Write ONLY the missing keys, each with a `$comment_<key>` naming the plugin
          version, the source and the date. Set `schemaVersion` to the current schema.
 - [ ] 5. Re-run any formatter the repo applies to the file — a `$comment` usually says
          which — then show the diff. In `workflow.json` it must touch nothing but the
-         added keys; the stack docs § 5b writes are separate files.
+         added keys; the deploy-target docs § 5b writes are separate files.
 - [ ] 6. The file is usually tracked on a protected branch: branch, commit, open a PR.
          Never merge it.
 - [ ] 7. Read it back: `jq .schemaVersion` equals the current schema and every proposed
@@ -179,13 +179,13 @@ upgrade would add and what each probe found.
 ⚠️ **Check whether `.claude/` is gitignored** before declaring the file shared:
 
 ```sh
-git check-ignore -v .claude/workflow.json .claude/workflow/stacks/probe.md   # the second path need not exist
+git check-ignore -v .claude/workflow.json .claude/workflow/deploy-targets/probe.md   # the second path need not exist
 ```
 
 Both paths, because the fix for one is not the fix for the other: the common
 `.claude/*` + `!/.claude/workflow.json` pattern shares the config and still hides every
-stack doc § 5b writes — the read-back passes, the file never reaches the PR, and every
-teammate reads "no stack docs" as a normal state.
+deploy-target doc § 5b writes — the read-back passes, the file never reaches the PR, and every
+teammate reads "no deploy-target docs" as a normal state.
 
 Read the `-v` output, not the exit code — `git check-ignore` exits 0 on **any** pattern
 match, a negation included. Many repos blanket-ignore `.claude/*` with per-file
@@ -294,27 +294,32 @@ than implying the board is broken.
 ⚠️ **Never hardcode a field or option id** into `workflow.json` or anywhere else.
 Resolve them from `field-list` in the same run that uses them.
 
-## 5b. Stacks — the repo's own operational knowledge
+## 5b. Deploy targets and `repo.md` — the repo's own operational knowledge
 
-Stack-specific knowledge lives in the repo, not the plugin: `.claude/workflow/stacks/<name>.md`,
-one file per stack, named in `workflow.json` → `stacks`. What each section is for and
-which skill reads it: [`shared/config.md`](../../shared/config.md) § Stack docs.
+Stack-specific knowledge lives in the repo, not the plugin, in two kinds of file:
+`.claude/workflow/deploy-targets/<name>.md`, **one per place code gets deployed** (not per
+technology), named in `workflow.json` → `deployTargets`; and `.claude/workflow/repo.md`,
+**exactly one**, for the review bot, the reviewer invariants and the traps, which do not
+vary by target. What each section is for and which skill reads it:
+[`shared/config.md`](../../shared/config.md) § Deploy-target docs.
 
 Runs in **bootstrap and upgrade**. Check reports what it would generate and writes
 nothing.
 
 ```
-- [ ] 1. Name the stack(s) from EVIDENCE — the table below. Never from a README.
-- [ ] 2. Copy the skeleton:  cat "${CLAUDE_PLUGIN_ROOT}/skills/setup/stack-template.md"
-         Its header needs the plugin version:  jq -r .version "${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json"
+- [ ] 1. Name the deploy target(s) from EVIDENCE — the table below. Never from a README.
+- [ ] 2. Copy the skeletons:  cat "${CLAUDE_PLUGIN_ROOT}/skills/setup/deploy-target-template.md"
+         and  cat "${CLAUDE_PLUGIN_ROOT}/skills/setup/repo-template.md"  (one repo.md per repo)
+         Their headers need the plugin version:  jq -r .version "${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json"
 - [ ] 3. Fill each section from what § 2 already probed, plus the two probes this step
          owns (below). Every filled line carries its source path and today's date.
          Anything no probe answered stays `UNVERIFIED — fill in`. Nothing is invented.
-- [ ] 4. Show the file and ASK. A stack name is a proposal; the user may rename it,
+- [ ] 4. Show both files and ASK. A target name is a proposal; the user may rename it,
          split it in two, or drop it.
-- [ ] 5. Write it, and write the names into `workflow.json` → `stacks` with a
-         `$comment_stacks` — `[]` when the evidence named nothing. Read both back: every
-         `##` header from the skeleton is present, exactly, and every name has a file.
+- [ ] 5. Write them, and write the target names into `workflow.json` → `deployTargets`
+         with a `$comment_deployTargets` — `[]` when the evidence named nothing (repo.md is
+         written regardless). Read back: every `##` header from each skeleton is present,
+         exactly, and every name has a file.
 - [ ] 6. List every UNVERIFIED section in § 7 Missing, with who can fill it.
 ```
 
@@ -334,14 +339,14 @@ repo contains — several may apply, and each gets its own file:
 
 Read the workflow lines, not just the file names: a `Dockerfile` plus a workflow that
 runs `gcloud run deploy` is `gcp-cloud-run`. When the evidence names nothing, **write no
-stack doc and say so** — the generic reference docs still apply, and an invented stack
+deploy-target doc and say so** — the generic reference docs still apply, and an invented stack
 is worse than none.
 
 **Filling from § 2, and the two probes this step owns.** `deployOnMerge` and
 `deployWorkflow` go under Deploy, with the `paths` / `paths-ignore` block § 2 copied
 from that workflow; the migration directory and apply command § 2 recorded beside
 `agentReadyForbiddenPaths` go under Infra. **The forbidden paths themselves are not
-copied** — `workflow.json` owns that list and the stack doc points at it, so there is
+copied** — `workflow.json` owns that list and the deploy-target doc points at it, so there is
 one list to rot. Two things § 2 does not probe, so this step does:
 
 ```sh
@@ -379,11 +384,28 @@ proposal. Only when the bot has fewer than two comments to read do the lines sta
 `UNVERIFIED`, and that is a Missing row: the babysit loop cannot tell an ack from a
 review without them.
 
-**Upgrade on a repo that already has stack docs**: add any `##` header the skeleton has
-and the file lacks, with its body `UNVERIFIED`; generate a doc for evidence that has
-appeared since (a new `fly.toml`, say) and add its name to `stacks`; say "nothing to
-add" when neither applies. **Never touch a filled section**, and never rename a file — a
-human chose that name.
+**Upgrade on a repo that already has these docs**: add any `##` header a skeleton has and
+the file lacks, with its body `UNVERIFIED`; generate a target doc for evidence that has
+appeared since (a new `fly.toml`, say) and add its name to `deployTargets`; say "nothing to
+add" when neither applies. **Never touch a filled section**, and never rename a target
+file — a human chose that name.
+
+**Upgrade from schema 3**, where the key was `stacks` and the docs carried the per-repo
+sections themselves:
+
+```
+- [ ] a. `git mv .claude/workflow/stacks .claude/workflow/deploy-targets`; rename the key
+         `stacks` → `deployTargets` and `$comment_stacks` → `$comment_deployTargets` in
+         place, values untouched.
+- [ ] b. Create `repo.md` from the skeleton. Move each target doc's `## Review bot`,
+         `## Reviewer invariants` and `## Traps` sections into it: sections that are
+         byte-identical across targets become one; sections that differ are both kept,
+         each line suffixed with the target it came from, and listed in § 7 Missing for
+         a human to reconcile. Remove the moved sections from the target docs.
+- [ ] c. Read back: target docs have exactly the four skeleton headers, `repo.md` has the
+         three, and the resolution block prints `targets=`, one `targetdoc=` per file and
+         `repodoc=`.
+```
 
 ## 6. Confirm the agents
 
@@ -440,7 +462,8 @@ Print three blocks, in this order:
 | integrationBranch | `origin/dev` | `gh repo view` default branch |
 | validate | 3 commands | `.github/workflows/ci.yml` job `test` |
 | schemaVersion | 2 | current schema, `shared/config.md` § Layer 2 |
-| stacks | `gcp-cloud-run`, `gcp-terraform` | `.github/workflows/deploy.yml`, `terraform/` (provider `google`) |
+| deployTargets | `gcp-cloud-run`, `gcp-terraform` | `.github/workflows/deploy.yml`, `terraform/` (provider `google`) |
+| repo.md | written | review bot from the scan; invariants and traps UNVERIFIED |
 
 **Created** — labels and board fields, with anything skipped because it already existed.
 
@@ -463,9 +486,9 @@ can close.
 |---|---|---|
 | No `Hold` Status option | No parked state; every Todo card is pickable | Board UI, one click |
 | `workflow.json` behind the schema | Keys the plugin gained are unknown here; skills run on defaults | `/gh-issue-flow:setup upgrade` |
-| `stacks/<name>.md` § Review bot patterns UNVERIFIED | The babysit loop cannot tell an ack from a review | The bot had fewer than two comments to read; re-run § 5b after its next review, or a human writes the two patterns |
-| `stacks/<name>.md` § Reviewer invariants UNVERIFIED | The `safety` lens has nothing stack-specific to check | The person who owns the data model writes one line per invariant |
-| `.claude/` is gitignored | Config and stack docs are local-only; teammates get nothing | Add `!/.claude/workflow.json` and `!/.claude/workflow/`, needs a PR |
+| `repo.md` § Review bot patterns UNVERIFIED | The babysit loop cannot tell an ack from a review | The bot had fewer than two comments to read; re-run § 5b after its next review, or a human writes the two patterns |
+| `repo.md` § Reviewer invariants UNVERIFIED | The `safety` lens has nothing stack-specific to check | The person who owns the data model writes one line per invariant |
+| `.claude/` is gitignored | Config and deploy-target docs are local-only; teammates get nothing | Add `!/.claude/workflow.json` and `!/.claude/workflow/`, needs a PR |
 | No area labels yet | Triage cannot route assignees | Tell me your areas and I will create them |
 | Branch unprotected | Nothing blocks a red merge | Repo settings — a deliberate choice |
 | `commit.gpgsign` unset | Skills stop on a signing failure | `git config commit.gpgsign true` |

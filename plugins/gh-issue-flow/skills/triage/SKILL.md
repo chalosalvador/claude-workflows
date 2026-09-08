@@ -265,7 +265,7 @@ unattended agent can finish this issue and open a PR a human will want to review
 Apply it only when **every** positive condition holds:
 
 - [ ] `effort:easy`
-- [ ] Exactly one repo, and you can name the files it touches — for a sibling in `repos`, that means its checkout resolved and you read **its** `workflow.json` for `agentReadyForbiddenPaths` and its stack doc; a sibling with no checkout is board-only this run and never gets this label
+- [ ] Exactly one repo, and you can name the files it touches — for a sibling in `repos`, that means its checkout resolved and you read **its** `workflow.json` for `agentReadyForbiddenPaths` and its deploy-target doc; a sibling with no checkout is board-only this run and never gets this label
 - [ ] Acceptance criteria concrete enough to write a test against
 - [ ] An existing test file or pattern to mirror — **or** it is a pure docs/copy change
 - [ ] No open product/design question in the body or comments
@@ -277,9 +277,9 @@ Apply it only when **every** positive condition holds:
 | Labels `blocked`, `epic`, `legal`, `compliance`, `security` — or Status `Hold` | Needs a human owner (or a human un-parking) by definition |
 | Body says "Blocked by: #n" / "depends on" / "sequenced after" (unresolved) | Ordering constraint an agent will miss |
 | Priority P0 | A P0 deserves a person right now, not a queue |
-| Touches infrastructure, migrations, or CI workflow files | Human-gated, by kind. Concrete paths for this repo: `workflow.json` → `agentReadyForbiddenPaths`; the stack doc § Infra and migrations names the apply commands and ordering |
-| Involves secrets, env vars, runtime config, or a credential swap | ⚠️ A credential/env change needs a **superset first** or no revision can boot — and provisioning tools silently store empty or newline-suffixed values ([`secrets-and-ci.md`](../../reference/secrets-and-ci.md)); how *this* platform is verified is in the stack doc § Secrets and env |
-| Changes a store that another store derives from — a view, an index, a sync target; the stack doc § Infra and migrations names them and their rebuild order | The derived store has to be rebuilt in order against the rollout, and an unattended run cannot sequence that. With no stack doc, any schema change is this row |
+| Touches infrastructure, migrations, or CI workflow files | Human-gated, by kind. Concrete paths for this repo: `workflow.json` → `agentReadyForbiddenPaths`; the deploy-target doc § Infra and migrations names the apply commands and ordering |
+| Involves secrets, env vars, runtime config, or a credential swap | ⚠️ A credential/env change needs a **superset first** or no revision can boot — and provisioning tools silently store empty or newline-suffixed values ([`secrets-and-ci.md`](../../reference/secrets-and-ci.md)); how *this* platform is verified is in the deploy-target doc § Secrets and env |
+| Changes a store that another store derives from — a view, an index, a sync target; the deploy-target doc § Infra and migrations names them and their rebuild order | The derived store has to be rebuilt in order against the rollout, and an unattended run cannot sequence that. With no deploy-target doc, any schema change is this row |
 | Needs a coordinated change in two repos | Two PRs, one breaking moment |
 | Requires touching shared staging or prod | Merging the integration branch may deploy |
 

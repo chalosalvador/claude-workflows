@@ -58,8 +58,8 @@ jobs:
 
       # Stack docs are read by header name; the skeleton, config.md's table and
       # every "§ <Section>" reference have to be one set.
-      - name: Stack-doc headers agree
-        run: python3 tests/test_stack_headers.py
+      - name: Doc headers agree
+        run: python3 tests/test_doc_headers.py
 
       - name: Plugin + marketplace manifests
         run: |

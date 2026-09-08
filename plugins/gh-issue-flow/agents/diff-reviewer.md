@@ -63,10 +63,10 @@ one side without the other is a break even when both sides compile. Also
 read/write asymmetry: a field written but missing from a second store's read, a
 parity check, or a derived store (a view, an index, a cache) that has to be rebuilt in
 order against the rollout. The cross-store parities this repo depends on arrive in your
-HANDOFF's `Stack doc:` line, carried from the repo's stack doc § Reviewer invariants;
+HANDOFF's `Ops docs:` line, carried from the repo's `repo.md` § Reviewer invariants;
 check each one the diff touches. If the line says none were carried, look yourself in
 the **main checkout** (`$(dirname "$(git rev-parse --path-format=absolute
---git-common-dir)")/.claude/workflow/stacks/*.md`) — never the bare relative path, because
+--git-common-dir)")/.claude/workflow/deploy-targets/*.md`) — never the bare relative path, because
 `.claude/` is usually gitignored in the worktree you were handed. With no doc, or an
 `UNVERIFIED` section, say so in one line; a clean pass with nothing checked is not a
 clean pass.
@@ -90,11 +90,11 @@ enumerate each one:
 reason to stop looking.** A caller you cannot rule out is a finding.
 
 **safety** — Credential, secret and data-isolation safety. Start from your HANDOFF's
-`Stack doc:` line — the predicate every query on isolated data must carry, the boundary
-every write must respect, carried from the repo's stack doc § Reviewer invariants — and
+`Ops docs:` line — the predicate every query on isolated data must carry, the boundary
+every write must respect, carried from the repo's `repo.md` § Reviewer invariants — and
 check each line against the diff. If it says none were carried, look yourself in the
 **main checkout** (`$(dirname "$(git rev-parse --path-format=absolute
---git-common-dir)")/.claude/workflow/stacks/*.md`), never the bare relative path:
+--git-common-dir)")/.claude/workflow/deploy-targets/*.md`), never the bare relative path:
 `.claude/` is usually gitignored in the worktree you were handed, and a glob that matches
 nothing there reads exactly like "this repo declares no invariants". With no doc, or an
 `UNVERIFIED` section, say so in one line and fall back to what the code itself declares:
@@ -108,7 +108,7 @@ nothing exercises, and assertions on shape rather than behavior.
 
 **deploy** — Migration and rollout safety. Destructive vs. additive/nullable.
 Ordering between migration, backfill, and image roll. Start from your HANDOFF's
-`Stack doc:` line — the § Deploy and § Infra and migrations lines the planner carried:
+`Ops docs:` line — the § Deploy and § Infra and migrations lines the planner carried:
 what a merge runs, the ordering rules, what is not in the CD path — then verify against
 the live workflow; the doc is a snapshot and the workflow wins. Check whether merging
 the integration branch auto-deploys and runs migrations — read

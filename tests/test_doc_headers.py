@@ -3,13 +3,13 @@
 
 WHY THIS EXISTS
 ---------------
-A stack doc (`.claude/workflow/stacks/<name>.md`, generated into user repos from
-`skills/setup/stack-template.md`) is read by header NAME. The skeleton says so:
+A deploy-target doc (`.claude/workflow/deploy-targets/<name>.md`, generated into user repos from
+`skills/setup/deploy-target-template.md`) is read by header NAME. The skeleton says so:
 "skills read them by name, so keep every ## exactly as written". Three things
 therefore have to agree, and prose cannot hold them:
 
-  1. the `##` headers in the skeleton;
-  2. the Section column of the "Read by" table in shared/config.md § Stack docs;
+  1. the `##` headers in the two skeletons, with no header in both;
+  2. the Section column of the "Read by" table in shared/config.md § Deploy-target docs;
   3. every "§ <Section>" reference to a stack-doc section under plugins/.
 
 MEASURED: the PR that introduced the contract shipped two readers citing
@@ -27,7 +27,7 @@ spelled short, and reds; a "§ X" that matches no header at all ("§ Layer 1",
 
 Mutation-proven — ledger in CONTRIBUTING.md § Conventions.
 
-Run:  python3 tests/test_stack_headers.py
+Run:  python3 tests/test_doc_headers.py
 Set STACK_GUARD_ROOT to point it at a copy (the mutation harness does).
 """
 from __future__ import annotations
@@ -39,11 +39,12 @@ import sys
 from pathlib import Path
 
 ROOT = Path(os.environ.get("STACK_GUARD_ROOT") or Path(__file__).resolve().parent.parent)
-TEMPLATE = ROOT / "plugins/gh-issue-flow/skills/setup/stack-template.md"
+TEMPLATES = {"target": ROOT / "plugins/gh-issue-flow/skills/setup/deploy-target-template.md",
+             "repo": ROOT / "plugins/gh-issue-flow/skills/setup/repo-template.md"}
 CONFIG = ROOT / "plugins/gh-issue-flow/shared/config.md"
 SCAN = "plugins/gh-issue-flow/"
 
-EXPECTED_HEADERS = 7
+EXPECTED_HEADERS = {"target": 4, "repo": 3}
 
 HEADER = re.compile(r"^## (.+?)\s*$", re.M)
 TABLE_ROW = re.compile(r"^\| ([A-Z][^|]*?) \|", re.M)
@@ -57,18 +58,23 @@ def fail(msg: str) -> int:
 
 
 def main() -> int:
-    headers = HEADER.findall(TEMPLATE.read_text(encoding="utf-8"))
-    if not headers:
-        return fail("no ## headers found in the skeleton — did a rewrite drop them?")
-    if len(headers) != EXPECTED_HEADERS:
-        return fail(f"skeleton has {len(headers)} headers, expected {EXPECTED_HEADERS}; update the constant deliberately")
+    headers: list[str] = []
+    for kind, path in TEMPLATES.items():
+        hs = HEADER.findall(path.read_text(encoding="utf-8"))
+        if not hs:
+            return fail(f"no ## headers found in the {kind} skeleton — did a rewrite drop them?")
+        if len(hs) != EXPECTED_HEADERS[kind]:
+            return fail(f"{kind} skeleton has {len(hs)} headers, expected {EXPECTED_HEADERS[kind]}; update the constant deliberately")
+        headers += hs
+    if len(set(headers)) != len(headers):
+        return fail("a header appears in both skeletons; a section has one home")
     hset = set(headers)
     problems: list[str] = []
 
     config = CONFIG.read_text(encoding="utf-8")
-    block = config.split("| Section | Read by | For |", 1)
+    block = config.split("| Section | File | Read by | For |", 1)
     if len(block) < 2:
-        return fail("config.md has no '| Section | Read by | For |' table")
+        return fail("config.md has no '| Section | File | Read by | For |' table")
     table = block[1].split("\n\n", 1)[0]
     rows = set(TABLE_ROW.findall(table)) - {"Section"}
     if rows != hset:
@@ -96,11 +102,11 @@ def main() -> int:
                     problems.append(f"{rel}:{line}: '§ {' '.join(words[:k])}' names no header — the header is '## {h}'")
 
     if problems:
-        print(f"FAIL: {len(problems)} stack-header violation(s)\n", file=sys.stderr)
+        print(f"FAIL: {len(problems)} doc-header violation(s)\n", file=sys.stderr)
         for p in problems:
             print(f"  - {p}", file=sys.stderr)
         return 1
-    print(f"OK: {len(headers)} skeleton headers, table agrees, references under {SCAN} name them exactly")
+    print(f"OK: {len(headers)} skeleton headers across {len(TEMPLATES)} skeletons, table agrees, references under {SCAN} name them exactly")
     return 0
 
 

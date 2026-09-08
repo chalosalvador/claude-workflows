@@ -232,4 +232,4 @@ That is GitHub's behaviour and applies to every repo; the failure surfaces only 
 impersonation 403s, far from the cause, on a workflow that ran yesterday. Before any
 transfer, re-bind every federation trust that matches on the subject. Which bindings this
 stack has (a WIF `principal://` binding, an AWS trust policy condition) belongs in the
-repo's stack doc § Traps.
+repo's repo.md § Traps.

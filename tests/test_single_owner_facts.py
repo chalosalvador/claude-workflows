@@ -140,7 +140,7 @@ OWNED: dict[str, tuple[str, int]] = {
     "`board` FIRST, and only then from `userConfig`":
         ("plugins/gh-issue-flow/skills/triage/SKILL.md", 1),
 
-    # The stack-doc reading rule. Restated as a CONSEQUENCE in the skeleton (which is
+    # The ops-doc reading rule. Restated as a CONSEQUENCE in the skeleton (which is
     # generated into user repos), in both agents (fresh context, no link to follow) and in
     # the babysit loop — deliberately, each in its own words. The RULE has one owner, and
     # the softening the guard exists to catch is "an UNVERIFIED section has nothing to
@@ -148,11 +148,11 @@ OWNED: dict[str, tuple[str, int]] = {
     "A section marked `UNVERIFIED` is an unknown, not an all-clear.":
         ("plugins/gh-issue-flow/shared/config.md", 1),
 
-    # The stack-doc write boundary. Its consequence appears in next-issue § 6, autopilot
+    # The ops-doc write boundary. Its consequence appears in next-issue § 6, autopilot
     # § 10 and review-process ("propose in the handoff; a human commits it"), and the PR 21
     # review found one copy that had already inverted it ("fill it in"). One owner, and
     # every other site says what to do instead, not the rule again.
-    "Agents do not edit stack docs.":
+    "Agents do not edit deploy-target docs or `repo.md`.":
         ("plugins/gh-issue-flow/shared/config.md", 1),
 }
 

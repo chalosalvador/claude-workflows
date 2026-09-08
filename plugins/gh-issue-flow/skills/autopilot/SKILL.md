@@ -124,7 +124,7 @@ checkout does — filter to that repo and ignore the other's cards entirely. A r
 to one repo that picks up another's issue **has no checkout to build in**. With no repo
 named, you may take a sibling's card only when its checkout resolves
 ([`shared/config.md`](../../shared/config.md) § Repo scope) — and then every repo-level
-fact for that issue (branch, gate, forbidden paths, stack docs) comes from **that**
+fact for that issue (branch, gate, forbidden paths, deploy-target docs) comes from **that**
 checkout's `workflow.json`, not this one. Backpressure (§ 1) counts `agent-authored` PRs
 across every repo in `repos` regardless; the review queue is shared.
 
@@ -158,7 +158,7 @@ needs infrastructure or a migration, touches secrets/env/runtime config, changes
 store another store derives from (triage § 4 names the row), needs two repos, or contains
 an unanswered product question.
 
-Read the stack doc § Infra and migrations for that verdict — from the **main checkout**
+Read the deploy-target doc § Infra and migrations for that verdict — from the **main checkout**
 (config.md § Resolving `workflow.json` step 1 prints where it found the files), since this routine is usually
 inside a worktree where `.claude/` is gitignored. It names the apply commands and the
 ordering; `workflow.json` → `agentReadyForbiddenPaths` names the paths.
@@ -339,7 +339,7 @@ gate failure → § Handing it back. Credential and env changes are hand-work fo
 the provisioning tools store empty values, trailing newlines and write-only types without
 erroring, and every failure surfaces far from the cause:
 [`../../reference/secrets-and-ci.md`](../../reference/secrets-and-ci.md) for the rules,
-the repo's stack doc § Secrets and env for this platform's spelling.
+the repo's deploy-target doc § Secrets and env for this platform's spelling.
 
 ## 8. Validation gate
 
@@ -429,7 +429,7 @@ PR body must contain, in order:
 - **How it was verified** — the exact gate commands and their result, plus the
   mutation-check result for any new test
 - **Noticed, not fixed** — anything out of scope you saw
-- **For the stack doc** — a proposed, dated bullet for `.claude/workflow/stacks/<name>.md`
+- **For `repo.md`** — a proposed, dated bullet for `.claude/workflow/repo.md`
   § Traps when the run measured something about the platform the doc does not say.
   Proposed only; the reviewer commits it or drops it.
 - **Spec** — which change was archived, and whether specs were updated or the change
