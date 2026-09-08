@@ -87,7 +87,10 @@ reports zero commits for a live workstream.
 **Cross-cutting commits.** One commit often touches several paths — a tooling or
 design-system sweep can hit all of them — so it will appear under more than one
 workstream. **Attribute it to the workstream it is *about* and mention it once**; don't
-repeat it under every app it touched.
+repeat it under every app it touched. The mirror case: a commit touching **no**
+workstream path — a runbook under `documentation/`, a root config — is invisible to the
+per-path pull. MEASURED: a cutover-runbook fix reported every stream empty for its day.
+Always run the unscoped pull too, and attribute by what the commit is about.
 
 ## 3. Pull the commits
 
