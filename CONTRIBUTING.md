@@ -201,13 +201,13 @@ Several commits exist specifically to correct a claim that turned out to be wron
 that history is worth more than a clean-looking one.
 
 **The single-owner guard will block you, and that is the point.**
-`tests/test_single_owner_facts.py` pins twelve clauses to exactly one owning file. Rewrite a
+`tests/test_single_owner_facts.py` pins fourteen clauses to exactly one owning file. Rewrite a
 section and the pinned clause stops existing, and it fails with *"0 means the owner lost
 it — did a rewrite drop the fact?"* **Update `OWNED` in the same commit.** Do not route
 around it by deleting the entry — it has already caught its own pin going stale three
 times, which is the behaviour it was built for.
 
-It is mutation-proven 11/11 (7 kill + 4 must-stay-green); the two board pins added later were proven 7/7 (3 kill + 4 must-stay-green) on top. If you change the guard itself,
+It is mutation-proven 11/11 (7 kill + 4 must-stay-green); the two board pins added later were proven 7/7 (3 kill + 4 must-stay-green) on top, and the two stack-doc pins 8/8 (4 kill + 4 must-stay-green): a softened or inverted owner and an exact copy elsewhere red; a hard-wrap, moved emphasis, a move within the owner and a paraphrase elsewhere stay green. If you change the guard itself,
 re-prove it; the must-stay-green half is what stops it reddening on ordinary reformatting.
 
 `tests/test_config_schema.py` is mutation-proven **11/11 (7 kill + 4 must-stay-green)**:
