@@ -138,7 +138,7 @@ refreshes skills; do not assume it re-resolves agents.
 
 ## The single-owner guard will block your commit. That is the point.
 
-`tests/test_single_owner_facts.py` pins fifteen clauses to exactly one owning file. If you
+`tests/test_single_owner_facts.py` pins sixteen clauses to exactly one owning file. If you
 rewrite a section and the pinned clause stops existing, it fails with
 `0 means the owner lost it — did a rewrite drop the fact?`
 
@@ -146,7 +146,7 @@ rewrite a section and the pinned clause stops existing, it fails with
 three times, which is the cost-is-the-feature behaviour it was built for. Do not route
 around it by deleting the entry.
 
-It is mutation-proven 11/11 (7 kill + 4 must-stay-green); the two board pins added later were proven 7/7 (3 kill + 4 must-stay-green) on top, the two ops-doc pins 8/8 (4 kill + 4 must-stay-green), and the area-map pin 8/8 (4 kill + 4 must-stay-green). If you change it, re-prove it —
+It is mutation-proven 11/11 (7 kill + 4 must-stay-green); the two board pins added later were proven 7/7 (3 kill + 4 must-stay-green) on top, the two ops-doc pins 8/8 (4 kill + 4 must-stay-green), the area-map pin 8/8 (4 kill + 4 must-stay-green), and the out-of-sweep pin 8/8 (4 kill + 4 must-stay-green). If you change it, re-prove it —
 the must-stay-green half is what stops it reddening on reformatting.
 
 ⚠️ It enumerates via `git ls-files`, i.e. the **index**. A new unstaged file is invisible
