@@ -122,7 +122,11 @@ the board reads that file; only a post-write read-back re-fetches.
 **Repo scope.** When the caller names a repo — a scheduled routine pinned to one
 checkout does — filter to that repo and ignore the other's cards entirely. A run pinned
 to one repo that picks up another's issue **has no checkout to build in**. With no repo
-named, you are running by hand and may take either.
+named, you may take a sibling's card only when its checkout resolves
+([`shared/config.md`](../../shared/config.md) § Repo scope) — and then every repo-level
+fact for that issue (branch, gate, forbidden paths, stack docs) comes from **that**
+checkout's `workflow.json`, not this one. Backpressure (§ 1) counts `agent-authored` PRs
+across every repo in `repos` regardless; the review queue is shared.
 
 Order by Priority (P1 → P3), then by age (oldest first — the queue should drain, not
 churn). Take at most **2**. Empty queue → say so in one line and stop.

@@ -74,6 +74,12 @@ no commits *to you*; that is not the same as no commits. List it under "not cove
 the reason — this is the same failure as the stale-workstream-path one below, and it
 reads identically in the output.
 
+🚨 **A sibling's integration ref and workstreams come from ITS `workflow.json`, never this
+one.** Run the resolution block from the sibling's checkout and take `integrationBranch`
+and `workstreams` from what it prints. MEASURED: judging a sibling's commits against
+this file's `origin/dev` — a branch the sibling also had, 815 commits stale — reported
+months of merged work as unmerged, with no error.
+
 ⚠️ **Read the workstream paths from config, not from memory.** An app that was split or
 renamed leaves the old path in every doc and half the skills; a stale path silently
 reports zero commits for a live workstream.

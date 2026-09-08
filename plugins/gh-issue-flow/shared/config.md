@@ -154,30 +154,41 @@ schema a key arrived in; that column is the migration list, and it is what the d
 line in § Resolving `workflow.json` step 2 reads. `tests/test_config_schema.py` holds this table, the
 example above and `setup`'s probe list to the same key set.
 
-| Key | Since | Setup | Meaning |
-|---|---|---|---|
-| `schemaVersion` | 1 | always written | Which shape this file has; `0` when absent |
-| `repos` | 0 | § 2 | Every repo the multi-repo skills sweep, full `owner/repo` |
-| `board` | 0 | § 2 | This repo's Projects v2 board; overrides Layer 1 |
-| `integrationBranch` | 0 | § 2 | Remote ref to branch from and merge into |
-| `mergeMethod` | 0 | § 2 | `squash` / `rebase` / `merge`, from the repo's allowed set |
-| `specFlow` | 0 | § 2 | `openspec` when the directory exists, else absent |
-| `preflight` | 0 | § 2 | Machine-level deps the gate needs and no lockfile installs |
-| `validate` | 0 | § 2 | The gate, verbatim from CI, run every time |
-| `validateWhenChanged` | 0 | § 2 | Glob → command, run only when the diff touches it |
-| `ciOnly` | 0 | § 2 | Required checks not to attempt locally, each with the reason |
-| `requiredChecks` | 0 | § 2 | Check names protection requires |
-| `protection` | 0 | § 2 | `strict`, `enforceAdmins`, `conversationResolution` |
-| `deployOnMerge` | 0 | § 2 | What merging the integration branch does, in words |
-| `deployWorkflow` | 0 | § 2 | The workflow file `deployOnMerge` was read from |
-| `workstreams` | 0 | § 2 | Monorepo path → human name |
-| `areaLabels` | 0 | § 4 | `area:*` label → one-line meaning |
-| `dri` | 0 | § 4 | `area:*` label → GitHub login that owns it |
-| `trackForArea` | 0 | § 5 | `area:*` label → board Track option |
-| `agentReadyForbiddenPaths` | 0 | § 2 | Paths an unattended run must never touch |
-| `$comment*` | 0 | § 3 | Provenance for the human reader; never read by a skill |
-| `stacks` | 2 | § 5b | The stack doc names this repo carries, one per file in `.claude/workflow/stacks/`; `[]` when the evidence names none |
-| `priorityCaps` | 3 | § 2 | Label → highest priority that label may carry, applied by `triage` § 3c. Absent means `{"legal": "P1"}`; `{}` turns caps off |
+| Key | Since | Setup | Scope | Meaning |
+|---|---|---|---|---|
+| `schemaVersion` | 1 | always written | file | Which shape this file has; `0` when absent |
+| `repos` | 0 | § 2 | file | Every repo the multi-repo skills sweep, full `owner/repo` |
+| `board` | 0 | § 2 | board | This repo's Projects v2 board; overrides Layer 1 |
+| `integrationBranch` | 0 | § 2 | repo | Remote ref to branch from and merge into |
+| `mergeMethod` | 0 | § 2 | repo | `squash` / `rebase` / `merge`, from the repo's allowed set |
+| `specFlow` | 0 | § 2 | repo | `openspec` when the directory exists, else absent |
+| `preflight` | 0 | § 2 | repo | Machine-level deps the gate needs and no lockfile installs |
+| `validate` | 0 | § 2 | repo | The gate, verbatim from CI, run every time |
+| `validateWhenChanged` | 0 | § 2 | repo | Glob → command, run only when the diff touches it |
+| `ciOnly` | 0 | § 2 | repo | Required checks not to attempt locally, each with the reason |
+| `requiredChecks` | 0 | § 2 | repo | Check names protection requires |
+| `protection` | 0 | § 2 | repo | `strict`, `enforceAdmins`, `conversationResolution` |
+| `deployOnMerge` | 0 | § 2 | repo | What merging the integration branch does, in words |
+| `deployWorkflow` | 0 | § 2 | repo | The workflow file `deployOnMerge` was read from |
+| `workstreams` | 0 | § 2 | repo | Monorepo path → human name |
+| `areaLabels` | 0 | § 4 | board | `area:*` label → one-line meaning |
+| `dri` | 0 | § 4 | board | `area:*` label → GitHub login that owns it |
+| `trackForArea` | 0 | § 5 | board | `area:*` label → board Track option |
+| `agentReadyForbiddenPaths` | 0 | § 2 | repo | Paths an unattended run must never touch |
+| `$comment*` | 0 | § 3 | file | Provenance for the human reader; never read by a skill |
+| `stacks` | 2 | § 5b | repo | The stack doc names this repo carries, one per file in `.claude/workflow/stacks/`; `[]` when the evidence names none |
+| `priorityCaps` | 3 | § 2 | board | Label → highest priority that label may carry, applied by `triage` § 3c. Absent means `{"legal": "P1"}`; `{}` turns caps off |
+
+**Scope is what `repos` cannot widen.** A `board` key describes the Projects v2 board
+every repo in `repos` feeds — `areaLabels`, `dri`, `trackForArea`, `priorityCaps` — and
+applies to every issue a run sweeps. A `repo` key describes **the repo this file lives
+in** and nothing else: its branch, gate, forbidden paths, stack docs. A `file` key is
+about the file itself. So a run that sweeps a sibling from `repos` reads the sibling's
+board-level facts from this file and its repo-level facts **from the sibling's own
+`workflow.json`**, found through the sibling's checkout (§ Repo scope). MEASURED: with
+both repos listed and one file, `work-summary` judged every ai-app commit against the
+gateway's `origin/dev` — a branch the sibling also has, 815 commits stale — and reported
+months of merged work as unmerged, silently.
 
 ### Stack docs — `.claude/workflow/stacks/`
 
@@ -301,9 +312,23 @@ git -C "<candidate>" rev-parse --show-toplevel      # prove a sibling before usi
 ```
 
 **A repo with no resolvable checkout is not an error** — every issue, PR and board
-operation goes through `gh` and needs no working copy. Only commit-log reads do. Skip
-those for that repo and **say you skipped them**, rather than silently reporting it as
-a quiet day.
+operation goes through `gh` and needs no working copy. Only commit-log reads and
+repo-level facts do. Skip those for that repo and **say you skipped them**, rather than
+silently reporting it as a quiet day.
+
+🚨 **`repos` is the issue-sweep set, not a config merge.** Listing a sibling widens which
+issues, PRs and merged work a run reads. It does **not** make this file's `repo`-scoped
+keys (§ Layer 2 → Schema, Scope column) apply to the sibling. For every sibling you
+sweep:
+
+| You need the sibling's | Read it from |
+|---|---|
+| board-level facts — area, DRI, Track, priority caps | **this** file; they describe the shared board |
+| integration branch, gate, forbidden paths, stack docs, workstreams | **the sibling's own** `.claude/workflow.json` (its checkout, worktree then main, per the block in § Resolving `workflow.json` run from that checkout) |
+| any of the above with no checkout | nothing — the sibling is **board-only** this run: sweep its issues for the integrity pass, never gate one `agent-ready`, never judge its merges, never pick it to implement, and say so once |
+
+Two files that both list each other must agree on every board-level key. `setup check`
+compares them when both checkouts resolve and reports a disagreement as a Missing row.
 
 ---
 

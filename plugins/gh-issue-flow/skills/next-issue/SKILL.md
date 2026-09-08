@@ -139,6 +139,12 @@ Un-parking is the user's call, not the picker's.
 The issue's repo is on its GitHub URL. Narrow to the workstream from `workflow.json` →
 `workstreams`, or from the repo's own directory layout.
 
+If that repo is a sibling from `repos` rather than the one you are in, resolve its
+checkout ([`shared/config.md`](../../shared/config.md) § Repo scope) and run the
+resolution block there: the branch, gate, workstreams and stack docs for this issue are
+**the sibling's**, and a Mode A prompt must say "run from the <sibling> repo". No
+checkout → say so and stop; do not build a sibling's issue from this repo's config.
+
 ⚠️ **Beware stale paths in issue bodies and docs.** An app that was split or renamed
 leaves the old path valid-looking — sometimes still on disk as an untracked leftover.
 Confirm against the current tree, not the issue text.
