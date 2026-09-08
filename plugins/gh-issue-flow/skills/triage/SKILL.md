@@ -47,7 +47,8 @@ both start with zero memory of it.
 - [ ] 3. DEEP PASS — capped at 25 untriaged issues: category → effort → priority
          → duplicates → agent-ready gate. (§ 3–4)
 - [ ] 4. Write it: labels, board fields, assignee, dup comments, `triaged` LAST
-- [ ] 5. Print the receipt: summary table + detail on P0/P1 + board-health line
+- [ ] 5. Print the receipt: integrity line + out-of-sweep line + summary table +
+         detail on P0/P1 + board-health line
 ```
 
 **Why split:** keeping the board on-project and assigned is cheap and must be
@@ -364,6 +365,24 @@ Open with the **integrity line** — proof the guarantee held this run:
 **The two zeros are the point.** If either is non-zero, something blocked the write —
 say which issue and why, loudly.
 
+Then the **out-of-sweep line**, always, even when N is 0:
+
+``Out of sweep: N board cards from repos not in `repos` — <owner/repo#N, …> — left
+untouched; add the repo to `repos` or remove the card``
+
+The integrity guarantee is a claim about the swept repos only. Since 0.10.0 `repos` is the
+issue-sweep set, so a board card whose repo is not in it is never swept, never labeled,
+never assigned and never moved — by design, and this line is what stops a clean integrity
+line from overstating. MEASURED 2026-09-08: a board carried an open, unlabeled, unassigned
+card from a repo in neither sibling's `repos`; the run left it alone, correctly, and
+mentioned it only by its own initiative — nothing in the receipt shape required the
+mention, so a rewrite could drop it and the card would be invisible forever. Derive N
+from the § 1 board fetch already on disk: compare each item's `content.repository`
+(`nameWithOwner`) against `repos`, case-insensitively. An org transfer means the board's
+stored owner can differ from the canonical one, so compare against what `gh repo view
+--json nameWithOwner` says for each entry in `repos`, or name the ambiguity in the line
+rather than guessing either way. Never label, assign or move such a card.
+
 **Summary table** — every issue that went through the deep pass this run:
 
 | Issue | Repo | Title | Category | Effort | Priority | Assignee | Agent-ready | Notes |
@@ -377,8 +396,9 @@ Close with a **board-health line**: `N deep-triaged · N still untriaged (next r
 agent-ready · N P0/P1 open · N without priority · N stale In-Progress · N possible
 dupes`, plus any load warnings and anything you deliberately left alone.
 
-**On a quiet day** — nothing off-board, nothing unassigned, no new untriaged — say so
-in the integrity line plus one sentence, nothing else. A clean board should read clean.
+**On a quiet day** — nothing off-board, nothing unassigned, no new untriaged — the
+receipt is the integrity line, the out-of-sweep line and one sentence, nothing else. A
+clean board should read clean.
 
 ⚠️ **Report, don't accuse.** A low or zero lane in any per-person view is usually
 **allocation**, not underperformance. Ask the lead before inferring.

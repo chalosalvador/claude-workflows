@@ -44,6 +44,7 @@ machine-default board with nobody to check with. Look in both, worktree first:
 
 ```sh
 WT=$(git rev-parse --show-toplevel) || { echo "NOT INSIDE A CHECKOUT — cd into a repo and rerun; nothing is resolved yet"; exit 1; }
+echo "repo=$(git -C "$WT" remote get-url origin 2>/dev/null | sed -E 's#^(git@|https://)github.com[:/]##; s#\.git$##' | grep . || printf '%s\n' -)  wt=$WT"  # which checkout answered
 MAIN=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)") # main checkout
 WF=""
 for D in "$WT" "$MAIN"; do
@@ -86,13 +87,32 @@ boardless case printed nothing at all.
 
 In a normal checkout the two are identical and the loop reads it once.
 
+**The `repo=` line says which checkout answered, and nothing else in the output does.**
+Every other line of a run in the wrong repo looks exactly like a run in the right one.
+MEASURED 2026-09-08: a triage run in a workspace holding two sibling checkouts ran one
+sibling's freshness check without changing directory, so it ran in the other sibling and
+reported a 481-commit divergence against that checkout's stale `origin/main`; only a
+rerun inside the intended repo caught it, and nothing the block printed could have. The
+line is the remote's spelling, not the canonical owner — an org transfer does not
+rewrite remotes, so a transferred repo still prints its old org here — which is why it
+identifies WHICH checkout answered and is never the value to build API paths from; the
+canonical `owner/repo` comes from `gh repo view --json nameWithOwner`, as the skills
+already say. It never calls `gh` and never aborts the block: a checkout with no `origin`
+prints `repo=-`, and a non-GitHub remote prints the URL as it is. The `| grep .` is
+load-bearing: a pipeline's status is `sed`'s, so without it the fallback never fires —
+MEASURED, a no-remote checkout printed `repo=` and nothing after it. And the fallback is
+`printf`, not `echo '-'`: MEASURED, zsh's builtin `echo` reads a lone `-` as the end of
+its options and prints nothing, so under zsh `echo '-'` printed the same empty `repo=`.
+
 **A workspace directory holding several checkouts is a supported starting point.**
 MEASURED 2026-09-08: both of a team's scheduled routines start in one, and both runs
 worked. The block cannot run *there* — a plain directory is not a git repo, so its first
 line prints `NOT INSIDE A CHECKOUT` and stops — and that line is a location error, never
 an answer about the board. `cd` into each repo you will sweep (§ Repo scope) and run the
 block inside it, once per repo; each run's `number=` / `schema=` / `targets=` lines are
-that repo's. An earlier wording of that line ended in "no repo board", which read as an
+that repo's, and the `repo=` line is what proves it. A `repo=` that names a different
+repo than the one you meant to resolve is the location error to catch before reading
+anything else. An earlier wording of that line ended in "no repo board", which read as an
 answer and would have sent a run to the machine default; the message changed for that
 reason.
 
@@ -112,6 +132,7 @@ IB=$(jq -r '.integrationBranch // empty' "$WF")            # e.g. origin/dev
 
 A checkout parked on a feature branch, or left behind by another session, is the common
 cause; a stale reading is not a drift line's business and must not trigger `upgrade`.
+The diff is run from the checkout the `repo=` line names, never from a sibling's.
 
 **Step 2 — schema drift.** Step 1 also printed `schema=<n>`: the file's `schemaVersion`,
 `0` when absent. Compare it to **Current schema** in § Layer 2. When the file is behind,

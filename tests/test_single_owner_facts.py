@@ -163,11 +163,22 @@ OWNED: dict[str, tuple[str, int]] = {
     # catches is "fall back to this file's map when the sibling's cannot be read".
     "A sibling's area map comes from the sibling's own `workflow.json`, never this one.":
         ("plugins/gh-issue-flow/shared/config.md", 1),
+
+    # The out-of-sweep receipt line. Since 0.10.0 `repos` is the issue-sweep set, so a
+    # board card from a repo outside it is never swept — correctly — and the integrity
+    # line's "0 off-project · 0 unassigned" is a claim about the swept repos only.
+    # MEASURED 2026-09-08: such a card was on the board, the run left it alone and
+    # mentioned it only by its own initiative; nothing in the receipt shape required the
+    # mention, so a rewrite could drop it and the card would be invisible forever. The
+    # checklist and the quiet-day paragraph name the line; the line itself has one owner.
+    "Out of sweep: N board cards from repos not in `repos` — <owner/repo#N, …> — left "
+    "untouched; add the repo to `repos` or remove the card":
+        ("plugins/gh-issue-flow/skills/triage/SKILL.md", 1),
 }
 
 # Independent completeness check: NOT derived from len(OWNED), which would be
 # circular and pass over a silently emptied pin.
-EXPECTED_PINNED_CLAUSES = 15
+EXPECTED_PINNED_CLAUSES = 16
 
 
 def normalize(text: str) -> str:
