@@ -88,16 +88,11 @@ existing-but-empty directory is a zsh `no matches found` error at exit 0 — no 
 sentinel, and the main checkout never tried. `find` prints nothing and the `else` still
 distinguishes "no directory" from "empty directory".
 
-⚠️ **The `|| { … exit 1; }` is not decoration either.** Without it, both `git rev-parse`
-calls fail, `WT` is empty and `dirname ""` is `.`, so the loop quietly tests
-`./.claude/workflow.json` and **adopts a board from whatever directory you happen to be
-in, at exit 0.** Measured: a stray file in a non-repo cwd yielded
-`number=999  owner=WRONG-ORG`.
-
-⚠️ **The `else` is not decoration — do not collapse this into a `for … done || echo`.**
-`continue` exits 0, so such a loop always "succeeds" and the fallback becomes dead code:
-the boardless case then prints **nothing at all**, which reads as a clean run rather than
-an unanswered question. Measured while writing this.
+⚠️ **The `|| { … exit 1; }` and the explicit `else` are load-bearing, not decoration.**
+Measured, both failure shapes read as a clean run: without the first, a non-repo cwd
+adopted a board from a stray file at exit 0; collapsed to `for … done || echo`, the
+boardless case printed nothing at all.
+[`../reference/shell-traps.md`](../reference/shell-traps.md) § A loop's fallback never fires.
 
 In a normal checkout the two are identical and the loop reads it once.
 
@@ -248,22 +243,14 @@ example above and `setup`'s probe list to the same key set.
 
 ### Stack docs — `.claude/workflow/stacks/`
 
-**Everything stack-specific lives in the repo, not in this plugin.** What merging the
-integration branch actually does, how a secret is set and read back on this platform,
-which directories an unattended run must never touch, which bot reviews PRs and what its
-comments look like, which invariants a reviewer must check — all of that differs per
-repo, and the plugin's reference docs are stack-neutral on purpose. `setup` § 5b
-generates one markdown file per stack from what it probed, using the skeleton at
-`skills/setup/stack-template.md`; humans fill in what a probe cannot know.
-
-**`workflow.json` → `stacks` names them; the files live at
-`.claude/workflow/stacks/<name>.md`.** Both are written by `setup` § 5b in the same run,
-so the key is the inventory and the directory is the read-back: § Layer 1 step 1 prints
-both (it already looks in the worktree and then the main checkout, because `.claude/` is
-commonly gitignored in a worktree) and step 5 reconciles them. A name with no file, or a
-file with no name, is a one-line finding, never a silent skip. The key is what lets the
-drift line, `upgrade`, and `$comment_stacks` provenance carry stack docs exactly the way
-they carry every other key.
+**Everything stack-specific lives in the repo, not in this plugin.** `setup` § 5b
+generates one file per stack from what it probed, using `skills/setup/stack-template.md`;
+humans fill in what a probe cannot know. `workflow.json` → `stacks` names the files, and
+that key is what lets the drift line, `upgrade` and `$comment_stacks` provenance carry
+stack docs like every other key. § Layer 1 step 1 prints the names and the files it finds
+(worktree first, then the main checkout, because `.claude/` is commonly gitignored in a
+worktree); step 5 reconciles them, and a name with no file or a file with no name is a
+one-line finding, never a silent skip.
 
 **Skills read the section headers**, which is why the skeleton says to keep them exactly:
 
@@ -413,15 +400,10 @@ BOARD_JSON="$SCRATCH/board-<board_number>.json"  # <-- the NUMBER you resolved, 
 [ -s "$BOARD_JSON" ] || board_fetch "<board_owner>" "<board_number>" "$BOARD_JSON"
 ```
 
-🚨 **Do not use `gh project item-list` for this.** MEASURED on the same 6-item board in
-the same run: the CLI costs **102 GraphQL points**, `board_fetch` costs **3**. GraphQL
-bills on what a query could return, and the CLI asks for a maximal board whatever yours
-holds — `--limit 1000` and `--limit 100` both cost 102, `--limit 30` costs 31. There is no
-flag to narrow it. For scale, `gh issue view --comments` cost 2 on that same run, and its
-REST spelling cost 0.
-
-`board_fetch` emits the same `{"items":[…]}` field names, so every `jq` pass below works
-against either. It was verified identical to the CLI on every key these skills read.
+🚨 **Do not use `gh project item-list` for this.** MEASURED: 102 GraphQL points against
+`board_fetch`'s 3 on the same board, and no CLI flag narrows it — the numbers, why, and
+the proof that the two outputs agree on every key the skills read are in
+[`../reference/board-query.md`](../reference/board-query.md).
 
 🚨 **Still one board read per run.** Two steps that both need the board are two `jq`
 passes over `$BOARD_JSON`, **never two fetches**. Cheap is not free — and the rule also

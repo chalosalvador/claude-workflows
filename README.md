@@ -134,9 +134,16 @@ adapting the skills, do this first.
 Worth knowing before you point `autopilot` at a queue, because the caps exist for this
 reason.
 
-A **one-line documentation fix**, end to end, spent roughly **110k tokens and ~12 minutes
-of wall clock** — about 40k on the planner and 70k across two review lenses, both pinned
-at `effort: max`. A substantial change costs more.
+MEASURED 2026-09-07 on plugin 0.8.1
+([PR 24](https://github.com/chalosalvador/claude-workflows/pull/24) holds the record): two
+`effort:easy` issues, end to end and unattended — triage in 3 minutes; autopilot **28
+minutes** from selection to report, 14 of them from first push to green; **262k subagent
+tokens** across six agents, the planner and lenses at `sonnet` as the tier table below
+prescribes for easy issues. The Workflow layer did the same two issues in 22 minutes for
+485k tokens at a stronger tier — faster, not cheaper. The earlier measurement, on 0.5.x
+with the planner and two lenses pinned at `effort: max`, spent ~110k tokens in ~12
+minutes on a one-line docs fix; the tier table exists because of that difference. A
+substantial change costs more.
 
 That is the justification for three rules you might otherwise be tempted to relax:
 
