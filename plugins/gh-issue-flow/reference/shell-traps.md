@@ -99,6 +99,19 @@ ls .github/workflows/*.yml                       # * -> no matches found
 `setopt nullglob` would also fix it, but never set shell options inside a skill — you do
 not own the shell the next command runs in.
 
+## A loop's fallback never fires, and an empty `$(git rev-parse)` adopts the cwd
+
+Two shapes measured on the board-resolution block in `shared/config.md` § Layer 1, both
+of which read as a clean run:
+
+- **`for … done || echo "none"` never prints "none".** `continue` exits 0, so the loop
+  always "succeeds" and the fallback is dead code; the not-found case prints nothing at
+  all. Use an explicit `if [ -n "$FOUND" ] … else echo … fi` after the loop.
+- **An unguarded `WT=$(git rev-parse --show-toplevel)` in a non-repo cwd** leaves `WT`
+  empty, `dirname ""` is `.`, and the loop quietly tests `./.claude/workflow.json` —
+  measured: a stray file yielded `number=999  owner=WRONG-ORG`, at exit 0. Guard the
+  substitution: `WT=$(git rev-parse --show-toplevel) || { echo "NOT A GIT REPO"; exit 1; }`.
+
 ## `IFS=$'\t' read -r a b c` cannot parse a row with an empty MIDDLE column
 
 TAB is an **IFS whitespace** character, so a run of tabs collapses into ONE delimiter

@@ -265,13 +265,9 @@ task reports by waking the session that started it, and a scheduled run's sessio
 simply end at the turn boundary instead of waiting. The notification then has nobody to
 reach.
 
-MEASURED 2026-09-03, an autopilot routine on its own PRs: it backgrounded a 24-iteration
-CI poll and closed its turn with *"I'll be notified when it completes."* The poll stopped
-at **iteration 19 with the gate still `IN_PROGRESS`**, the session never resumed, and the
-PR was left **open and ready-for-review with an unverified gate and no report** — the
-exact end-state § 11's cap exists to prevent. Nothing errored. From outside it is
-indistinguishable from a run waiting on a permission prompt, which is how it was
-reported.
+MEASURED: an unattended run did exactly this and left a PR ready-for-review with an
+unverified gate and no report — [`../reference/verification.md`](../reference/verification.md)
+§ A backgrounded wait has nobody to report to.
 
 Two shapes that are safe, and one that is not:
 

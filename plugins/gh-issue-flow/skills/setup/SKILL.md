@@ -211,10 +211,6 @@ gh label create compliance      -d "Needs a human owner — never agent-ready"  
 gh label create security        -d "Needs a human owner — never agent-ready"              -c B60205
 ```
 
-The last three are the ones `triage` § 3c applies and `triage` § 4 / `autopilot` § 3
-read as disqualifiers. They were missing from this list, so a fresh repo had triage
-writing a label that did not exist.
-
 A new GitHub repo ships with `bug`, `documentation`, `duplicate`, `enhancement`,
 `good first issue`, `help wanted`, `invalid`, `question` and `wontfix` (verified) — so
 four of the category labels already exist. Check before creating.
@@ -296,12 +292,9 @@ Resolve them from `field-list` in the same run that uses them.
 
 ## 5b. Stacks — the repo's own operational knowledge
 
-The plugin's reference docs are stack-neutral on purpose. What merging deploys, how a
-secret is provisioned and verified, which paths an unattended run must never touch,
-which bot reviews PRs and what its comments look like — all of that differs per repo,
-so it lives **in the repo**: `.claude/workflow/stacks/<name>.md`, one file per stack,
-named in `workflow.json` → `stacks`. Which skill reads which section:
-[`shared/config.md`](../../shared/config.md) § Stack docs.
+Stack-specific knowledge lives in the repo, not the plugin: `.claude/workflow/stacks/<name>.md`,
+one file per stack, named in `workflow.json` → `stacks`. What each section is for and
+which skill reads it: [`shared/config.md`](../../shared/config.md) § Stack docs.
 
 Runs in **bootstrap and upgrade**. Check reports what it would generate and writes
 nothing.
@@ -390,29 +383,22 @@ human chose that name.
 
 ## 6. Confirm the agents
 
-The workflow's quality comes from two subagents, and a user who does not know they exist
-will never notice when they silently are not running.
+Two subagents carry the workflow's quality, and a user who does not know they exist never
+notices when they silently are not running.
 
 | Agent | Runs at | Used by | Returns |
 |---|---|---|---|
 | `issue-planner` | `effort: max`, read-only | `next-issue`, `autopilot` | The scoping plan — and **REVIEW LENSES**, which decides the next step |
 | `diff-reviewer` | `effort: max`, read-only | `next-issue`, `autopilot` | Findings through one lens: `correctness`, `contract`, `scoping`, `safety`, `tests`, `deploy` |
 
-### 🚨 Detect shadowing — do not just warn about it
-
-**A same-named agent in `~/.claude/agents/` or the project's `.claude/agents/` wins, and
-the plugin's copy never runs.** There is no error, no warning, and the shadowing agent
-still returns a good-looking result — so every symptom points at the plugin's file, which
-is not the file executing.
-
-MEASURED: five consecutive agent runs were spent tuning a plugin agent file that nothing
-read, because an older same-named agent sat in `~/.claude/agents/`. Four separate
-explanations were constructed for the resulting "non-compliance". All were void. **Prose
-warning this was already in this skill and was ignored** — which is why it is now a check
-you run, not a paragraph you read.
+**Check, do not warn.** A same-named agent in `~/.claude/agents/` or the project's
+`.claude/agents/` wins over the plugin's copy, with no error and a plausible result.
+MEASURED: five runs were spent tuning a plugin file nothing read; the story is in
+`CONTRIBUTING.md` § Testing a change to an agent, and the reason it is a check here is that
+a prose warning in this skill was ignored.
 
 ```sh
-claude plugin list          # "No plugins installed" -> NOTHING in the plugin is loaded
+claude plugin list          # "No plugins installed" -> every skill here is inert
 ls ~/.claude/agents/ .claude/agents/ 2>/dev/null
 ```
 
@@ -425,39 +411,19 @@ For each of `issue-planner` and `diff-reviewer`, report explicitly:
 | same-named file in `.claude/agents/` | Same, and it also shadows the user-level one. |
 | neither | The plugin's agents are live. |
 
-**If a shadow exists, say which file will actually execute, by absolute path.** Do not
-delete or rename it — it may be deliberate and it may be older and better. The user
-decides; you only make the invisible visible.
+If a shadow exists, name the file that will execute, by absolute path, and change
+nothing — it may be deliberate; the user decides. Every skill here spawns the namespaced
+`gh-issue-flow:<agent>`, which always resolves to the plugin's copy; a bare name resolves
+to whichever wins.
 
-🚨 **The namespaced name is the reliable one, and every skill here spawns it.**
-`gh-issue-flow:issue-planner` always resolves to the plugin's copy; a bare
-`issue-planner` resolves to whichever wins. This is not only a "wrong version" risk —
-the shadow observed here was a pre-generalization ancestor that hardcoded another repo's
-integration branch and carried no HANDOFF section, so a bare spawn would have diffed
-against a branch that does not exist and re-derived everything the plan already
-measured. **It would still have produced a confident, well-formatted review.**
+🚨 **Agent types resolve at session start.** Measured: an edit or an install changes
+nothing for the running session, and the spawn fails with `Agent type '<name>' not
+found`. Restart to test an agent change; `/reload-plugins` refreshes skills only.
 
-🚨 **Agent discovery happens at SESSION START.** Editing an agent file — or adding a new
-one — changes nothing for the session already running; the spawn fails with
-`Agent type '<name>' not found` listing the agents as they were at launch. Measured.
-
-So an agent edit cannot be tested in the session that made it. **Restart with the plugin
-loaded, then measure:**
-
-```sh
-claude --plugin-dir <path-to>/plugins/gh-issue-flow
-```
-
-`/reload-plugins` refreshes skills; do not assume it re-resolves agent types.
-
-Two things worth telling the user once, because they are not obvious:
-
-- **They pin `effort: max` regardless of the session's own effort**, so planning and
-  review run at full reasoning even from a cheap session. Implementation does not — a
-  skill cannot pin the main loop's effort.
-- 🚨 **A subagent cannot fan out.** `gh-issue-flow:diff-reviewer` is spawned **N times
-  from the parent in one message**, one per lens. A single reviewer asked to "check
-  everything" is a different, weaker thing.
+Tell the user once: the agents pin `effort: max` regardless of the session's setting
+(implementation does not — a skill cannot pin the main loop), and a subagent cannot fan
+out, so `gh-issue-flow:diff-reviewer` is spawned N times from the parent in one message,
+one per lens.
 
 ## 7. Report
 
@@ -475,36 +441,19 @@ Print three blocks, in this order:
 **Created** — labels and board fields, with anything skipped because it already existed.
 
 **Missing — and who can fix it.** The honest half. Separate what a human must do from
-what is merely absent:
+what is merely absent.
 
-🚨 **An unset board is NOT a Missing row.** ⚠️ And a blank `board_number` alone does
-**not** mean label-only — it only does when this repo's `workflow.json` names no board
-either. Resolve both layers before you say anything (§ Layer 1); a repo with
-`board: {number, owner}` set has a board no matter what Layer 1 holds. When both are
-genuinely empty, filing it as a gap tells the user their setup failed when it may be
-exactly what they wanted. Report it as a **narrowing** instead — what the skills no longer claim — and
-link to § 5 rather than restating the fallback, which § 5 already owns. The count of
-unset `userConfig` options the install prints is the same shape: **not a gap you can
-close for them**, so do not file it as one.
-
-⚠️ **But you cannot tell a deliberate blank from a wiped one, so do not assert it was a
-choice.** `claude plugin uninstall` empties `pluginConfigs`, and nothing distinguishes
-the result from a user who never set a board. When the board resolves to nothing, report
-the narrowing **and** give the way back — the `--config` command and the
-**`/reload-plugins`** that must follow it are in
-[`shared/config.md`](../../shared/config.md) § Layer 1. **The reload is part of the fix,
-not an optional extra**: without it the command succeeds and the very next skill still
-resolves an empty board.
-
-Say it as *"no board is configured — if that is deliberate, nothing is wrong; if you
-expected one, here is how to restore it."*
-
-⚠️ **Say which layer answered for the board, and say it every run.** Layer 1 is a machine
-default and Layer 2 wins — the resolution order and the measurement behind it are in
-[`shared/config.md`](../../shared/config.md) § Layer 1. If this repo feeds a different
-board, the fix is `workflow.json` → `board`, written in § 3, **not** re-running the
-install. Report the board number in effect and where it came from; pointing a repo's
-triage at the previous project's board is silent and expensive to undo.
+🚨 **An unset board is a narrowing, not a Missing row.** Resolve both layers first
+([`shared/config.md`](../../shared/config.md) § Layer 1): `workflow.json` → `board` wins,
+the machine default is second, and only when both are empty is the repo label-only. Say
+which layer answered, every run — pointing a repo's triage at the previous project's
+board is silent and expensive to undo. When neither is set, say *"no board is configured
+— if that is deliberate, nothing is wrong; if you expected one, here is how to restore
+it"* and give the way back from § Layer 1: the `--config` command **and** the
+`/reload-plugins` after it, without which the next skill still resolves empty. You cannot
+tell a deliberate blank from one `claude plugin uninstall` wiped, so never assert it was
+a choice. The install's "N options not yet set" count is the same shape: not a gap you
+can close.
 
 | Gap | Effect | Fix |
 |---|---|---|
