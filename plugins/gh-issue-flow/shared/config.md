@@ -235,10 +235,9 @@ about the file itself. So a run that sweeps a sibling from `repos` reads the two
 board-level facts from this file and everything else **from the sibling's own
 `workflow.json`** — its checkout when one resolves, else the file read from GitHub
 (§ Repo scope). A sibling's area map comes from the sibling's own `workflow.json`,
-never this one. Before 0.12.0 the three maps were board-scoped, which forced two files
-feeding one board to carry a byte-identical union of both repos' areas; a file that
-still carries the union keeps working — an entry for a label this repo does not have is
-never read for an issue here, and `setup check` lists it as cleanup. MEASURED: with
+never this one. A file that also carries a sibling's areas keeps working — an entry for a
+label this repo does not have is never read for an issue here, and `setup check` lists it
+as cleanup. MEASURED: with
 both repos listed and one file, `work-summary` judged every ai-app commit against the
 gateway's `origin/dev` — a branch the sibling also has, 815 commits stale — and reported
 months of merged work as unmerged, silently.

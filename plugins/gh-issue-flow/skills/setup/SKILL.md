@@ -29,7 +29,7 @@ Two modes, chosen from the user's wording:
   lists this repo's `area:*` labels (`gh label list --limit 200 --json name --jq
   '.[].name'`) and reports every label with no `dri` entry in **this** file as a
   Missing row, and every `dri` entry with no such label here as cleanup — that second
-  list is what a pre-0.12.0 union file shows, and it is not a failure.
+  list is what a file carrying a sibling's areas shows, and it is not a failure.
 - **Upgrade** ("upgrade", "migrate the config", "bring workflow.json up to date", or the
   drift line any skill prints) — an existing file, a newer plugin: add only the keys the
   schema gained since the file was written. § 3 Upgrade mode.
@@ -387,9 +387,9 @@ ls .coderabbit.yaml .coderabbit.yml 2>/dev/null
 Write the login and where it came from. Then, **in this same run, derive the two
 patterns from the bot's own comments**: open the newest review it posted and the newest
 acknowledgement (the short one with no findings), quote a phrase from each that the
-other does not contain, and write both lines as PROBED with the two comment URLs as the
-source. Show the user the two comments beside the two patterns — a pattern is a
-proposal. Only when the bot has fewer than two comments to read do the lines stay
+other does not contain, and write both lines as PROBED from the bot's newest review and
+newest acknowledgement — never the comment URL, which names a PR. Show the user the two
+comments, with their URLs, beside the two patterns — a pattern is a proposal. Only when the bot has fewer than two comments to read do the lines stay
 `UNVERIFIED`, and that is a Missing row: the babysit loop cannot tell an ack from a
 review without them.
 

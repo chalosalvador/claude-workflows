@@ -124,7 +124,7 @@ from the system that consumes it.
 a worktree — copies commits, not your working tree, so an acceptance run before you commit
 silently tests the OLD content and reports the bug you just fixed. **Commit first, then
 clone.** Measured; same family as
-[`../reference/mutation-harness.md`](../reference/mutation-harness.md) way #1.
+[`../reference/mutation-harness.md`](../reference/mutation-harness.md) way 1.
 
 The upside: that pre-commit run is a valid **control**. Keep it and report both
 directions — pre-fix reproduces, post-fix passes.
@@ -173,6 +173,9 @@ diff it cannot touch buys nothing — but **any diff that adds a guard, validati
 invariant gets `scoping`**, whatever else it gets. That is the lens that asks what the
 diff does not touch, and it is the hole every other lens is built to miss.
 
+**Any diff that adds or changes a comment or doc line gets `comments`**, whatever the
+plan named. The plan is written before the code exists, so decide it from the final diff.
+
 ### 3.1 Cost discipline
 
 **This subsection is the single source for spend rules. Skills link here; they do not
@@ -184,10 +187,11 @@ environment and read the same files. Roughly a third of the spend, buying nothin
 
 Four levers, in order of saving:
 
-1. **Pass the planner's `HANDOFF` block to every lens**, verbatim, plus the gate result
-   and the worktree path. This is the one that removes the duplication above.
-2. **Gate the lens list** on the plan's REVIEW LENSES. Six lenses where two apply is
-   triple.
+1. **Pass the planner's `HANDOFF` block to every lens**, verbatim, plus the gate result,
+   the worktree path and the `Plugin:` line. This is the one that removes the duplication
+   above.
+2. **Gate the lens list** on the plan's REVIEW LENSES. The full set where two apply
+   costs several times the review.
 3. **Tier the `model` per spawn**, by the issue's size label:
 
    | Label | Planner | Lenses |
@@ -250,6 +254,9 @@ they mutate the shared worktree. See
   and surface it — do not push unsigned.
 - **Never commit secrets.** If the work appears to need a credential, that is a gate
   failure, not something to work around.
+- Comments and docs the change adds follow the repo's own policy, or
+  [`../reference/comments-and-docs.md`](../reference/comments-and-docs.md) when it has
+  none. History goes in the PR body.
 - When `specFlow` is set, **archive the spec change as the last commit of the SAME
   pull request**, before the push — not after the merge. A post-merge archive is
   unimplementable for any flow that does not merge.

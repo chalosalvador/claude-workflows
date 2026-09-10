@@ -20,8 +20,9 @@ claude plugin validate . --strict
 CI runs all of them as the `guards` job. Run them before pushing — `main` is protected, so a
 red gate means the PR simply cannot merge.
 
-`tests/test_comment_policy.py` reads only the lines your branch adds or changes since it
-left `origin/main`, so `git fetch origin` before running it. What it enforces is
+`tests/test_comment_policy.py` reads the lines your branch adds or changes since it left
+`origin/main`, and every untracked file that is not ignored, so `git fetch origin` before
+running it and keep drafts such as a PR body outside the checkout. What it enforces is
 [`comments-and-docs.md`](plugins/gh-issue-flow/reference/comments-and-docs.md); a line
 nobody touches is never read, so older text that breaks the policy stays until it is
 edited.
@@ -92,7 +93,9 @@ claude plugin list                 # must show gh-issue-flow enabled
 ls ~/.claude/agents/               # anything here with a matching name shadows the plugin
 ```
 
-Then spawn `gh-issue-flow:issue-planner`, never a bare `issue-planner`.
+Then spawn `gh-issue-flow:issue-planner`, never a bare `issue-planner`, with a `Plugin:`
+line naming the absolute path of `plugins/gh-issue-flow`. Without it the agent reads the
+lens set from the newest installed copy, not your working tree.
 
 To test the **installed** path against your working tree rather than the published
 version, add the checkout as a directory source — then reinstall on every change you

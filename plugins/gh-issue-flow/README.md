@@ -48,8 +48,8 @@ regardless of the session's own setting. They appear as `gh-issue-flow:<name>`.
 
 🚨 **A subagent cannot fan out** — it has no Agent tool and spawns do not nest. Spawn
 `gh-issue-flow:diff-reviewer` **N times from the parent, in one message**, one per lens.
-Gate the lens list on what the planner named; six max-effort reviewers on a styling
-change is waste.
+Gate the lens list on what the planner named; the full set of max-effort reviewers on a
+styling change is waste.
 
 🚨 **Spawn the namespaced name.** A bare `diff-reviewer` resolves to whichever same-named
 agent file wins, and a stale one in `~/.claude/agents/` shadows this one with no warning

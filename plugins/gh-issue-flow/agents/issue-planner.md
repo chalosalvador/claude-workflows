@@ -139,7 +139,7 @@ Which `diff-reviewer` lenses this diff can actually trip. The set, and what each
 [`diff-reviewer.md` § The lenses](diff-reviewer.md#the-lenses): read that section from
 `agents/diff-reviewer.md` in the plugin directory your invocation names as `Plugin:`, or,
 with none, in the newest installed copy
-(`ls -d ~/.claude/plugins/cache/*/gh-issue-flow/*/ | sort -V | tail -1`). **Name only
+(`ls -d ~/.claude/plugins/cache/claude-workflows/gh-issue-flow/*/ | sort -V | tail -1`). **Name only
 those, one clause each on why**, and list the ones you skipped with the reason. This gates
 a parallel max-effort review — an unearned lens costs real tokens, a missing one costs a
 real bug.

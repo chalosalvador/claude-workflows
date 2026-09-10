@@ -138,7 +138,8 @@ reason.
 Two `effort:easy` issues, end to end and unattended, with the planner and lenses at
 `sonnet` as the tier table below prescribes for easy issues: triage takes 3 minutes;
 autopilot **28 minutes** from selection to report, 14 of them from first push to green,
-and **262k subagent tokens** across six agents. The Workflow layer does the same two
+and **262k subagent tokens** across two planners and four lenses; a diff that also gets the
+`comments` lens adds one more. The Workflow layer does the same two
 issues in 22 minutes for 485k tokens at a stronger tier — faster, not cheaper. With the
 planner and two lenses pinned at `effort: max`, a one-line docs fix costs ~110k tokens in
 ~12 minutes; the tier table exists because of that difference. A substantial change
@@ -266,7 +267,8 @@ review, babysit, board, deploy — facts, not policy).
 by the repo: deploy, secrets, infra, review bot, reviewer invariants, traps. Nothing
 stack-specific ships in the plugin.
 
-**Reference** — twelve docs of measured operational knowledge, stack-neutral; see
+**Reference** — measured operational knowledge, stack-neutral, and the default comment
+policy; see
 [its README](plugins/gh-issue-flow/reference/README.md).
 
 ## Develop

@@ -75,8 +75,8 @@ session claims the issues, **creates both worktrees itself**, and afterwards bab
 PRs together under one § 11 cap — which is the second reason to bother.
 
 Take that path only when the Workflow tool is in this session and § 2 actually selected
-two candidates; on one issue it buys nothing. Hand the script the plugin's base directory
-(the path the Skill tool printed for this file) and the § 3.1 model tier per issue — its
+two candidates; on one issue it buys nothing. Hand the script the plugin directory
+([`shared/execution.md`](../../shared/execution.md) § 3) and the § 3.1 model tier per issue — its
 agents cannot find either on their own, measured. Without it, work them in order exactly
 as below. That file also states plainly what the layer costs, which is not nothing, and
 what one live run measured.
@@ -309,7 +309,8 @@ skeptic, that is a handback, not a `skip_specs`.**
 Stay inside what the issue asks for. **An unattended run is the worst possible place for
 opportunistic refactors:** the reviewer cannot tell your improvement from your mistake,
 and every extra hunk is a reason to reject the whole PR. Follow the conventions already
-in the file; match its idiom.
+in the file; match its idiom. Comments and docs follow
+[`shared/execution.md`](../../shared/execution.md) § 4.
 
 ### The fold-in threshold — when to just fix it here
 

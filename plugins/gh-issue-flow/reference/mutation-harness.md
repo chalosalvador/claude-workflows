@@ -122,7 +122,7 @@ line. Treat a non-kill as *unverified* until the mutation is proven present.
     anywhere**, so `if "ERROR" in out:` is dead code. **Key on the return code**
     (2=interrupted, 3=internal, 4=usage, 5=no-tests-collected) *and* require a
     `\d+ (passed|failed)` line before trusting an empty failing-set.
-    ⚠️ #17 and #18 compound: a guard file that fails to import gives exit 2 and no
+    Items 17 and 18 compound: a guard file that fails to import gives exit 2 and no
     FAILED lines — reported as "baseline green", and every later case is meaningless.
 
 19. **`\S+` truncates a parametrized id containing a space.**

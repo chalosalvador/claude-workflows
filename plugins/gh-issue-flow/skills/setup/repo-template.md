@@ -26,8 +26,8 @@ when it has none.
 <!-- Read by: shared/execution.md § 5 (the babysit loop), review-process.md. -->
 - Bot: {{login}} — detected from {{config file / check name / comment author}} — PROBED, or `none`
 - Check name in branch protection: {{…}} — or none
-- An acknowledgement comment matches: {{pattern}} — PROBED from {{comment URL}}, or UNVERIFIED when the bot has fewer than two comments
-- A real review comment matches: {{pattern}} — PROBED from {{comment URL}}, or UNVERIFIED
+- An acknowledgement comment matches: {{pattern}} — PROBED from the bot's newest acknowledgement, or UNVERIFIED when the bot has fewer than two comments
+- A real review comment matches: {{pattern}} — PROBED from the bot's newest review, or UNVERIFIED
 - Rate limit and re-trigger behaviour: UNVERIFIED
 
 ## Reviewer invariants

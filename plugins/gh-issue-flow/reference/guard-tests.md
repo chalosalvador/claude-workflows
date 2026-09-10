@@ -106,7 +106,7 @@ unexamined.
 4. **Depth-1 block capture.** The indented-code-block branch appended only the line
    that *started* the block, so a multi-line command was inspected one line deep.
 
-#1 is what people design for. #2–#4 are all "the guard never looked there", and
+Item 1 is what people design for. Items 2–4 are all "the guard never looked there", and
 they are both more common and harder to see, because the guard passes on the
 *correct* content while silently skipping the region that changed.
 

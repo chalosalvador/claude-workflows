@@ -323,8 +323,8 @@ another 45 for the second.
 
 ### The shape
 
-`pipeline()`, not `parallel()` — issue #2's review starts the moment its build finishes,
-whatever issue #1 is doing. There is one deliberate barrier inside the ship stage: the
+`pipeline()`, not `parallel()` — the second issue's review starts the moment its build
+finishes, whatever the first is doing. There is one deliberate barrier inside the ship stage: the
 adjudicator needs every lens's findings together, which is what a barrier is for.
 
 Per issue: 1 planner + 1 builder + L lenses + 1 shipper, plus 2 more only when
@@ -334,8 +334,8 @@ for one delta path. If both plans name more lenses than that allows, run one iss
 through the workflow and leave the other for the next run; do not silently drop lenses to
 fit a budget.
 
-**`args` carries two things the script cannot discover.** `args.plugin` is the plugin's
-base directory — the path the Skill tool printed when autopilot was invoked, e.g.
+**`args` carries two things the script cannot discover.** `args.plugin` is the plugin
+directory as [`../shared/execution.md`](../shared/execution.md) § 3 defines it, e.g.
 `~/.claude/plugins/cache/<marketplace>/gh-issue-flow/<version>` — and every prompt cites
 the skill files by that absolute path. Named by bare name, the files resolve from the
 workflow's **cwd**: in the plugin's source checkout that is unmerged source rather than
@@ -454,7 +454,9 @@ const build = async (issue) => {
      classes is a handback, not a judgment call. Add or extend tests and mutation-check
      them. Do NOT commit, push, or open a PR — a later stage does that.
 
-     Return the plan's REVIEW LENSES in lenses, and a handoff a fresh reviewer can use.`,
+     Return the plan's REVIEW LENSES in lenses, adding scoping if your diff adds a guard and
+     comments if it adds or changes a comment or doc line (${args.plugin}/shared/execution.md
+     § 3), and a handoff a fresh reviewer can use.`,
     { label: `build:#${issue.number}`, phase: 'Build', schema: BUILD }
   )
   return built ? { issue, plan, ...built } : { issue, plan, ...dead('Build', 'the builder') }
@@ -484,7 +486,7 @@ const ship = async (built, issue) => {
     Findings to adjudicate: ${JSON.stringify(findings)}${extra}
 
     Fix every valid finding. For any you reject, put the claim and your reason in
-    rejected — they go in the PR body, never dropped silently.
+    rejected — they go in the PR body's History, never dropped silently.
 
     Set newLogic true if your fixes added a branch, gate, condition or code path, and
     name the lens that raised it in raisingLens. When newLogic is true, open the PR as a
@@ -514,8 +516,9 @@ const ship = async (built, issue) => {
     `PR #${shipped.prNumber} for issue #${issue.number} is a DRAFT pending this delta
      review. ${rules(issue.worktree)}
      Delta findings: ${JSON.stringify(delta ? delta.findings : [])}
-     Fix every valid one, amend the PR body's rejected list, push, and mark the PR ready
-     for review. Read the PR state back and return it. If a finding changes the shape of
+     Fix every valid one per ${args.plugin}/shared/execution.md § 3, where a finding is
+     never closed by adding prose; record any you reject in the PR body's History, push,
+     and mark the PR ready for review. Read the PR state back and return it. If a finding changes the shape of
      the fix, leave it a draft and return outcome handback with that reason.`,
     { label: `finalize:#${issue.number}`, phase: 'Ship', schema: SHIP })
 

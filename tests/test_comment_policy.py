@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Guard: the lines a branch adds or changes follow the comment policy.
 
-Only added and changed lines are read: a line the branch doesn't touch never fails, and
-neither does one it only moves or re-indents. Markdown fails on an issue or PR number, or on
-a date outside backticks; fenced code is skipped. A code comment fails on an issue or PR
-number, a date, an alarm marker, narration of a superseded draft, or a block over
-MAX_BLOCK_LINES lines. The rules: plugins/gh-issue-flow/reference/comments-and-docs.md.
+Only added and changed lines are read, and every line of an untracked file counts as added:
+a line the branch doesn't touch never fails, and neither does a comment or doc line it only
+moves or re-indents. Markdown fails on an issue or PR number, or on
+a date outside backticks; fenced code is skipped, but a fence tagged `markdown` or `md` holds
+doc text and is read. A code comment fails on an issue or PR number, a date, an alarm
+marker, narration of a superseded draft, or a run of more than MAX_BLOCK_LINES added
+comment lines. The rules: plugins/gh-issue-flow/reference/comments-and-docs.md.
 
 Run:  git fetch origin && python3 tests/test_comment_policy.py
 """
@@ -29,11 +31,12 @@ ROOT = Path(__file__).resolve().parent.parent
 MAIN = "origin/main"
 POLICY = "plugins/gh-issue-flow/reference/comments-and-docs.md"
 MAX_BLOCK_LINES = 15
+PROSE_FENCES = {"markdown", "md"}
 
 # A `#<digits>` followed by `-` is a heading anchor, as in `(#2-validation-gates)`.
 ISSUE_REF = re.compile(
-    r"(?<![\w&#/])(?:[\w.-]+(?:/[\w.-]+)?)?#\d{1,5}(?![\w-])"
-    r"|\b(?:PR|pull request|issue)\s+#?\d{1,5}\b"
+    r"(?<![\w&#/.])(?:[\w.-]+(?:/[\w.-]+)?)?#\d{1,5}(?![\w-])"
+    r"|\b(?:PRs?|pull requests?|issues?)\s+#?\d{1,5}\b"
     r"|github\.com/[\w.-]+/[\w.-]+/(?:issues|pull)/\d+",
     re.IGNORECASE,
 )
@@ -55,12 +58,14 @@ EARLIER_DRAFT = re.compile(
     r" (?:said|claimed|used to)\b",
     re.IGNORECASE,
 )
-HUNK = re.compile(r"^@@ -\d+(?:,(\d+))? \+(\d+)(?:,(\d+))? @@")
+HUNK = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@")
 HEREDOC = re.compile(r"(?<!<)<<(?!<)[-~]?\s*['\"]?([A-Za-z_]\w*)['\"]?")
+# Shell arithmetic, where `<<` is a shift and opens no heredoc.
+ARITHMETIC = re.compile(r"\$?\(\((?:[^()]|\([^()]*\))*\)\)")
 FENCE = re.compile(r"`{3,}|~{3,}")
 WORDY = re.compile(r"[^\W_]")
 C_ESCAPES = {"a": "\a", "b": "\b", "f": "\f", "n": "\n", "r": "\r", "t": "\t", "v": "\v"}
-# Each flag pins a setting a developer's git config could otherwise change.
+# Each flag pins a setting a developer's git config or the tree's attributes could change.
 DIFF = (
     "-c",
     "core.quotepath=off",
@@ -76,6 +81,7 @@ DIFF = (
     "--no-color",
     "--no-ext-diff",
     "--no-textconv",
+    "--text",
 )
 
 
@@ -147,7 +153,7 @@ def scan(
                     continue
                 if ch == quote:
                     quote = None
-            elif ch in quotes:
+            elif ch in quotes and (i == 0 or not (line[i - 1].isalnum() or line[i - 1] == "_")):
                 quote = ch
             elif blocks and line.startswith("/*", i):
                 end = line.find("*/", i + 2)
@@ -166,7 +172,7 @@ def scan(
             text = " ".join(line[start:end].strip() for start, end in spans)
             found[number] = CommentLine(text, not code.strip())
         if heredocs:
-            match = HEREDOC.search(code)
+            match = HEREDOC.search(ARITHMETIC.sub("", code))
             if match:
                 heredoc_end = match.group(1)
     return found
@@ -205,19 +211,26 @@ def python_lines(source: str) -> dict[int, CommentLine]:
 
 
 def markdown_lines(source: str) -> dict[int, CommentLine]:
-    """Every prose line of a markdown file; fenced code blocks are skipped."""
+    """Every prose line of a markdown file, including the inside of a fence tagged `markdown`
+    or `md`, such as a skeleton setup copies into a repo. Other fenced code is skipped."""
     found: dict[int, CommentLine] = {}
-    fence: str | None = None
+    fences: list[tuple[str, bool]] = []
     for number, line in enumerate(source.split("\n"), start=1):
         text = line.strip()
-        if fence is None:
-            opener = FENCE.match(text)
-            if opener:
-                fence = opener.group(0)
-            else:
-                found[number] = CommentLine(text, True)
-        elif set(text) == {fence[0]} and len(text) >= len(fence):
-            fence = None
+        if fences:
+            marker, prose = fences[-1]
+            if set(text) == {marker[0]} and len(text) >= len(marker):
+                fences.pop()
+                continue
+            if not prose:
+                continue
+        opener = FENCE.match(text)
+        # A backtick fence's info string holds no backtick; such a line is a code span.
+        if opener and not (opener.group(0)[0] == "`" and "`" in text[opener.end():]):
+            info = (text[opener.end():].split() or [""])[0].lower()
+            fences.append((opener.group(0), info in PROSE_FENCES))
+        else:
+            found[number] = CommentLine(text, True)
     return found
 
 
@@ -260,16 +273,19 @@ def classify(path: str, source: str) -> tuple[str, dict[int, CommentLine]] | Non
     return None
 
 
-def check_file(path: str, source: str, added: set[int]) -> list[Violation]:
+def check_file(path: str, source: str, added: set[int]) -> tuple[list[Violation], int]:
+    """The violations on the added lines, and how many added lines were comment or doc text."""
     classified = classify(path, source)
     if classified is None:
-        return []
+        return [], 0
     kind, lines = classified
     found: list[Violation] = []
+    read = 0
     for number in sorted(added):
         line = lines.get(number)
         if line is None:
             continue
+        read += 1
         broken = ["issue or PR number"] if names_an_issue(line.text) else []
         if dated(kind, line.text):
             broken.append("date")
@@ -281,7 +297,7 @@ def check_file(path: str, source: str, added: set[int]) -> list[Violation]:
         found.extend(Violation(path, number, rule, line.text) for rule in broken)
     if kind == "code":
         found.extend(long_blocks(path, lines, added))
-    return found
+    return found, read
 
 
 def long_blocks(path: str, lines: dict[int, CommentLine], added: set[int]) -> list[Violation]:
@@ -330,32 +346,35 @@ def unquote(name: str) -> str:
 def added_lines(repo: Path, base: str, counts: Callable[[str], bool] = counted) -> dict[str, set[int]]:
     """Line numbers each counted file gains, working tree included, since the branch left `base`.
 
-    A line whose words the same diff removes somewhere, in any file, is a move or a re-indent,
-    not new. A file `counts` rejects neither gains lines nor lends them.
+    A line whose words the same diff removes from a comment or doc line, in any file, is a move
+    or a re-indent, not new. A removed line the check would not have read lends nothing.
     """
     merge_base = git(repo, "merge-base", base, "HEAD").strip()
     added: dict[str, dict[int, str]] = {}
     removed: Counter[str] = Counter()
     path: str | None = None
-    lends = False
-    old = new = number = 0
+    lent: set[int] = set()
+    old = new = number = old_number = 0
     for line in git(repo, *DIFF, merge_base).split("\n"):
         if old or new:
             if old and line.startswith("-"):
-                if lends:
+                if old_number in lent:
                     removed[line[1:].strip()] += 1
-                old -= 1
+                old, old_number = old - 1, old_number + 1
             elif new and line.startswith("+"):
                 if path is not None:
                     added.setdefault(path, {})[number] = line[1:].strip()
                 number += 1
                 new -= 1
             elif line.startswith(" "):
-                old, new, number = old - 1, new - 1, number + 1
+                old, new, number, old_number = old - 1, new - 1, number + 1, old_number + 1
             continue
         if line.startswith("--- "):
             origin = unquote(line[4:].removesuffix("\t"))
-            lends = origin.startswith("a/") and counts(origin[2:])
+            lent = set()
+            if origin.startswith("a/") and counts(origin[2:]):
+                classified = classify(origin[2:], git(repo, "show", f"{merge_base}:{origin[2:]}"))
+                lent = set(classified[1]) if classified else set()
             continue
         if line.startswith("+++ "):
             target = unquote(line[4:].removesuffix("\t"))
@@ -363,9 +382,10 @@ def added_lines(repo: Path, base: str, counts: Callable[[str], bool] = counted) 
             continue
         hunk = HUNK.match(line)
         if hunk:
-            old = int(hunk.group(1) or 1)
-            number = int(hunk.group(2))
-            new = int(hunk.group(3) or 1)
+            old_number = int(hunk.group(1))
+            old = int(hunk.group(2) or 1)
+            number = int(hunk.group(3))
+            new = int(hunk.group(4) or 1)
     for name in git(repo, "ls-files", "-z", "--others", "--exclude-standard").split("\0"):
         file = repo / name
         if name and counts(name) and file.is_file() and not file.is_symlink():
@@ -414,6 +434,7 @@ def main(argv: list[str] | None = None, env: Mapping[str, str] | None = None) ->
             else {path: lines & found[path] for path, lines in changes.items() if path in found}
         )
     violations: list[Violation] = []
+    read = 0
     for path, added in sorted((changes or {}).items()):
         file = args.repo / path
         if not added or file.is_symlink() or not file.is_file():
@@ -422,10 +443,15 @@ def main(argv: list[str] | None = None, env: Mapping[str, str] | None = None) ->
             source = file.read_bytes().decode("utf-8")
         except UnicodeDecodeError:
             continue
-        violations.extend(check_file(path, source, added))
-    checked = sum(len(lines) for lines in (changes or {}).values())
+        found_here, read_here = check_file(path, source, added)
+        violations.extend(found_here)
+        read += read_here
+    total = sum(len(lines) for lines in (changes or {}).values())
     if not violations:
-        print(f"OK: {checked} added lines checked, none break the comment policy")
+        print(
+            f"OK: {read} comment and doc lines read, of {total} added lines; "
+            "none break the comment policy"
+        )
         return 0
     print(f"FAIL: {len(violations)} added line(s) break the comment policy\n", file=sys.stderr)
     for v in violations:

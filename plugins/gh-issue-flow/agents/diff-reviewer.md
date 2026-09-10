@@ -52,8 +52,9 @@ Resolve the integration branch from the repo, don't assume `main`:
 **Three dots, always** — two dots shows the base's own commits inverted.
 
 The plugin's own files are under the directory your invocation names as `Plugin:`. With
-none, use the newest installed copy, `ls -d ~/.claude/plugins/cache/*/gh-issue-flow/*/ |
-sort -V | tail -1`, and say in one line which one you read.
+none, use the newest installed copy,
+`ls -d ~/.claude/plugins/cache/claude-workflows/gh-issue-flow/*/ | sort -V | tail -1`, and
+say in one line which one you read.
 
 ## The lenses
 
@@ -123,9 +124,8 @@ than assuming a merge is inert.
 
 **comments** — Each comment and doc line the diff adds or changes
 (`git diff -U0 <integration-branch>...HEAD`), against the repo's own comment policy: a
-section titled "Comments and docs" in its `AGENTS.md`, `CLAUDE.md` or `CONTRIBUTING.md`
-(`grep -n -i -E '^#+ .*comments and docs' AGENTS.md CLAUDE.md CONTRIBUTING.md`), which
-wins. With none, apply the plugin default, `reference/comments-and-docs.md` in the plugin
+section titled "Comments and docs" in its agent or contributor instructions, wherever they
+sit (`git grep -n -i -E '^#+ .*comments and docs' -- '*.md'`), which wins. With none, apply the plugin default, `reference/comments-and-docs.md` in the plugin
 directory. Say in one line which policy you applied. Report a line that carries:
 
 - an issue or PR number;

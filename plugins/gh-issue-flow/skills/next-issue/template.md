@@ -69,6 +69,8 @@ VALIDATE (verbatim, from the repo's gate):
   switched off entirely by skip_specs — do not report a bare green from it.
 
 PROCESS:
+Plugin docs: `ls -d ~/.claude/plugins/cache/claude-workflows/gh-issue-flow/*/ | sort -V |
+tail -1`. Pass that directory as `Plugin: <dir>` to every planner and reviewer you spawn.
 1. Post the scoping plan as a comment on #N first; set the board card to In
    Progress. Then branch, then create the SPEC block's change directory and get its
    validate to exit 0 BEFORE writing code.
@@ -90,8 +92,8 @@ PROCESS:
    folded tree.
 3. Branch feat/N-order-note-reporting; commit referencing "Fixes #N". Every
    commit GPG-signed — if signing fails, stop. Never commit secrets.
-4. Open a PR whose body follows gh-issue-flow's reference/git-and-github.md
-   § Writing a PR body; history goes in its History section, never in code or
+4. Open a PR whose body follows reference/git-and-github.md § Writing a PR body
+   in that plugin directory; history goes in its History section, never in code or
    docs. Then drive CI + review-bot threads to green: reply, verify the reply
    posted, THEN resolve. Watch review THREADS as well as checks — a bot posts as a
    thread, so a checks-only poll never sees it. Do not assume a babysit skill
@@ -146,7 +148,7 @@ ask before running it.
   memory — the versions in the original of this file were wrong for weeks. Include the
   preflight, and carry the caveats on what a spec validate does **not** assert so the
   fresh session does not read a green as proof.
-- **PROCESS** — the numbered steps as in the example: scoping comment → branch → spec
+- **PROCESS** — the plugin-docs line, then the numbered steps as in the example: scoping comment → branch → spec
   change before code → **named** review lenses from the plan, never the generic list
   ([the set](../../agents/diff-reviewer.md#the-lenses)) → conditional delta re-review →
   archive as the last commit → commit → PR with the body
