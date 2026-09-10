@@ -153,7 +153,8 @@ def scan(
                     continue
                 if ch == quote:
                     quote = None
-            elif ch in quotes and (i == 0 or not (line[i - 1].isalnum() or line[i - 1] == "_")):
+            # An apostrophe inside a word, as in `Don't`, opens no string.
+            elif ch in quotes and not (ch == "'" and i and (line[i - 1].isalnum() or line[i - 1] == "_")):
                 quote = ch
             elif blocks and line.startswith("/*", i):
                 end = line.find("*/", i + 2)
@@ -373,7 +374,10 @@ def added_lines(repo: Path, base: str, counts: Callable[[str], bool] = counted) 
             origin = unquote(line[4:].removesuffix("\t"))
             lent = set()
             if origin.startswith("a/") and counts(origin[2:]):
-                classified = classify(origin[2:], git(repo, "show", f"{merge_base}:{origin[2:]}"))
+                try:
+                    classified = classify(origin[2:], git(repo, "show", f"{merge_base}:{origin[2:]}"))
+                except subprocess.CalledProcessError:
+                    classified = None  # a path git cannot be handed back, such as one not in UTF-8
                 lent = set(classified[1]) if classified else set()
             continue
         if line.startswith("+++ "):
