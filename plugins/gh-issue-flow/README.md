@@ -53,7 +53,7 @@ styling change is waste.
 
 **Spawn the namespaced name.** A bare `diff-reviewer` resolves to whichever same-named
 agent file wins, and a stale one in `~/.claude/agents/` shadows this one with no warning
-at all — see `skills/setup/SKILL.md` § Detect shadowing.
+at all — see `skills/setup/SKILL.md` § 6, Confirm the agents.
 
 `issue-planner` describes the spec change; it never creates it. Its callers run it at
 different points in the branch lifecycle, one of them before the branch exists.
@@ -156,4 +156,4 @@ claude --plugin-dir ./plugins/gh-issue-flow
 claude plugin validate ./plugins/gh-issue-flow --strict
 ```
 
-`/reload-plugins` picks up edits without a restart.
+`/reload-plugins` picks up skill edits without a restart; an agent edit needs a restart.

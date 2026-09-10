@@ -25,9 +25,9 @@ header (e.g. "Infra" for "Infra and migrations") is a reference to that header
 spelled short, and reds; a "§ X" that matches no header at all ("§ Layer 1",
 "§ 5b", "§ Board queries") is some other section and is ignored.
 
-Mutation-proven — ledger in CONTRIBUTING.md § Conventions.
+Mutation-proven; the cases a re-proof covers are in CONTRIBUTING.md § Conventions.
 
-Run:  python3 tests/test_doc_headers.py
+Run:  git add <the paths you changed> && python3 tests/test_doc_headers.py
 Set STACK_GUARD_ROOT to point it at a copy (the mutation harness does).
 """
 from __future__ import annotations

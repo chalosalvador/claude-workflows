@@ -17,9 +17,9 @@ That third field is what a marketplace listing advertises. A PR that bumps
 plugin.json and plugins[0].version and forgets the top level is green on every
 check in CI while the manifest names a version that does not exist.
 
-CONTRIBUTING.md answers this with "read the three back yourself". That is a human
-promise where a four-line assertion will do — which is the whole argument of
-`reference/verification.md`: prove it, do not intend to.
+Reading the three back by hand is a human promise where a four-line assertion will
+do — which is the whole argument of `reference/verification.md`: prove it, do not
+intend to.
 
 WHAT THIS DOES **NOT** DO
 -------------------------

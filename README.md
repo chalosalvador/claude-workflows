@@ -48,7 +48,8 @@ project board** — the skills fall back to labels and `gh issue list`.
 **The two install paths differ here, and neither is broken.** From a terminal,
 `claude plugin install` prints a line like *"4 userConfig options not yet set"*.
 The in-session `/plugin install` does **not** — it may show a configuration step instead,
-or simply report the plugin enabled. That second half is **unverified**. Either way, seeing neither a form nor a count is expected, not a failure.
+or simply report the plugin enabled. That second half is **unverified**. Either way,
+seeing neither a form nor a count is expected, not a failure.
 
 That count is **not an error**. It counts options declared but not stored — including
 the two that already carry working defaults (`status_in_progress` → `In Progress`,
@@ -267,7 +268,7 @@ claude --plugin-dir ./plugins/gh-issue-flow
 claude plugin validate ./plugins/gh-issue-flow --strict
 ```
 
-`/reload-plugins` picks up edits without a restart.
+`/reload-plugins` picks up skill edits without a restart; an agent edit needs a restart.
 
 ## Recommended: pair this with OpenSpec
 

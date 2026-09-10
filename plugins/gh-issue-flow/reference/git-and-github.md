@@ -204,9 +204,12 @@ gh api graphql -f query='{rateLimit{remaining}}' --jq .data.rateLimit.remaining
 That query costs **0 points**, so it can bracket a command to price it exactly:
 `before=$(probe); <command>; after=$(probe)`.
 
-**Believe the error, not the meter.** A `gh project` failure beside a clean `rate_limit`
-read is the stale meter above, not a separate Projects v2 limit: a bare `viewer` query
-fails the same way.
+**Believe the error, not the meter.** When a `gh project` call fails beside a clean
+`rate_limit` read, run a bare `viewer` query. If it fails the same way, the clean read is
+the stale meter above and the GraphQL budget is spent. If it succeeds, the failure is the
+secondary limit that `rate_limit` does not report
+([`../shared/board.md`](../shared/board.md) § Board queries): back off and retry rather
+than waiting for the hourly reset.
 
 > There is no REST fallback for Projects v2. When GraphQL is exhausted, board writes
 > simply wait.

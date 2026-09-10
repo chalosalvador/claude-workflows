@@ -599,8 +599,9 @@ stale read is indistinguishable from a good one.
 **Unverified:**
 
 - **A** has not run live: no agent has produced a triage verdict through the fan-out, and
-  the 10-issue threshold is asserted, not observed. The serial deep pass gives identical
-  verdicts on consecutive runs of the same testbed, which is the baseline A has to match.
+  the 10-issue threshold is asserted, not observed. The baseline A has to match is the
+  serial deep pass run twice on the same board, so the serial pass's own run-to-run
+  variation is not blamed on the fan-out.
 - B on more than two lenses per plan, on a plan that triggers the delta path, or on a repo
   whose CI takes longer than its build; a single run's wall-clock gap is a sample, not a
   rate.

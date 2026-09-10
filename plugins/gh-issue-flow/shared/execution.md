@@ -10,9 +10,8 @@ Selection criteria, pauses, backpressure, labels, handback and caps live in the
 skills. Only what would be *identical either way* belongs here.
 
 One copy is the point: the same command kept in two skills drifts into different, and in
-places wrong, content. **If you change a command
-here, you change it for every skill.** If you want different content per skill, it is
-policy: put it back in the skill.
+places wrong, content. **If you change a command here, you change it for every skill.**
+If you want different content per skill, it is policy: put it back in the skill.
 
 Config resolution: [`config.md`](config.md). Read it first — everything below is
 written against those placeholders.
@@ -158,7 +157,7 @@ the lens set there, and the `comments` lens reads the default policy,
 same-named file wins, and a stale one in `~/.claude/agents/` shadows the plugin's
 silently — same lens names, no handoff, another repo's branch names hardcoded. It
 returns a good-looking review of the wrong thing. See
-[`../skills/setup/SKILL.md`](../skills/setup/SKILL.md) § Detect shadowing.
+[`../skills/setup/SKILL.md`](../skills/setup/SKILL.md) § 6, Confirm the agents.
 
 **A built-in `/code-review` skill may be `disable-model-invocation`, meaning a
 session cannot invoke it and the call errors.** Do not put it in a workflow step: a PR

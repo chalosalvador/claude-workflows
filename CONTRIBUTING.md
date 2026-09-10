@@ -20,8 +20,9 @@ claude plugin validate . --strict
 CI runs all of them as the `guards` job. Run them before pushing — `main` is protected, so a
 red gate means the PR cannot merge.
 
-`test_single_owner_facts.py`, `test_no_stray_files.py` and `test_links.py` list files with
-`git ls-files`, i.e. the index, so a new file is invisible to them until it is staged.
+`test_single_owner_facts.py`, `test_no_stray_files.py`, `test_links.py` and
+`test_doc_headers.py` list files with `git ls-files`, i.e. the index, so a new file is
+invisible to them until it is staged.
 `git add` the paths you changed before trusting a local green, never `git add -A`: a
 sweeping add is how a stray file reaches a commit.
 
@@ -52,7 +53,9 @@ there, even when the marketplace is registered as a directory source:
 ~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/
 ```
 
-The copy is not a live view of the checkout: its files are not symlinks, and a
+`claude plugin marketplace list` shows which source each marketplace uses —
+`Directory (<your checkout>)` or GitHub. Either way the copy is not a live view of the
+checkout: its files are not symlinks, and a
 `git checkout` here does not change what it serves. `<version>` is `plugin.json` →
 `version`, and nothing invalidates the cache while that string is unchanged, so every
 change merged since the install is invisible to every session until the version moves,
@@ -252,7 +255,8 @@ a guard reddening on ordinary reformatting. The cases each guard's re-proof incl
   names stay green. References are compared word by word, because a greedy match lets a
   short form through.
 - `test_version_agreement.py`: any disagreement among the three numbers reds, including a
-  stale top-level `version` that `claude plugin validate` passes.
+  stale top-level `version` that `claude plugin validate` passes; three equal numbers,
+  before and after a legitimate bump of all three, stay green.
 
 **Facts live in one place.** `shared/execution.md` owns mechanics; skills own policy and
 link to it. If you find yourself pasting the same rule into two skills, it belongs in

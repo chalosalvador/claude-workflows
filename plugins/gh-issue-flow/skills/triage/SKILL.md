@@ -104,7 +104,7 @@ empty board as a clean one; there is nothing to have cleaned.
 # the call, or you get `command not found`.
 SCRATCH="${SCRATCH:-${TMPDIR:-/tmp}}"
 BOARD_JSON="$SCRATCH/board.json"
-board_fetch "<board_owner>" "<board_number>" "$BOARD_JSON"   # 3 points, not 102 — see config.md
+board_fetch "<board_owner>" "<board_number>" "$BOARD_JSON"   # 3 points, not 102 — see reference/board-query.md
 ```
 
 That is this run's **only** board fetch — see [`shared/board.md`](../../shared/board.md)

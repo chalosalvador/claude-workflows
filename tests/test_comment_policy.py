@@ -3,8 +3,8 @@
 
 Only added and changed lines are read, and every line of an untracked file counts as added:
 a line the branch doesn't touch never fails, and neither does a comment or doc line it only
-moves or re-indents. Markdown fails on an issue or PR number anywhere, and on a date
-outside backticks and code fences; a fence tagged `markdown` or `md` holds doc text and is
+moves or re-indents. Markdown fails on an issue or PR number in prose or fenced code, and
+on a date outside backticks and code fences; a fence tagged `markdown` or `md` holds doc text and is
 read in full. A code comment fails on an issue or PR number, a date, an alarm
 marker, narration of a superseded draft, or a run of more than MAX_BLOCK_LINES added
 comment lines. The rules: plugins/gh-issue-flow/reference/comments-and-docs.md.
@@ -61,6 +61,8 @@ EARLIER_DRAFT = re.compile(
 HUNK = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@")
 HEREDOC = re.compile(r"(?<!<)<<(?!<)[-~]?\s*['\"]?([A-Za-z_]\w*)['\"]?")
 DELIMITER = re.compile(r"(?<!<)<<[-~]?\s*$")
+# A colour value in code, hex digits after `color:` or `fill=`, is not an issue reference.
+COLOUR = re.compile(r"([:=]\s*[\"']?)#[0-9A-Fa-f]{3,8}\b")
 # Shell arithmetic, where `<<` is a shift and opens no heredoc.
 ARITHMETIC = re.compile(r"\$?\(\((?:[^()]|\([^()]*\))*\)\)")
 FENCE = re.compile(r"`{3,}|~{3,}")
@@ -112,6 +114,26 @@ def dated(kind: str, text: str) -> bool:
     return DATE.search(QUOTED.sub("", TRIPLE_QUOTES.sub(" ", text))) is not None
 
 
+def literal_parts(line: str, start: int, end: int) -> list[tuple[int, int]]:
+    """The spans of a double-quoted string outside any `$(…)`, which the shell still runs."""
+    parts, i = [], start
+    while True:
+        sub = line.find("$(", i, end)
+        if sub == -1:
+            parts.append((i, end))
+            return parts
+        parts.append((i, sub))
+        depth, j = 0, sub + 1
+        while j < end:
+            depth += {"(": 1, ")": -1}.get(line[j], 0)
+            if depth == 0:
+                break
+            j += 1
+        if j >= end:
+            return parts
+        i = j + 1
+
+
 def without(line: str, spans: list[tuple[int, int]]) -> str:
     """The line with the given column spans cut out."""
     parts, previous = [], 0
@@ -152,12 +174,16 @@ def scan(
         while i < len(line):
             ch = line[i]
             if quote:
-                if ch == "\\":
+                # In shell, a backslash inside single quotes is literal.
+                if ch == "\\" and not (heredocs and quote == "'"):
                     i += 2
                     continue
                 if ch == quote:
                     quote = None
                     strings.append((opened, i + 1))
+            elif heredocs and ch == "\\":
+                i += 2
+                continue
             # An apostrophe inside a word, as in `Don't`, opens no string.
             elif ch in quotes and not (ch == "'" and i and (line[i - 1].isalnum() or line[i - 1] == "_")):
                 quote, opened = ch, i
@@ -180,8 +206,14 @@ def scan(
             text = " ".join(line[start:end].strip() for start, end in spans)
             found[number] = CommentLine(text, not code.strip())
         if heredocs:
-            # A quoted string opens no heredoc, unless it is the delimiter itself: `<<'EOF'`.
-            quoted = [s for s in strings if not DELIMITER.search(line[: s[0]])]
+            # A quoted string opens no heredoc, apart from the delimiter itself (`<<'EOF'`) and
+            # a `$(…)` inside double quotes (`"$(cat <<'EOF'`), which the shell still runs.
+            quoted = [
+                part
+                for start, end in strings
+                if not DELIMITER.search(line[:start])
+                for part in (literal_parts(line, start, end) if line[start] == '"' else [(start, end)])
+            ]
             bare = without(line, sorted(spans + quoted))
             match = HEREDOC.search(ARITHMETIC.sub("", bare))
             if match:
@@ -299,7 +331,8 @@ def check_file(path: str, source: str, added: set[int]) -> tuple[list[Violation]
         if line is None:
             continue
         read += 1
-        broken = ["issue or PR number"] if names_an_issue(line.text) else []
+        text = COLOUR.sub(r"\1", line.text) if line.fenced else line.text
+        broken = ["issue or PR number"] if names_an_issue(text) else []
         if dated(kind, line.text) and not line.fenced:
             broken.append("date")
         if kind == "code":
@@ -360,19 +393,24 @@ def added_lines(repo: Path, base: str, counts: Callable[[str], bool] = counted) 
     """Line numbers each counted file gains, working tree included, since the branch left `base`.
 
     A line whose words the same diff removes from a comment or doc line, in any file, is a move
-    or a re-indent, not new. A removed line the check would not have read lends nothing.
+    or a re-indent, not new; a removed fenced line excuses only an added fenced one. A removed
+    line the check would not have read lends nothing.
     """
     merge_base = git(repo, "merge-base", base, "HEAD").strip()
     added: dict[str, dict[int, str]] = {}
     removed: Counter[str] = Counter()
+    removed_fenced: Counter[str] = Counter()
     path: str | None = None
     lent: set[int] = set()
+    lent_fenced: set[int] = set()
     old = new = number = old_number = 0
     for line in git(repo, *DIFF, merge_base).split("\n"):
         if old or new:
             if old and line.startswith("-"):
                 if old_number in lent:
                     removed[line[1:].strip()] += 1
+                elif old_number in lent_fenced:
+                    removed_fenced[line[1:].strip()] += 1
                 old, old_number = old - 1, old_number + 1
             elif new and line.startswith("+"):
                 if path is not None:
@@ -384,13 +422,15 @@ def added_lines(repo: Path, base: str, counts: Callable[[str], bool] = counted) 
             continue
         if line.startswith("--- "):
             origin = unquote(line[4:].removesuffix("\t"))
-            lent = set()
+            lent, lent_fenced = set(), set()
             if origin.startswith("a/") and counts(origin[2:]):
                 try:
                     classified = classify(origin[2:], git(repo, "show", f"{merge_base}:{origin[2:]}"))
                 except subprocess.CalledProcessError:
                     classified = None  # a path git cannot be handed back, such as one not in UTF-8
-                lent = {n for n, row in classified[1].items() if not row.fenced} if classified else set()
+                rows = classified[1] if classified else {}
+                lent = {n for n, row in rows.items() if not row.fenced}
+                lent_fenced = {n for n, row in rows.items() if row.fenced}
             continue
         if line.startswith("+++ "):
             target = unquote(line[4:].removesuffix("\t"))
@@ -409,12 +449,24 @@ def added_lines(repo: Path, base: str, counts: Callable[[str], bool] = counted) 
             added[name] = {n: row.strip() for n, row in enumerate(rows, start=1)}
     changes: dict[str, set[int]] = {}
     for name, rows_added in sorted(added.items()):
+        fenced = fenced_lines(repo, name)
         for n, text in sorted(rows_added.items()):
-            if WORDY.search(text) and removed[text]:
+            if WORDY.search(text) and n in fenced and removed_fenced[text]:
+                removed_fenced[text] -= 1
+            elif WORDY.search(text) and removed[text]:
                 removed[text] -= 1
             else:
                 changes.setdefault(name, set()).add(n)
     return changes
+
+
+def fenced_lines(repo: Path, name: str) -> set[int]:
+    """The lines of a file's working-tree version that sit inside a code fence."""
+    file = repo / name
+    if not file.is_file() or file.is_symlink():
+        return set()
+    classified = classify(name, file.read_bytes().decode("utf-8", "replace"))
+    return {n for n, row in classified[1].items() if row.fenced} if classified else set()
 
 
 def compared_bases(explicit: str | None, env: Mapping[str, str]) -> list[str]:
