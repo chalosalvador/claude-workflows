@@ -149,9 +149,9 @@ OWNED: dict[str, tuple[str, int]] = {
         ("plugins/gh-issue-flow/shared/config.md", 1),
 
     # The ops-doc write boundary. Its consequence appears in next-issue § 6, autopilot
-    # § 10 and review-process ("propose in the handoff; a human commits it"), and the PR 21
-    # review found one copy that had already inverted it ("fill it in"). One owner, and
-    # every other site says what to do instead, not the rule again.
+    # § 10 and review-process ("propose in the handoff; a human commits it"), and a
+    # restated copy is how it inverts ("fill it in"). One owner, and every other site
+    # says what to do instead, not the rule again.
     "Agents do not edit deploy-target docs or `repo.md`.":
         ("plugins/gh-issue-flow/shared/config.md", 1),
 
@@ -164,13 +164,11 @@ OWNED: dict[str, tuple[str, int]] = {
     "A sibling's area map comes from the sibling's own `workflow.json`, never this one.":
         ("plugins/gh-issue-flow/shared/config.md", 1),
 
-    # The out-of-sweep receipt line. Since 0.10.0 `repos` is the issue-sweep set, so a
-    # board card from a repo outside it is never swept — correctly — and the integrity
-    # line's "0 off-project · 0 unassigned" is a claim about the swept repos only.
-    # MEASURED 2026-09-08: such a card was on the board, the run left it alone and
-    # mentioned it only by its own initiative; nothing in the receipt shape required the
-    # mention, so a rewrite could drop it and the card would be invisible forever. The
-    # checklist and the quiet-day paragraph name the line; the line itself has one owner.
+    # The out-of-sweep receipt line. `repos` is the issue-sweep set, so a board card from
+    # a repo outside it is never swept — correctly — and the integrity line's
+    # "0 off-project · 0 unassigned" is a claim about the swept repos only. Without this
+    # line in the receipt shape such a card is invisible, and a rewrite could drop it.
+    # The checklist and the quiet-day paragraph name the line; the line itself has one owner.
     "Out of sweep: N board cards from repos not in `repos` — <owner/repo#N, …> — left "
     "untouched; add the repo to `repos` or remove the card":
         ("plugins/gh-issue-flow/skills/triage/SKILL.md", 1),

@@ -91,10 +91,9 @@ Add or extend tests for what changed. **Mutation-check any new test**: break the
 it covers and confirm it fails. A test that passes against broken code is worse than
 no test — it reads as proof. **State the mutation result in the PR body.**
 
-🚨 **Gate the commit on the mutant's result; never print it and carry on.** MEASURED
-2026-09-07: a block ran the mutant, printed `7 passed`, restored the file, committed,
-pushed, and wrote `1 failed` into the PR body — a survived mutant shipped as a kill
-because nothing read the line. Spell it so a surviving mutant stops the block:
+**Gate the commit on the mutant's result; never print it and carry on.** A block that
+runs the mutant, prints `7 passed`, restores the file and commits ships a survived mutant
+as a kill, because nothing reads the line. Spell it so a surviving mutant stops the block:
 
 ```sh
 MUT=$(pytest tests/ -q 2>&1 | tail -1); <restore the file>
@@ -146,8 +145,15 @@ Read it before the first review of a session.
 
 Before committing, spawn `gh-issue-flow:diff-reviewer` subagents (read-only,
 `effort: max`, fresh context) **in parallel — one message, several tool calls** — one
-per lens: `correctness`, `contract`, `scoping`, `safety`, `tests`, `deploy`. Give each
-the diff location and enough issue context to judge intent.
+per lens from [the set](../agents/diff-reviewer.md#the-lenses). Give each the diff
+location and enough issue context to judge intent.
+
+**Every lens prompt, and the planner's, carries `Plugin: <dir>`**: the plugin directory,
+which is the base directory the Skill tool printed for the running skill, up to the
+parent of `skills/`. A subagent cannot find the plugin's files otherwise, because
+`CLAUDE_PLUGIN_ROOT` is unset in its shell and its prompt holds no path. The planner reads
+the lens set there, and the `comments` lens reads the default policy,
+[`comments-and-docs.md`](../reference/comments-and-docs.md), when the repo has none.
 
 🚨 **Spawn the NAMESPACED name, always.** A bare `diff-reviewer` resolves to whichever
 same-named file wins, and a stale one in `~/.claude/agents/` shadows the plugin's
@@ -201,7 +207,12 @@ across the board. What is being removed is *duplicated research*, not scrutiny �
 handoff tells a reviewer where to look, never what to conclude.
 
 Adjudicate the merged findings yourself: fix every valid one, and for any you reject
-**say so with the reason in the PR body, never silently.**
+**say so with the reason in the PR body's History, never silently.**
+
+**A finding is never closed by adding prose.** Fix the code, add a test, or answer it:
+in the review thread, or, for a pre-PR lens, in the PR body's History. A comment or doc
+line written to satisfy a reviewer is history, which
+[`comments-and-docs.md`](../reference/comments-and-docs.md) keeps out of the tree.
 
 ### Re-review the delta when the fixes added NEW LOGIC
 
@@ -224,7 +235,7 @@ conditional pass, not a loop.**
 finding real defects in code written to satisfy an earlier lens are in
 [`../reference/review-process.md`](../reference/review-process.md); on a security or
 guard change, the first green is where the work starts, not where it ends. Say in the
-PR body that the delta got one pass, so the human reviewer knows the bound.
+PR body's History that the delta got one pass, so the human reviewer knows the bound.
 
 ⚠️ **Commit before spawning lenses**, and do not edit files while one is running —
 they mutate the shared worktree. See

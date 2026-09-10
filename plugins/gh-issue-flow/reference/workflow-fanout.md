@@ -337,11 +337,12 @@ fit a budget.
 **`args` carries two things the script cannot discover.** `args.plugin` is the plugin's
 base directory — the path the Skill tool printed when autopilot was invoked, e.g.
 `~/.claude/plugins/cache/<marketplace>/gh-issue-flow/<version>` — and every prompt cites
-the skill files by that absolute path. MEASURED 2026-09-07: with the files named by bare
-name, all four builders and shippers resolved `autopilot/SKILL.md` and
-`shared/execution.md` from the workflow's **cwd**, which was the plugin's *source
-checkout* — a tree that already carried unmerged edits to § 2.2 — and not the installed
-version the session was running. In a consumer repo there is no such file at all. And
+the skill files by that absolute path. Named by bare name, the files resolve from the
+workflow's **cwd**: in the plugin's source checkout that is unmerged source rather than
+the installed version the session runs, and in a consumer repo there is no such file at
+all. The planner and every lens get it as a `Plugin:` line, which is where they read the
+lens set and the default comment policy
+([`../shared/execution.md`](../shared/execution.md) § 3). And
 `issue.model` is the § 3.1 tier for that issue's size label (`sonnet` for `effort:easy`);
 the script forwards it to the planner and the lenses, and omits `model` entirely when it
 is unset. Without it every agent inherits the session model — measured: ten agents at the
@@ -427,7 +428,8 @@ const build = async (issue) => {
      Repo spec flow: ${issue.specFlow}
      Integration branch: ${issue.base}. Merging it ${issue.deployNote}.
      Gate: ${issue.gate}
-     Worktree (READ-ONLY, do not edit): ${issue.worktree}`,
+     Worktree (READ-ONLY, do not edit): ${issue.worktree}
+     Plugin: ${args.plugin}`,
     { agentType: 'gh-issue-flow:issue-planner', label: `plan:#${issue.number}`, phase: 'Plan',
       ...(issue.model ? { model: issue.model } : {}) }   // shared/execution.md § 3.1 tier
   )
@@ -466,7 +468,8 @@ const ship = async (built, issue) => {
     ${lens} lens ONLY, for issue #${issue.number}. Read-only: report, never fix.
     Handoff from the implementer: ${built.handoff}
     Files touched: ${built.filesTouched.join(', ')}
-    Gate result: ${built.gateResult}`
+    Gate result: ${built.gateResult}
+    Plugin: ${args.plugin}`
 
   // Barrier is correct here: the adjudicator weighs every lens's findings together.
   const findings = (await parallel(built.lenses.map(lens => () => agent(lensPrompt(lens), {
@@ -502,7 +505,8 @@ const ship = async (built, issue) => {
     `Review ONLY the delta the adjudicator added to ${issue.worktree} for issue
      #${issue.number}, through the ${shipped.raisingLens} lens. That delta exists to
      establish that lens's property, so that is the question to ask of it.
-     git diff on the commits after the implementation commit is the scope.`,
+     git diff on the commits after the implementation commit is the scope.
+     Plugin: ${args.plugin}`,
     { agentType: 'gh-issue-flow:diff-reviewer', label: `delta:${shipped.raisingLens}#${issue.number}`,
       phase: 'Review', schema: FINDINGS })
 
@@ -584,7 +588,7 @@ Stated plainly, because the serial path does not pay these:
 |---|---|
 | The batch build produces newest-first batches of 5, capped at 25, with no `triaged` issue in them | `jq` against a 30-issue and a 28-issue fixture. It also caught the `.[0]` slurp bug above, which is why that ⚠️ is there. |
 | The script's pure-JS half behaves: verdicts merge across batches, `missing` catches a dropped issue **and** an agent that returns nothing, the drop is announced via `log()`, a clean run logs nothing, reciprocal dupes collapse to one pair, self-references and unconfident dupes are dropped | 9 assertions against a throwaway harness that stubs `agent()`, `parallel()` and `log()` and runs the real script body |
-| **B** — the autopilot script's control flow: a handback short-circuits before a single lens is spawned, a dead planner spends nothing after itself, new logic opens a draft and the delta lens runs **as the lens that raised it**, the finalizer flips it to ready, a dead finalizer leaves the PR a draft and reports a handback rather than a success, and `deltaReviewed` survives the finalizer overwriting `raisingLens`; and, since 2026-09-07, that `args.plugin` reaches the builder and shipper prompts and `issue.model` reaches the planner and lenses but never the builder or shipper | 23 assertions against the same kind of harness, stubbing `agent()`, `parallel()`, `pipeline()` and `log()`; rebuilt for the `args.plugin` change and mutation-checked (dropping `...delta_ran` reds it) |
+| **B** — the autopilot script's control flow: a handback short-circuits before a single lens is spawned, a dead planner spends nothing after itself, new logic opens a draft and the delta lens runs **as the lens that raised it**, the finalizer flips it to ready, a dead finalizer leaves the PR a draft and reports a handback rather than a success, and `deltaReviewed` survives the finalizer overwriting `raisingLens`; and that `args.plugin` reaches the builder and shipper prompts and `issue.model` reaches the planner and lenses but never the builder or shipper | 23 assertions against the same kind of harness, stubbing `agent()`, `parallel()`, `pipeline()` and `log()`; rebuilt for the `args.plugin` change and mutation-checked (dropping `...delta_ran` reds it) |
 
 ⚠️ **A harness can read a stale script and pass.** Regenerating B's harness in place
 failed silently once, so a green run was reporting on the previous version of the script.
@@ -597,9 +601,8 @@ JS, and these optional layers do not earn a new file class in the marketplace re
 `tests/` directory (which an installed plugin does not carry). Rebuild them if you
 change either script; each is about twenty lines of stubs.
 
-**Measured, B, live — 2026-09-07, one run of each path on the testbed's two easy issues,
-board reset between them** (the run record, with wall-clock and token figures, is in the
-plugin repo's PR for 0.8.2, not here):
+**Measured, B, live — one run of each path on the testbed's two easy issues, board reset
+between them:**
 
 | Claim | Result |
 |---|---|

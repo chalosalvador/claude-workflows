@@ -116,6 +116,9 @@ Three lists of **paths**, not prose:
   change already touches; needs no new test; adds no branch, gate or code path; moves no
   contract. Anything failing one goes on NOT CHANGING.
 
+**One owner per fact.** When the change adds or moves a fact a doc states, name the file
+that owns it under CHANGES; every other file links to it rather than restating it.
+
 **Do not plan follow-up issues for the FOLD IN class.** A card costs a triage pass, a
 board slot and a future branch — more than a two-line fix in an open file is worth. Only
 recommend filing for a real decision, real sequencing, or its own blast radius.
@@ -132,10 +135,16 @@ broke nothing and says nothing about whether the change is right.
 
 ### 5. REVIEW LENSES
 
-Which `diff-reviewer` lenses this diff can actually trip: `correctness`, `contract`,
-`scoping`, `safety`, `tests`, `deploy`. **Name only those, one clause each on why**, and
-list the ones you skipped with the reason. This gates a parallel max-effort review — an
-unearned lens costs real tokens, a missing one costs a real bug.
+Which `diff-reviewer` lenses this diff can actually trip. The set, and what each asks, is
+[`diff-reviewer.md` § The lenses](diff-reviewer.md#the-lenses): read that section from
+`agents/diff-reviewer.md` in the plugin directory your invocation names as `Plugin:`, or,
+with none, in the newest installed copy
+(`ls -d ~/.claude/plugins/cache/*/gh-issue-flow/*/ | sort -V | tail -1`). **Name only
+those, one clause each on why**, and list the ones you skipped with the reason. This gates
+a parallel max-effort review — an unearned lens costs real tokens, a missing one costs a
+real bug.
+
+**Any diff that adds or changes a comment or a doc line gets `comments`.**
 
 `scoping` and `safety` are different questions and are skipped for different reasons:
 `scoping` asks what else reaches the code this diff touches; `safety` asks about

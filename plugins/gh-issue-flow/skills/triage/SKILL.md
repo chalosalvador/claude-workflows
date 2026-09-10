@@ -370,13 +370,11 @@ Then the **out-of-sweep line**, always, even when N is 0:
 ``Out of sweep: N board cards from repos not in `repos` — <owner/repo#N, …> — left
 untouched; add the repo to `repos` or remove the card``
 
-The integrity guarantee is a claim about the swept repos only. Since 0.10.0 `repos` is the
-issue-sweep set, so a board card whose repo is not in it is never swept, never labeled,
-never assigned and never moved — by design, and this line is what stops a clean integrity
-line from overstating. MEASURED 2026-09-08: a board carried an open, unlabeled, unassigned
-card from a repo in neither sibling's `repos`; the run left it alone, correctly, and
-mentioned it only by its own initiative — nothing in the receipt shape required the
-mention, so a rewrite could drop it and the card would be invisible forever. Derive N
+The integrity guarantee is a claim about the swept repos only. `repos` is the issue-sweep
+set, so a board card whose repo is not in it is never swept, never labeled, never
+assigned and never moved — by design, and this line is what stops a clean integrity line
+from overstating. Without it such a card is invisible: nothing else in the receipt names
+it. Derive N
 from the § 1 board fetch already on disk: compare each item's `content.repository`
 (`nameWithOwner`) against `repos`, case-insensitively. An org transfer means the board's
 stored owner can differ from the canonical one, so compare against what `gh repo view

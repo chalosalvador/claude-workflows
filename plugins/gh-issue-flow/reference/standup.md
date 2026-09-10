@@ -215,7 +215,7 @@ Two traps, both of which manufacture false blockers:
 
 **The one place a number belongs.** The no-numbers rule holds everywhere else, but a
 blocker parked on another ticket is not actionable without it — write the plain-language
-reason *and* the number (`waiting on #21`). The blocking issue only; still no PR numbers
+reason *and* the number (`waiting on #N`). The blocking issue only; still no PR numbers
 or file names. Across repos, write `owner/repo#N`.
 
 Name the blocker in the same consequence-first voice as the bullets, and say **who or what

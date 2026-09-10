@@ -11,23 +11,8 @@ control holds.
 ## The shape
 
 Spawn several **read-only, max-effort, single-lens** reviewers **in parallel**, one per
-lens, then adjudicate the merged findings yourself. Typical lenses:
-
-| Lens | Asks |
-|---|---|
-| `correctness` | Does this do what it says on every input? |
-| `contract` | Does it change a wire/API/schema contract, and is the other side updated? |
-| `scoping` | What else reaches the code this touches, that the diff does not touch? |
-| `safety` | Credentials, secrets, and the isolation invariants the repo's `repo.md` declares — is the blast radius contained? |
-| `tests` | Do the tests bite? Would they catch the bug they name? |
-| `deploy` | What happens on rollout, rollback, and a partial apply? |
-
-**`scoping` and `safety` are two questions, and they were one word until it cost
-something.** The table here said "blast radius"; the agent said "data-isolation and
-credential safety". A planner naming `scoping` off this table got an agent hunting for
-isolation predicates, found none on a repo whose data has no such boundary, and
-reported *no findings* — a clean run of the wrong question. Each name now means one
-thing in both files.
+lens, then adjudicate the merged findings yourself. The lenses, and what each asks:
+[`../agents/diff-reviewer.md` § The lenses](../agents/diff-reviewer.md#the-lenses).
 
 Each gets **fresh context and max effort**, which an inline same-session review does
 not. Scale the lens list to the change — but do not under-scale: five-file plumbing

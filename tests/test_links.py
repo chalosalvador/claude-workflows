@@ -43,7 +43,7 @@ from pathlib import Path, PurePosixPath
 ROOT = Path(os.environ.get("LINK_GUARD_ROOT") or Path(__file__).resolve().parent.parent)
 
 # Refuse to pass on a suspiciously small parse. Independent of the real count.
-MIN_LINKS = 100   # measured 130 at ecbd9c5 on 2026-09-07; K4 (parser matching nothing) yields 0
+MIN_LINKS = 100   # well under the real count; K4 (parser matching nothing) yields 0
 
 LINK = re.compile(r"\]\(([^)\s]+)\)")
 SKIP = ("http://", "https://", "mailto:", "#")

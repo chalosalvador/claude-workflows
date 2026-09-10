@@ -88,12 +88,10 @@ boardless case printed nothing at all.
 In a normal checkout the two are identical and the loop reads it once.
 
 **The `repo=` line says which checkout answered, and nothing else in the output does.**
-Every other line of a run in the wrong repo looks exactly like a run in the right one.
-MEASURED 2026-09-08: a triage run in a workspace holding two sibling checkouts ran one
-sibling's freshness check without changing directory, so it ran in the other sibling and
-reported a 481-commit divergence against that checkout's stale `origin/main`; only a
-rerun inside the intended repo caught it, and nothing the block printed could have. The
-line is the remote's spelling, not the canonical owner — an org transfer does not
+Every other line of a run in the wrong repo looks exactly like a run in the right one: a
+freshness check meant for one of two sibling checkouts, run without changing directory,
+reports the other checkout's divergence as the intended one's. The line is the remote's
+spelling, not the canonical owner — an org transfer does not
 rewrite remotes, so a transferred repo still prints its old org here — which is why it
 identifies WHICH checkout answered and is never the value to build API paths from; the
 canonical `owner/repo` comes from `gh repo view --json nameWithOwner`, as the skills
@@ -104,25 +102,20 @@ MEASURED, a no-remote checkout printed `repo=` and nothing after it. And the fal
 `printf`, not `echo '-'`: MEASURED, zsh's builtin `echo` reads a lone `-` as the end of
 its options and prints nothing, so under zsh `echo '-'` printed the same empty `repo=`.
 
-**A workspace directory holding several checkouts is a supported starting point.**
-MEASURED 2026-09-08: both of a team's scheduled routines start in one, and both runs
-worked. The block cannot run *there* — a plain directory is not a git repo, so its first
-line prints `NOT INSIDE A CHECKOUT` and stops — and that line is a location error, never
-an answer about the board. `cd` into each repo you will sweep (§ Repo scope) and run the
-block inside it, once per repo; each run's `number=` / `schema=` / `targets=` lines are
-that repo's, and the `repo=` line is what proves it. A `repo=` that names a different
-repo than the one you meant to resolve is the location error to catch before reading
-anything else. An earlier wording of that line ended in "no repo board", which read as an
-answer and would have sent a run to the machine default; the message changed for that
-reason.
+**A workspace directory holding several checkouts is a supported starting point**, and a
+scheduled routine may start in one. The block cannot run *there* — a plain directory is
+not a git repo, so its first line prints `NOT INSIDE A CHECKOUT` and stops — and that
+line is a location error, never an answer about the board. `cd` into each repo you will
+sweep (§ Repo scope) and run the block inside it, once per repo; each run's `number=` /
+`schema=` / `targets=` lines are that repo's, and the `repo=` line is what proves it. A
+`repo=` that names a different repo than the one you meant to resolve is the location
+error to catch before reading anything else.
 
 🚨 **Fetch before you trust the file.** The block reads the working tree, which is
-whatever the checkout is parked on. MEASURED 2026-09-08: a shared checkout one commit
-behind its remote printed `schema=0  targets=-` for a repo whose remote was already at
-schema 4; ten minutes and one `git pull` later the same block printed `schema=4
-targets=vercel`. So `git fetch origin` first, then compare the working-tree file with the
-integration branch's copy — take `integrationBranch` from the working-tree file to know
-which ref to read:
+whatever the checkout is parked on: a shared checkout behind its remote prints the old
+`schema=` and `targets=`, and nothing in the output says so. So `git fetch origin` first,
+then compare the working-tree file with the integration branch's copy — take
+`integrationBranch` from the working-tree file to know which ref to read:
 
 ```sh
 IB=$(jq -r '.integrationBranch // empty' "$WF")            # e.g. origin/dev
@@ -278,13 +271,13 @@ file or a file with no name is a one-line finding, never a silent skip.
 
 | Section | File | Read by | For |
 |---|---|---|---|
-| Identity | target | `setup` read-back | the name, the evidence it came from, the date |
+| Identity | target | `setup` read-back | the name and the evidence it came from |
 | Deploy | target | `issue-planner` (into HANDOFF), [`execution.md`](execution.md) § 7, the `deploy` lens via HANDOFF | what a merge does, and the paths filter — as a **starting point**; § 7 still verifies against the live workflow |
 | Secrets and env | target | `triage` § 4, `autopilot` § 7 | why a credential change is human-gated here, and how a value is verified |
 | Infra and migrations | target | `triage` § 4, `autopilot` § 3, the `deploy` lens via HANDOFF | the apply commands and the ordering rules; the forbidden paths stay in `workflow.json` |
 | Review bot | repo.md | [`execution.md`](execution.md) § 5 | which comment is an ack and which is a review |
 | Reviewer invariants | repo.md | `issue-planner` (into HANDOFF), the `safety` and `contract` lenses via HANDOFF | the predicates and cross-store parities to check every diff against |
-| Traps | repo.md | `issue-planner` (it reads the whole file); written only through the proposal line in `next-issue` § 6 and `autopilot` § 10 | measured incidents on this repo |
+| Traps | repo.md | `issue-planner` (it reads the whole file); written only through the proposal line in `next-issue` § 6 and `autopilot` § 10 | traps on this repo and what to do instead, undated |
 
 **The planner reads the files once and carries the lines that apply into its HANDOFF
 `Ops docs:` field; the lenses read the HANDOFF, not the files.** That is
@@ -328,9 +321,11 @@ Six of them carry weight the others do not:
 - **`ciOnly`** names a required check you must **not** attempt locally, *with the reason*.
   A gate that needs a service, a secret, or a multi-GB download belongs here — running it
   and reading its failure as your own is the mistake this key exists to prevent.
-- **`$comment*`** keys are for the human reading the file. Record **where a value came
-  from and when** — every list in here is a snapshot of something that moves, and a
-  transcribed file list or `paths-ignore` copy is the first thing to rot.
+- **`$comment*`** keys are for the human reading the file. A `$comment_<key>` names the
+  source path, or the command that derives the value, so the next reader re-derives
+  rather than trusts. It never carries a date; `git blame` dates the line. Every list in
+  here is a snapshot of something that moves, and a transcribed file list or
+  `paths-ignore` copy is the first thing to rot.
 
 **Prefer a command that DERIVES a list over one that hardcodes it** — e.g. reading the
 file set out of the CI workflow at run time rather than transcribing it. Verify the
@@ -440,8 +435,9 @@ single constant.
 - Strip owners with `sub(".*/";"")` when comparing repo names — never match a
   literal owner prefix. A transferred repo still HTTP-redirects, so a stale ref
   keeps working in `gh` while silently failing every owner-string match.
-- **Issue numbers collide across repos.** A bare `#N` resolves same-repo; always
-  write `owner/repo#N` when referring across.
+- **Issue numbers collide across repos.** In issue and PR text, a bare `#N` resolves
+  same-repo, so write `owner/repo#N` when referring across. Comments and docs name no
+  issue at all ([`../reference/comments-and-docs.md`](../reference/comments-and-docs.md)).
 
 ---
 

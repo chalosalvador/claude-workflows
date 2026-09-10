@@ -12,12 +12,19 @@ python3 tests/test_version_agreement.py
 python3 tests/test_config_schema.py
 python3 tests/test_links.py
 python3 tests/test_doc_headers.py
+python3 tests/test_comment_policy.py
 claude plugin validate ./plugins/gh-issue-flow --strict
 claude plugin validate . --strict
 ```
 
 CI runs all of them as the `guards` job. Run them before pushing — `main` is protected, so a
 red gate means the PR simply cannot merge.
+
+`tests/test_comment_policy.py` reads only the lines your branch adds or changes since it
+left `origin/main`, so `git fetch origin` before running it. What it enforces is
+[`comments-and-docs.md`](plugins/gh-issue-flow/reference/comments-and-docs.md); a line
+nobody touches is never read, so older text that breaks the policy stays until it is
+edited.
 
 ⚠️ **A PR with NO checks is not a passing PR.** `guards` is required, so zero checks
 blocks a merge rather than allowing it — but the PR page looks clean either way, which is
@@ -51,8 +58,7 @@ Nothing invalidates that cache while `plugin.json` → `version` is unchanged, a
 **`git checkout` does not change what it serves.** Both refresh commands report success
 and do nothing: `claude plugin marketplace update` refreshes only the manifest, and
 `claude plugin update` compares versions and yours did not change. See
-[`CLAUDE.md`](CLAUDE.md) for the measured incident — a four-day-old plugin served
-silently across 14 commits and 8 merged PRs.
+[`CLAUDE.md`](CLAUDE.md) for how the cache is keyed and what refreshes it.
 
 **So: use `--plugin-dir` to test.** To collect a change that has already landed with a
 version bump, `claude plugin marketplace update` then `claude plugin update` — MEASURED,
@@ -197,8 +203,11 @@ quiet.
 
 **Prose here is measured, not asserted.** When a doc states a number or a behaviour, it
 came from running the thing. If you change a claim, re-measure it or mark it unverified.
-Several commits exist specifically to correct a claim that turned out to be wrong, and
-that history is worth more than a clean-looking one.
+The measurement, and the story of a claim that turned out wrong, go in the PR body's
+History
+([`git-and-github.md` § Writing a PR body](plugins/gh-issue-flow/reference/git-and-github.md#writing-a-pr-body));
+the doc states the current fact. Comments and docs follow
+[`comments-and-docs.md`](plugins/gh-issue-flow/reference/comments-and-docs.md).
 
 **The single-owner guard will block you, and that is the point.**
 `tests/test_single_owner_facts.py` pins sixteen clauses to exactly one owning file. Rewrite a

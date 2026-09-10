@@ -179,7 +179,8 @@ this diff needs.
 
 🚨 **State the tier from the issue's effort label; name no sections.** Naming one
 re-establishes the whole vocabulary and the planner emits all of them — measured. Pass
-the facts (branch, gate, spec flow, worktree) and let it choose the shape.
+the facts (branch, gate, spec flow, worktree, and the `Plugin:` directory from
+[`shared/execution.md`](../../shared/execution.md) § 3) and let it choose the shape.
 
 **The VERIFY-FIRST section must name real files/symbols, not guesses.**
 
@@ -233,7 +234,8 @@ Same research (steps 1–3), executed as actions, with a hard checkpoint:
          Skip for test/comment/doc-only fixes — a changed message still gets a pass.
 - [ ] 6c. Archive the spec change as the LAST commit of this PR; assert the archive
          JSON matches the delta-vs-skip call, then re-validate the folded tree.
-- [ ] 7. Commit referencing "Fixes #<N>" (never commit secrets), open a PR.
+- [ ] 7. Commit referencing "Fixes #<N>" (never commit secrets), open a PR whose body
+         is reference/git-and-github.md § Writing a PR body.
 - [ ] 8. Babysit to green — CI **and** review threads. Reply, verify, then resolve.
 - [ ] 9. Set the card → Done only at merge. NEVER merge without go-ahead.
 - [ ] 10. End with the PR handoff summary — § 6 below. Not optional, not conditional
@@ -295,8 +297,9 @@ One line first — the PR link and, in a sentence, what it does. Then these list
   ask. `Nothing` is a fine value here, and much better than silence.
 - **For `repo.md`** — one proposed bullet for `.claude/workflow/repo.md`
   § Traps when this run measured something about the platform that the doc does not
-  say (a command that lied, an ordering that bit). Written out, dated, ready to paste;
-  you never edit the doc yourself. `Nothing` is the usual value.
+  say (a command that lied, an ordering that bit). Written out, undated and in the
+  present tense, ready to paste; you never edit the doc yourself. `Nothing` is the usual
+  value.
 
 ### Rules
 

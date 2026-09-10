@@ -132,9 +132,8 @@ Write **only** what you probed. Leave a key out rather than guessing it — an a
 falls through to Layer-3 probing, a wrong key is believed. ⚠️ **`board` is the exception
 to "leave a key out": it is both sub-keys or no key at all**, never a half. See § 2.
 
-Add `$comment` keys recording **where each value came from and when**. Every list in that
-file is a snapshot of something that moves; the comment is what tells the next reader to
-re-derive rather than trust.
+Add a `$comment_<key>` for each value you write. What it holds is
+[`shared/config.md`](../../shared/config.md) § Layer 2, `$comment*`.
 
 **Always write `schemaVersion`** — the current schema from
 [`shared/config.md`](../../shared/config.md) § Layer 2 → Schema. It is how every later
@@ -155,13 +154,13 @@ you here.
 - [ ] 3. Probe each exactly as § 2 does. Show the proposed keys with their sources and
          ASK. A probe is a proposal, not a decision. `deployTargets` is the exception: § 5b
          both probes it and writes its files, so hand that key to § 5b.
-- [ ] 4. Write ONLY the missing keys, each with a `$comment_<key>` naming the plugin
-         version, the source and the date. Set `schemaVersion` to the current schema.
+- [ ] 4. Write ONLY the missing keys, each with a `$comment_<key>` as § 3 describes.
+         Set `schemaVersion` to the current schema.
 - [ ] 5. Re-run any formatter the repo applies to the file — a `$comment` usually says
          which — then show the diff. In `workflow.json` it must touch nothing but the
          added keys; the deploy-target docs § 5b writes are separate files.
-- [ ] 6. The file is usually tracked on a protected branch: branch, commit, open a PR.
-         Never merge it.
+- [ ] 6. The file is usually tracked on a protected branch: branch, commit (the message
+         names the plugin version), open a PR. Never merge it.
 - [ ] 7. Read it back: `jq .schemaVersion` equals the current schema and every proposed
          key is present.
 - [ ] 8. Run § 4 and § 5b — always, even when step 1 found the keys current. § 4 creates
@@ -321,9 +320,8 @@ nothing.
 - [ ] 1. Name the deploy target(s) from EVIDENCE — the table below. Never from a README.
 - [ ] 2. Copy the skeletons:  cat "${CLAUDE_PLUGIN_ROOT}/skills/setup/deploy-target-template.md"
          and  cat "${CLAUDE_PLUGIN_ROOT}/skills/setup/repo-template.md"  (one repo.md per repo)
-         Their headers need the plugin version:  jq -r .version "${CLAUDE_PLUGIN_ROOT}/.claude-plugin/plugin.json"
 - [ ] 3. Fill each section from what § 2 already probed, plus the two probes this step
-         owns (below). Every filled line carries its source path and today's date.
+         owns (below). Every filled line carries its source path, never a date.
          Anything no probe answered stays `UNVERIFIED — fill in`. Nothing is invented.
 - [ ] 4. Show both files and ASK. A target name is a proposal; the user may rename it,
          split it in two, or drop it.
@@ -426,7 +424,7 @@ notices when they silently are not running.
 | Agent | Runs at | Used by | Returns |
 |---|---|---|---|
 | `issue-planner` | `effort: max`, read-only | `next-issue`, `autopilot` | The scoping plan — and **REVIEW LENSES**, which decides the next step |
-| `diff-reviewer` | `effort: max`, read-only | `next-issue`, `autopilot` | Findings through one lens: `correctness`, `contract`, `scoping`, `safety`, `tests`, `deploy` |
+| `diff-reviewer` | `effort: max`, read-only | `next-issue`, `autopilot` | Findings through one lens from [the set](../../agents/diff-reviewer.md#the-lenses) |
 
 **Check, do not warn.** A same-named agent in `~/.claude/agents/` or the project's
 `.claude/agents/` wins over the plugin's copy, with no error and a plausible result.

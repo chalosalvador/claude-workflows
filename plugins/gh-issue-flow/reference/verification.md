@@ -79,15 +79,14 @@ and `gh pr checks` all worked.
 
 ### A backgrounded wait has nobody to report to
 
-MEASURED 2026-09-03, an autopilot routine on its own PRs: it backgrounded a 24-iteration
-CI poll and closed its turn with *"I'll be notified when it completes."* The poll stopped
-at **iteration 19 with the gate still `IN_PROGRESS`**, the session never resumed, and the
-PR was left **open and ready-for-review with an unverified gate and no report** — the
-exact end-state autopilot's cap exists to prevent. Nothing errored. From outside it is
-indistinguishable from a run waiting on a permission prompt, which is how it was
-reported. The rule it produced — foreground loop or `Monitor`, never a backgrounded
-command in an unattended run — is [`../shared/execution.md`](../shared/execution.md)
-§ 5's.
+An unattended run that backgrounds its CI poll and closes its turn with *"I'll be
+notified when it completes"* can end with nobody to notify: the poll stops with the gate
+still `IN_PROGRESS`, the session never resumes, and the PR is left **open and
+ready-for-review with an unverified gate and no report** — the exact end-state
+autopilot's cap exists to prevent. Nothing errors, and from outside it is
+indistinguishable from a run waiting on a permission prompt. The rule — foreground loop
+or `Monitor`, never a backgrounded command in an unattended run — is
+[`../shared/execution.md`](../shared/execution.md) § 5's.
 
 ## 2. An empty grep is only evidence if the pattern can match at all
 

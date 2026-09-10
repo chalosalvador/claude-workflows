@@ -6,19 +6,8 @@ caused wasted work.
 
 ## Validation gate
 
-```bash
-python3 tests/test_single_owner_facts.py
-python3 tests/test_no_stray_files.py
-python3 tests/test_version_agreement.py
-python3 tests/test_config_schema.py
-python3 tests/test_links.py
-python3 tests/test_doc_headers.py
-claude plugin validate ./plugins/gh-issue-flow --strict
-claude plugin validate . --strict
-```
-
-CI runs all of them as the `guards` job. Everything is markdown and JSON — there is no
-build, no install step, no dependency.
+The commands are in [`CONTRIBUTING.md`](CONTRIBUTING.md#the-gate) § The gate. CI runs
+them as the `guards` job.
 
 ## 🚨 `main` is protected. You cannot push to it.
 
@@ -46,13 +35,12 @@ MEASURED: those files have different inodes from the checkout's, are not symlink
 carry the mtime of the install. **The version in that path is `plugin.json` → `version`,
 and nothing invalidates the cache while that string is unchanged.**
 
-### This has already served a four-day-old plugin, silently
+### An unbumped version serves a stale plugin, silently
 
-MEASURED 2026-09-02: the cache held the tree as of `f12f53a` (2026-08-28) while the
-checkout sat on `main` **14 commits and 8 merged PRs later** — because `version` had read
-`0.1.0` since the initial commit and was never bumped. Every merged change was invisible
-to every session. The triage skill that ran still carried the 102-point board query that
-had been replaced days earlier, and nothing anywhere said so.
+While `version` is unchanged, the cache keeps the tree from the last install however far
+`main` moves on. Every change merged since is invisible to every session — a skill runs
+the text it had at install, including a query `main` has since replaced — and nothing
+anywhere says so.
 
 **Both refresh commands report success and change nothing:**
 
@@ -78,11 +66,9 @@ Reserve the full reinstall — `claude plugin uninstall <plugin>` then
 `main` byte for byte. **A restart is required either way**, and see the agent-discovery
 trap below.
 
-🚨 **The Skill tool's plugin directory is resolved once too — MEASURED 2026-09-07.** In a
-session that had run `claude plugin update` from 0.5.1 through 0.8.0, invoking
-`/gh-issue-flow:setup` loaded `…/cache/claude-workflows/gh-issue-flow/0.5.2/skills/setup`
-— the update had moved the install three versions on and the session was still serving
-a copy from hours earlier. Neither `plugin update` nor `/reload-plugins` repointed it. So
+**The Skill tool's plugin directory is resolved once per session too.** After `claude
+plugin update`, a skill invoked in the same session still loads from the cache directory
+it resolved earlier, and neither `plugin update` nor `/reload-plugins` repoints it. So
 the version you just updated to is **not** what this session runs until you restart, and
 a measurement made through the Skill tool without a restart measures the old text.
 
@@ -163,12 +149,14 @@ is a small Python repo with real CI and six deliberately varied issues; its `mai
 deliberately unprotected; `scripts/reset.sh` in that repo returns it to pristine
 (`--dry-run` first).
 
-⚠️ In that repo the `README.md` install line is **deliberately wrong** — it is a fixture
-for its issue #3, not a bug. `scripts/reset.sh` restores the broken form on every reset.
+In that repo the `README.md` install line is **deliberately wrong** — it is the fixture
+for one of its issues, not a bug. `scripts/reset.sh` restores the broken form on every
+reset.
 
 ## Convention
 
-Prose here is measured, not asserted. When a doc says a number or a behaviour, it came
-from running the thing. If you change a claim, re-measure it or mark it unverified —
-several commits here exist specifically to correct a claim that turned out to be wrong,
-and that history is worth more than a clean-looking one.
+Comments and docs here follow
+[`plugins/gh-issue-flow/reference/comments-and-docs.md`](plugins/gh-issue-flow/reference/comments-and-docs.md),
+and `tests/test_comment_policy.py` checks the lines a branch adds. How a claim here is
+measured, and where the measurement goes: [`CONTRIBUTING.md`](CONTRIBUTING.md#conventions)
+§ Conventions.

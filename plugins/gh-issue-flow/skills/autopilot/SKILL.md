@@ -206,8 +206,7 @@ whose branch is merged or older than 7 days.
 
 ⚠️ **A removed worktree leaves its local branch behind** (§ 12 keeps it on purpose), so
 the next run on the same issue fails at `-b feat/<N>-<slug>` with `a branch named …
-already exists`. MEASURED 2026-09-07 on the second run of the day. Before the `add`,
-check for it and decide from evidence, not by force:
+already exists`. Before the `add`, check for it and decide from evidence, not by force:
 
 ```sh
 git rev-parse --verify -q feat/<N>-<slug> && {
@@ -268,6 +267,7 @@ Repo has no spec flow.
 Integration branch: <branch>. Merging it <deploys X / is inert>.
 Gate: <commands>
 Worktree (read-only): <path>
+Plugin: <dir>      # the plugin directory, shared/execution.md § 3
 ```
 
 Let the planner decide what to emit. If you need something specific back, ask for the
@@ -367,8 +367,9 @@ logic — run as the lens that raised the finding.
 notice that a shadowing file in `~/.claude/agents/` answered instead, and it returns a
 plausible review either way.
 
-💰 Paste the plan's `HANDOFF` block into every lens prompt, plus the § 8 gate result and
-the worktree path — [`shared/execution.md`](../../shared/execution.md) § 3.1.
+💰 Paste the plan's `HANDOFF` block into every lens prompt, plus the § 8 gate result, the
+worktree path and the `Plugin:` line — [`shared/execution.md`](../../shared/execution.md)
+§ 3 and § 3.1.
 
 ⚠️ **Never a `disable-model-invocation` built-in review skill** — the call errors. This
 step said to run one until it was noticed, which meant unattended PRs shipped with **no
@@ -376,7 +377,7 @@ adversarial review at all** while this file claimed they had been reviewed. That
 failure mode this skill can least afford: nobody was watching.
 
 Unattended specifics: fix every valid finding; for any you reject, **put the reason in
-the PR body** — a silent drop is invisible to the only human who will look. If review
+the PR body's History** — a silent drop is invisible to the only human who will look. If review
 surfaces something that changes the *shape* of the fix, that is a scope escape →
 § Handing it back.
 
@@ -419,30 +420,11 @@ requested and why. Never report "review requested" off the exit code.
 
 Tag them in the body too — a requested review alone is easy to miss.
 
-PR body must contain, in order:
-
-- `Fixes #<N>` (use `owner/repo#N` across repos)
-- **What changed** — 2–4 lines, plain language. 🚨 **If the plan contradicted the
-  issue's own diagnosis, lead with that.** The reporter needs to learn what was actually
-  wrong, and a reviewer skimming for "does this match the issue" will otherwise read the
-  mismatch as scope creep.
-- **How it was verified** — the exact gate commands and their result, plus the
-  mutation-check result for any new test
-- **Noticed, not fixed** — anything out of scope you saw
-- **For `repo.md`** — a proposed, dated bullet for `.claude/workflow/repo.md`
-  § Traps when the run measured something about the platform the doc does not say.
-  Proposed only; the reviewer commits it or drops it.
-- **Spec** — which change was archived, and whether specs were updated or the change
-  carried `skip_specs` with what reason. On a `skip_specs` change **say plainly that the
-  validate gate asserted nothing**, so the reviewer knows the justification is theirs to
-  check.
-- **Deploy note** — state whether merging deploys. 🚨 **Only claim a diff does NOT
-  deploy if you checked every changed path in the FINAL diff against the live
-  `paths-ignore`** ([`shared/execution.md`](../../shared/execution.md) § 7) — it is
-  all-or-nothing per push, and `tests/**` is commonly not ignored, so the test you added
-  in § 8 is itself enough to arm the deploy. **When unsure, say it deploys.** This is
-  the one that has actually gone wrong.
-- A closing line: *opened unattended by autopilot; not merged — <reviewer> decides.*
+The PR body is
+[`reference/git-and-github.md` § Writing a PR body](../../reference/git-and-github.md#writing-a-pr-body),
+every section in its order, History included. Unattended, two things matter more than
+usual: the Deploy note, where the test you added in § 8 is itself enough to arm a deploy,
+and a closing line: *opened unattended by autopilot; not merged — <reviewer> decides.*
 
 ⚠️ **Never write a closing keyword next to an issue number you do not want closed, even
 negated** — and note that review bots append sections to your body after you write it.

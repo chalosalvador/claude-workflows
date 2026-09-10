@@ -44,7 +44,7 @@ regardless of the session's own setting. They appear as `gh-issue-flow:<name>`.
 | Agent | Used by | Returns |
 |---|---|---|
 | [`issue-planner`](agents/issue-planner.md) | `next-issue` step 3, `autopilot` § 6 | DECIDE-FIRST, VERIFY-FIRST, SCOPE (+FOLD IN), SPEC IMPACT, TESTS, RISKS, and **REVIEW LENSES** |
-| [`diff-reviewer`](agents/diff-reviewer.md) | `next-issue` step 6, `autopilot` § 9 | Findings through **one** assigned lens: `correctness`, `contract`, `scoping`, `safety`, `tests`, `deploy` |
+| [`diff-reviewer`](agents/diff-reviewer.md) | `next-issue` step 6, `autopilot` § 9 | Findings through **one** assigned lens from [the set](agents/diff-reviewer.md#the-lenses) |
 
 🚨 **A subagent cannot fan out** — it has no Agent tool and spawns do not nest. Spawn
 `gh-issue-flow:diff-reviewer` **N times from the parent, in one message**, one per lens.
@@ -82,7 +82,8 @@ docs owns.
 
 ### Reference
 
-Twelve docs of measured operational knowledge — see [their index](reference/README.md).
+Docs of measured operational knowledge, and the default comment policy — see
+[their index](reference/README.md).
 Skills link into them at the moment each becomes relevant.
 
 The one idea underneath all of them: **silence, an empty result, and exit 0 are

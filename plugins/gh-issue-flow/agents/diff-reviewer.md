@@ -3,8 +3,8 @@ name: diff-reviewer
 description: >-
   Adversarial single-lens review of the working diff before a PR is opened, in
   fresh context. Spawn several in parallel, one per lens (correctness,
-  contract, scoping, safety, tests, deploy). Read-only: reports findings, never
-  fixes.
+  contract, scoping, safety, tests, deploy, comments). Read-only: reports
+  findings, never fixes.
 tools: Read, Glob, Grep, Bash, WebFetch
 effort: max
 color: red
@@ -51,7 +51,13 @@ Resolve the integration branch from the repo, don't assume `main`:
 `.claude/workflow.json` -> `integrationBranch` if the repo defines one.
 **Three dots, always** — two dots shows the base's own commits inverted.
 
+The plugin's own files are under the directory your invocation names as `Plugin:`. With
+none, use the newest installed copy, `ls -d ~/.claude/plugins/cache/*/gh-issue-flow/*/ |
+sort -V | tail -1`, and say in one line which one you read.
+
 ## The lenses
+
+This is the lens set. Every other file links here instead of listing it.
 
 **correctness** — Logic that produces a wrong result. Boundary and empty cases,
 null/None paths, off-by-one, error handling that swallows, async ordering,
@@ -115,13 +121,32 @@ the integration branch auto-deploys and runs migrations — read
 `.claude/workflow.json` -> `deployOnMerge`, or the repo's CD workflow, rather
 than assuming a merge is inert.
 
+**comments** — Each comment and doc line the diff adds or changes
+(`git diff -U0 <integration-branch>...HEAD`), against the repo's own comment policy: a
+section titled "Comments and docs" in its `AGENTS.md`, `CLAUDE.md` or `CONTRIBUTING.md`
+(`grep -n -i -E '^#+ .*comments and docs' AGENTS.md CLAUDE.md CONTRIBUTING.md`), which
+wins. With none, apply the plugin default, `reference/comments-and-docs.md` in the plugin
+directory. Say in one line which policy you applied. Report a line that carries:
+
+- an issue or PR number;
+- a date;
+- history narration: what changed, what it used to be, what an earlier draft or a
+  reviewer said;
+- a fact restated where another file owns it — name the owner;
+- live state written as a value instead of the command that reads it;
+- a block over the policy's size limit;
+- an alarm marker.
+
+The policy's exceptions are never findings. Under the plugin default those are an
+OpenSpec change folder outside its spec deltas, which names its issue, and a security
+suppression carrying the issue and expiry date its scanner requires.
+
 ## Discipline
 
 🚨 **Never edit the worktree you were handed — not even to restore it a second later.**
-Other lenses are reading the same tree at the same time. MEASURED 2026-09-07: a `tests`
-lens rewrote `src/…/store.py` in place to re-run mutants, and the `correctness` lens
-running beside it saw a red gate and an uncommitted mutant body, then spent its budget
-proving the diff was not at fault. When your lens needs to run a mutant or a command
+Other lenses are reading the same tree at the same time: a mutant written in place shows
+the lens beside you a red gate and an uncommitted mutant body, and it spends its budget
+proving the diff is not at fault. When your lens needs to run a mutant or a command
 against modified code, `git clone` the worktree into a directory of your own under the
 caller's scratch area and mutate the clone. The shared tree is read-only for you in
 practice, whatever your tool list says.

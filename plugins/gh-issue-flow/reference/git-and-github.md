@@ -81,22 +81,53 @@ GitHub's linked-issue parser matches
 `close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved` + `#N` and **does not
 read negation in front of it.**
 
-Measured: every commit deliberately said `Refs #784`, never `Fixes` — verified by
+Measured: every commit deliberately said `Refs #N`, never `Fixes` — verified by
 regex over the squash message, zero closing keywords. The issue closed anyway,
 because a review bot appended a summary to the PR body containing:
 
-> **Merging does not close #784** until Terraform is applied.
+> **Merging does not close #N** until Terraform is applied.
 
-`close #784` matched. **The sentence written to say the issue must stay open is what
+`close #N` matched. **The sentence written to say the issue must stay open is what
 closed it.** Board automation then flipped the card to Done, and nothing in the repo
 detects it.
 
 - Never write a closing keyword next to `#N`, *even negated*. Phrase it as
-  "#784 stays open until …" — no keyword within ~1 token of the number.
+  "#N stays open until …" — no keyword within ~1 token of the number.
 - ⚠️ **You do not control the whole PR body.** Bots append sections after you write
   it, so a body clean at creation can acquire one.
 - When the merge must NOT close the issue, **read the issue state back after merging**
   and reopen if needed. Reopening does not restore the board card — set Status by hand.
+
+---
+
+## Writing a PR body
+
+This section owns the shape; skills link here. The sections, in order:
+
+- `Fixes #<N>`, or `owner/repo#N` across repos. When the merge must not close the issue,
+  no closing keyword at all (the section above).
+- **What changed** — 2–4 lines, plain language. **If the plan contradicted the issue's
+  own diagnosis, lead with that**: the reporter needs to learn what was actually wrong,
+  and a reviewer skimming for "does this match the issue" otherwise reads the mismatch
+  as scope creep.
+- **How it was verified** — the exact gate commands and their result, the mutation-check
+  result for every new test, and, when the gate cannot see the diff, the manual
+  acceptance you ran ([`../shared/execution.md`](../shared/execution.md) § 2).
+- **History** — how the change evolved, what review found and how each finding was
+  resolved (a rejected one with its reason, and whether the delta got its one re-review
+  pass), and the measured results. This is the only place history is written; the code
+  and the docs state the current behaviour ([`comments-and-docs.md`](comments-and-docs.md)).
+- **Noticed, not fixed** — anything out of scope you saw, one line each.
+- **For `repo.md`** — when the run measured something about the platform that the
+  repo's `repo.md` § Traps does not say: one proposed bullet, undated and in the present
+  tense. Proposed only; the reviewer commits it or drops it.
+- **Spec** — which change was archived, and whether specs were updated or the change
+  carried `skip_specs` with what reason. On a `skip_specs` change, say plainly that the
+  validate gate asserted nothing ([`openspec.md`](openspec.md)).
+- **Deploy note** — whether merging deploys, derived from the final diff as
+  [`../shared/execution.md`](../shared/execution.md) § 7 says.
+
+A skill may add its own closing line after these.
 
 ---
 
@@ -227,7 +258,7 @@ demoting a user does nothing while a team they belong to holds repo admin. And i
 Check both paths before changing either.
 
 🚨 **A repo transfer changes the identity a cloud trusts.** MEASURED: a transfer after
-2026-07-15 silently moved GitHub's OIDC `sub` to the immutable `owner@id/repo@id` form.
+`2026-07-15` silently moved GitHub's OIDC `sub` to the immutable `owner@id/repo@id` form.
 That is GitHub's behaviour and applies to every repo; the failure surfaces only as
 impersonation 403s, far from the cause, on a workflow that ran yesterday. Before any
 transfer, re-bind every federation trust that matches on the subject. Which bindings this

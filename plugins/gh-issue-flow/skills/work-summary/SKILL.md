@@ -188,9 +188,9 @@ not one per commit.
 
 One feature typically leaves **three** kinds of commit in the window:
 
-- the feature commit, carrying its PR number — `... (#6)`;
-- its review-fix commits — `Address PR review …`, `fix(...): … (PR #34 review)`;
-- a **double-numbered** merge — `... (#6) (#70)` — where the squash of a branch that
+- the feature commit, carrying its PR number — `... (#N)`;
+- its review-fix commits — `Address PR review …`, `fix(...): … (PR #N review)`;
+- a **double-numbered** merge — `... (#N) (#M)` — where the squash of a branch that
   already had a number in its subject picks up the merge's number too.
 
 Match on the PR number in the subject and on subject similarity, and prefer the **merge**
