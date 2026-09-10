@@ -2,7 +2,7 @@
 
 `setup` copies this to `.claude/workflow/repo.md` — **one per repo** — for the facts that
 do not vary by deploy target: which bot reviews pull requests and how its comments look,
-the invariants every reviewer checks a diff against, and the measured traps on this
+the invariants every reviewer checks a diff against, and the traps on this
 codebase. Per-target facts (what a merge deploys, how a secret is set, what applies
 migrations) live in `.claude/workflow/deploy-targets/<name>.md`
 ([`deploy-target-template.md`](deploy-target-template.md)).

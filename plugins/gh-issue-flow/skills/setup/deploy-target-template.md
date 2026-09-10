@@ -8,7 +8,7 @@ and auth providers are not targets; they appear inside the sections of the targe
 deploys them.
 
 Per-repo facts that do not vary by target — which bot reviews PRs, the invariants a
-reviewer checks, measured traps — live in the repo's single `repo.md`
+reviewer checks, the traps — live in the repo's single `repo.md`
 ([`repo-template.md`](repo-template.md)), not here.
 
 **The section headers are the contract**: skills read them by name, so keep every `##`
@@ -51,7 +51,7 @@ none.
 - Where secrets live and the command that sets one: {{from workflows/scripts}} — PROBED, or UNVERIFIED
 - The read-back that proves a value landed (byte count, type, the exact command): UNVERIFIED — fill in
 - Removing or renaming an env var safely (superset first?): UNVERIFIED — fill in
-- Traps measured here: UNVERIFIED
+- Traps here: UNVERIFIED
 
 ## Infra and migrations
 <!-- Read by: triage § 4 gate, autopilot § 3, the `deploy` lens via HANDOFF. -->

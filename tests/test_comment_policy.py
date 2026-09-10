@@ -3,9 +3,9 @@
 
 Only added and changed lines are read, and every line of an untracked file counts as added:
 a line the branch doesn't touch never fails, and neither does a comment or doc line it only
-moves or re-indents. Markdown fails on an issue or PR number, or on
-a date outside backticks; fenced code is skipped, but a fence tagged `markdown` or `md` holds
-doc text and is read. A code comment fails on an issue or PR number, a date, an alarm
+moves or re-indents. Markdown fails on an issue or PR number anywhere, and on a date
+outside backticks and code fences; a fence tagged `markdown` or `md` holds doc text and is
+read in full. A code comment fails on an issue or PR number, a date, an alarm
 marker, narration of a superseded draft, or a run of more than MAX_BLOCK_LINES added
 comment lines. The rules: plugins/gh-issue-flow/reference/comments-and-docs.md.
 
@@ -60,6 +60,7 @@ EARLIER_DRAFT = re.compile(
 )
 HUNK = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@")
 HEREDOC = re.compile(r"(?<!<)<<(?!<)[-~]?\s*['\"]?([A-Za-z_]\w*)['\"]?")
+DELIMITER = re.compile(r"(?<!<)<<[-~]?\s*$")
 # Shell arithmetic, where `<<` is a shift and opens no heredoc.
 ARITHMETIC = re.compile(r"\$?\(\((?:[^()]|\([^()]*\))*\)\)")
 FENCE = re.compile(r"`{3,}|~{3,}")
@@ -89,6 +90,7 @@ DIFF = (
 class CommentLine:
     text: str
     own_line: bool
+    fenced: bool = False
 
 
 @dataclass(frozen=True)
@@ -145,6 +147,8 @@ def scan(
             i = len(line) if in_block else end + 2
             spans.append((0, i))
         quote: str | None = None
+        opened = 0
+        strings: list[tuple[int, int]] = []
         while i < len(line):
             ch = line[i]
             if quote:
@@ -153,9 +157,10 @@ def scan(
                     continue
                 if ch == quote:
                     quote = None
+                    strings.append((opened, i + 1))
             # An apostrophe inside a word, as in `Don't`, opens no string.
             elif ch in quotes and not (ch == "'" and i and (line[i - 1].isalnum() or line[i - 1] == "_")):
-                quote = ch
+                quote, opened = ch, i
             elif blocks and line.startswith("/*", i):
                 end = line.find("*/", i + 2)
                 in_block = end == -1
@@ -168,12 +173,17 @@ def scan(
                 spans.append((i, len(line)))
                 break
             i += 1
+        if quote:
+            strings.append((opened, len(line)))
         code = without(line, spans)
         if spans:
             text = " ".join(line[start:end].strip() for start, end in spans)
             found[number] = CommentLine(text, not code.strip())
         if heredocs:
-            match = HEREDOC.search(ARITHMETIC.sub("", code))
+            # A quoted string opens no heredoc, unless it is the delimiter itself: `<<'EOF'`.
+            quoted = [s for s in strings if not DELIMITER.search(line[: s[0]])]
+            bare = without(line, sorted(spans + quoted))
+            match = HEREDOC.search(ARITHMETIC.sub("", bare))
             if match:
                 heredoc_end = match.group(1)
     return found
@@ -212,8 +222,9 @@ def python_lines(source: str) -> dict[int, CommentLine]:
 
 
 def markdown_lines(source: str) -> dict[int, CommentLine]:
-    """Every prose line of a markdown file, including the inside of a fence tagged `markdown`
-    or `md`, such as a skeleton setup copies into a repo. Other fenced code is skipped."""
+    """Every line of a markdown file but its fence markers. A line in a code fence is marked
+    `fenced`; a fence tagged `markdown` or `md` holds doc text, such as a skeleton setup
+    copies into a repo, and its lines are prose."""
     found: dict[int, CommentLine] = {}
     fences: list[tuple[str, bool]] = []
     for number, line in enumerate(source.split("\n"), start=1):
@@ -224,6 +235,7 @@ def markdown_lines(source: str) -> dict[int, CommentLine]:
                 fences.pop()
                 continue
             if not prose:
+                found[number] = CommentLine(text, True, fenced=True)
                 continue
         opener = FENCE.match(text)
         # A backtick fence's info string holds no backtick; such a line is a code span.
@@ -288,7 +300,7 @@ def check_file(path: str, source: str, added: set[int]) -> tuple[list[Violation]
             continue
         read += 1
         broken = ["issue or PR number"] if names_an_issue(line.text) else []
-        if dated(kind, line.text):
+        if dated(kind, line.text) and not line.fenced:
             broken.append("date")
         if kind == "code":
             if ALARM.search(line.text):
@@ -378,7 +390,7 @@ def added_lines(repo: Path, base: str, counts: Callable[[str], bool] = counted) 
                     classified = classify(origin[2:], git(repo, "show", f"{merge_base}:{origin[2:]}"))
                 except subprocess.CalledProcessError:
                     classified = None  # a path git cannot be handed back, such as one not in UTF-8
-                lent = set(classified[1]) if classified else set()
+                lent = {n for n, row in classified[1].items() if not row.fenced} if classified else set()
             continue
         if line.startswith("+++ "):
             target = unquote(line[4:].removesuffix("\t"))

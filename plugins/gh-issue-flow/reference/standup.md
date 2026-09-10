@@ -13,7 +13,7 @@ Triggered by "standup", or by a scheduled daily-update task. Everything in
 not a different investigation.** Read it with `--all` and check merge status per commit
 (`work-summary` § 3).
 
-🚨 **A standup is YOUR work, and only yours.** Keep the `--author` filter on, with every
+**A standup is YOUR work, and only yours.** Keep the `--author` filter on, with every
 one of your identities (`work-summary` § 3). This is the one output shape where dropping it is always
 wrong: you are reporting to the team, so a teammate's work in your update is at best noise
 and at worst you appearing to claim it. Never add a "Team:" bullet, never name what someone
@@ -53,7 +53,7 @@ Stream headings are the **bare stream name** and nothing else. Never append a st
 "— live", no "— on staging", no "(prod)". Streams repeat under Yesterday and Today as
 needed; omit any stream with no work in *that* section.
 
-⚠️ **Derive the heading from `workflow.json` → `workstreams`; do not paste the value in.**
+**Derive the heading from `workflow.json` → `workstreams`; do not paste the value in.**
 Those values are descriptions written for a human reading the config, so they carry a
 descriptive tail a heading must not: `"Checkout App — buyer-facing storefront (Next.js)"` is
 the config value, `_Checkout_` is the heading. Three rules cover every case:
@@ -80,16 +80,16 @@ The **last working day**, not literally yesterday.
 last working day is *not* the previous calendar day do you name the day instead: on a
 Monday the section is `*Friday*`, because that is when the work happened.
 
-⚠️ Never label it with a date — `*Tuesday 1 Sep*` is wrong even when the date is right. The
+Never label it with a date — `*Tuesday 1 Sep*` is wrong even when the date is right. The
 reader wants the relationship to today, and the date is already in the header line.
 
 A Monday standup with an empty Yesterday because Sunday was empty is a formatting bug, not
 an honest report.
 
-⚠️ **Never reach back more than one working day to fill it.** If the last working day was
+**Never reach back more than one working day to fill it.** If the last working day was
 genuinely quiet, say so.
 
-⚠️ **Re-derive Yesterday from git every run — never paste the previous draft forward.**
+**Re-derive Yesterday from git every run — never paste the previous draft forward.**
 Merge status is evaluated **as of now**, not as of yesterday: something tagged
 `(in progress)` yesterday that merged this morning carries no marker today. Pasting
 forward is how a shipped thing keeps being reported as open.
@@ -148,7 +148,7 @@ only makes sense to someone who has read the diff, it is not finished.
 
 **~4–6 bullets in Today, 2–3 in Yesterday, no more than ~3 per stream.**
 
-🚨 **This is a selection problem, not an ordering one.** Taking the top N of a ranked
+**This is a selection problem, not an ordering one.** Taking the top N of a ranked
 list of everything you did still leaves a list of everything you did, just shorter. Ask of
 each candidate: **"who else needs to know this, and what would they do differently?"** If
 the answer is nobody, it does not go in — however hard the work was, or however dramatic
@@ -207,10 +207,10 @@ Derive it cheaply and read-only from:
 
 Two traps, both of which manufacture false blockers:
 
-- ⚠️ **A board status meaning parked-by-choice (e.g. `Hold`) is not a blocker.** Parked is
+- **A board status meaning parked-by-choice (e.g. `Hold`) is not a blocker.** Parked is
   a decision; the `blocked` label is stuck. Reporting a parked card asks the team to
   unstick something nobody is stuck on.
-- ⚠️ **Your own unfinished work is not a blocker.** "Still need to finish the tests" is a
+- **Your own unfinished work is not a blocker.** "Still need to finish the tests" is a
   Today bullet tagged `(in progress)`.
 
 **The one place a number belongs.** The no-numbers rule holds everywhere else, but a
@@ -221,13 +221,13 @@ or file names. Across repos, write `owner/repo#N`.
 Name the blocker in the same consequence-first voice as the bullets, and say **who or what
 would clear it** — that is the only reason the line exists.
 
-⚠️ **Not a roll-call.** "Six PRs open for review, oldest first: …" is a list, not a blocker
+**Not a roll-call.** "Six PRs open for review, oldest first: …" is a list, not a blocker
 section: it names no consequence, asks for nothing specific, and buries the one item that
 actually needs a person. Blockers get the same selection test and the same one-per-thread
 collapse as every other bullet — several issues stuck behind one unmade decision are **one**
 blocker naming the decision, not one line each.
 
-⚠️ If the read-only lookups fail or are unavailable, write `- None.` and say the lookup
+If the read-only lookups fail or are unavailable, write `- None.` and say the lookup
 failed **outside** the pasteable text. Never guess a blocker.
 
 ### A complete example

@@ -18,10 +18,10 @@ Each gets **fresh context and max effort**, which an inline same-session review 
 not. Scale the lens list to the change — but do not under-scale: five-file plumbing
 changes still ship regressions.
 
-⚠️ **Spawn `gh-issue-flow:diff-reviewer`, never the bare name** — a shadowing file in
+**Spawn `gh-issue-flow:diff-reviewer`, never the bare name** — a shadowing file in
 `~/.claude/agents/` wins silently and returns a plausible review of the wrong thing.
 
-⚠️ Parallelism must live in the **parent**; a subagent cannot fan out. See
+Parallelism must live in the **parent**; a subagent cannot fan out. See
 `parallel-agents.md` for what those agents share and can clobber.
 
 ---
@@ -37,7 +37,7 @@ loop** — one conditional pass, then move on.
 
 **Run it as the lens that RAISED the finding.** The delta exists to establish that
 lens's property; asking a different question of it is how the pass goes through
-motions. Measured: three max-effort lenses cleared a diff; a pre-apply gate was then
+motions. In one case three max-effort lenses cleared a diff; a pre-apply gate was then
 added *in response to the deploy lens*, and a bot found a Medium bug in it. **That late
 code was the only part never adversarially reviewed** — and a `correctness` pass over a
 gate that exists for rollout ordering would have been looking somewhere else. Use
@@ -55,13 +55,13 @@ instead of taking the author's word.
 
 ---
 
-## 🚨 Every lens shares one blind spot: code the diff does not touch
+## Every lens shares one blind spot: code the diff does not touch
 
 Lenses are scoped to the diff by construction, so **a guard that is correct for
 everything in the diff and blind to an untouched caller reads as clean to every lens at
 once.** Adding more lenses does not help.
 
-Measured: five max-effort lenses found seven real defects and **all five missed** the
+In one case five max-effort lenses found seven real defects and **all five missed** the
 biggest one — a new `/32` guard lived in a test that only reads the committed tfvars,
 so a `-var` / `-var-file` override reached the firewall's `source_ranges` completely
 unvalidated. The variables file was not in the diff, so no lens looked at whether it
@@ -71,11 +71,10 @@ should have been. A PR-scoped bot caught it immediately.
 > questions. A guard's *coverage* is a claim about the whole system, and you cannot
 > verify it from the changed lines alone.
 
-**This is what the `scoping` lens is for, and the question is now in the agent
-itself** — `agents/diff-reviewer.md` carries it verbatim, so it fires whether or not
-the caller remembers to paste it. It was a paste-it-in instruction here for long
-enough to be worth saying plainly: **an instruction that depends on the caller
-remembering is not a control.**
+**This is what the `scoping` lens is for, and the question is in the agent itself** —
+`agents/diff-reviewer.md` carries it verbatim, so it fires whether or not the caller
+remembers to paste it: **an instruction that depends on the caller remembering is not a
+control.**
 
 So: **any diff that adds a guard, validation or invariant gets `scoping`**, whatever
 else the planner named — and **answer the question yourself before shipping** too. The
@@ -158,14 +157,14 @@ On another, four max-effort lenses missed three High-severity holes the bot then
 
 ---
 
-## ⚠️ A passing bot check is not evidence of zero findings
+## A passing bot check is not evidence of zero findings
 
 **A green check plus zero unresolved threads is not evidence of zero findings.** A
 review bot's summary comment can carry `🛑 Comments failed to post (N)` sections whose
 findings never become review threads — invisible from the checks page, invisible to
 `gh pr checks`, invisible to a thread count.
 
-Measured: check **pass**, 3 review threads, and **15** recovered findings across two
+One PR showed check **pass**, 3 review threads, and **15** recovered findings across two
 collapsed `<details>` sections. The summary claimed 18 actionable comments; ~3 were
 delivered. Two of the buried ones were user-facing security defects.
 
@@ -176,7 +175,7 @@ delivered. Two of the buried ones were user-facing security defects.
 One review never ran at all — *"Review limit reached … we couldn't start this review"* —
 and the check went green anyway.
 
-🚨 **The re-trigger can be a NO-OP.** After the window elapsed, an `@bot review` comment
+**The re-trigger can be a NO-OP.** After the window elapsed, an `@bot review` comment
 returned only an acknowledgement carrying the catch: *"…is an incremental review system
 and does not re-review already reviewed commits."* It had marked those commits seen
 while skipping them for the limit, so the command had nothing to do.
@@ -211,10 +210,9 @@ CAUGHT; a `perl` pattern that silently matched nothing so a real bypass looked l
 miss; a grep that missed a crash-instead-of-summary output; and a broken baseline that
 made all 13 results meaningless. See `mutation-harness.md`.
 
-**When a tool turns out to be uninvokable, grep every skill that calls it.** One skill's
-review step was an uninvokable no-op for two days — every unattended PR shipped with no
-adversarial review while the file claimed otherwise — because only the first of two
-callers got fixed.
+**When a tool turns out to be uninvokable, grep every skill that calls it.** Fixing only
+the first caller leaves the second a no-op, and every PR it opens ships with no
+adversarial review while the file claims otherwise.
 
 **Never hardcode a test count in a skill or doc.** A growing suite moves by dozens within
 a day, and the stale number then contradicts a passing run. Green-vs-red is the gate.

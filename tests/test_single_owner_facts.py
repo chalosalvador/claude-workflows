@@ -3,7 +3,7 @@
 
 WHY THIS EXISTS
 ---------------
-Spend rules, tier tables and measured numbers are the content most likely to be
+Spend rules, tier tables and cost figures are the content most likely to be
 tuned later. When the same fact sits in several files, a tune updates one and
 leaves the others silently contradicting it. This guard reds instead.
 
@@ -18,8 +18,8 @@ DESIGN — see plugins/gh-issue-flow/reference/guard-tests.md
   some "looks duplicated" heuristic that the next author routes around.
 * REGION-NORMALIZED, never line-scoped. Every file is collapsed to one line
   before matching. Markdown hard-wraps at ~90 cols, so a line-scoped matcher
-  cannot see a clause split across two lines — measured three separate times
-  while building this repo, twice producing a confident FALSE "not present".
+  cannot see a clause split across two lines, and reports a confident false
+  "not present".
 * COUNTS, not presence. A clause appearing twice inside its own owner is drift
   too, and presence alone cannot see it.
 * SCOPED to tracked markdown under the paths below. A bare rglob descends into
@@ -29,10 +29,10 @@ KNOWN LIMIT — read before trusting a local green
 ------------------------------------------------
 Enumeration is `git ls-files`, i.e. the INDEX. A brand-new, unstaged file is
 invisible to this guard, so a duplicate introduced in one passes locally.
-Measured. `git add` it first; that is also the state CI runs in, which is why CI
-is the authoritative run.
+`git add` it first; that is also the state CI runs in, which is why CI is the
+authoritative run.
 
-Run:  git add -A && python3 tests/test_single_owner_facts.py
+Run:  git add <the paths you changed> && python3 tests/test_single_owner_facts.py
 """
 from __future__ import annotations
 
@@ -45,12 +45,8 @@ ROOT = Path(__file__).resolve().parent.parent
 
 # Only these trees are scanned. Anything outside is not this guard's business.
 #
-# CLAUDE.md and CONTRIBUTING.md were added after this branch shipped a direct
-# self-contradiction between them in ONE commit — CLAUDE.md said `claude plugin tag`
-# validates two version fields while CONTRIBUTING.md said the gate checks two of three
-# and the top-level is unchecked — and both guards passed. They are the repo's two
-# highest-traffic prose files and nothing mechanical protected either. MEASURED:
-# widening costs nothing, 25 scanned files -> 27, no existing pin becomes a stray.
+# CLAUDE.md and CONTRIBUTING.md are the repo's two highest-traffic prose files, and a
+# contradiction between them passes every other guard.
 SCAN_ROOTS = ("README.md", "CLAUDE.md", "CONTRIBUTING.md", "plugins/")
 
 # ─── THE PIN ────────────────────────────────────────────────────────────────
@@ -68,12 +64,12 @@ OWNED: dict[str, tuple[str, int]] = {
     "`effort` is frontmatter-only and cannot be overridden":
         ("plugins/gh-issue-flow/shared/execution.md", 1),
 
-    # The measured waste. Was restated 9x across 5 files.
+    # The waste figure; restated copies drift when it is retuned.
     "roughly a third of the spend":
         ("plugins/gh-issue-flow/shared/execution.md", 1),
 
     # The planner's output shape belongs with the planner. Third phrasing:
-    #   1. "≤400 words"                 — advisory. Measured, blown 4.75x.
+    #   1. "≤400 words"                 — advisory; overrun 4.75x.
     #   2. tier table, EMIT / DO NOT EMIT — a BAN-LIST. 0/3 compliance.
     #   3. this — an ALLOWLIST: five sections fully specified, everything else
     #      trigger-gated and one line. Nothing describes a section you should

@@ -21,7 +21,7 @@ Write it in the present tense, and only if it stays true without anyone editing 
 - **Never name an issue or PR number in a comment or a doc**, apart from the two exceptions
   below. Issue and PR numbers belong in issue and PR text, commit messages and branch
   names. There is no TODO exception: describe work that is still missing in words, and let
-  the tracker hold the issue.
+  the tracker hold the issue. Examples, fenced code included, use `#N`.
 - **No dates, "measured" or "currently".** A result lives in the report or the PR that
   produced it. A date that is itself part of a fact, such as a platform cutoff, is written
   in backticks.

@@ -78,8 +78,8 @@ gh repo view --json nameWithOwner,defaultBranchRef,squashMergeAllowed,rebaseMerg
 git branch -r --list 'origin/*'
 ```
 
-🚨 **Handle the empty repo first.** A GitHub repo created but never pushed to reports
-`isEmpty: true` and `defaultBranchRef.name` as an **empty string** — measured, not null,
+**Handle the empty repo first.** A GitHub repo created but never pushed to reports
+`isEmpty: true` and `defaultBranchRef.name` as an **empty string** — not null,
 so a truthiness check on the object still passes and you compose `origin/` + `""` =
 `origin/`, a branch name that silently matches nothing downstream.
 
@@ -91,10 +91,10 @@ On an empty repo: say so, write no `integrationBranch`, and tell the user to pus
 and re-run. Everything else in this skill still applies — labels and the board can be set
 up before the first commit.
 
-⚠️ **Glob defensively — the agent's shell is zsh, where an unmatched glob is an ERROR,
+**Glob defensively — the agent's shell is zsh, where an unmatched glob is an ERROR,
 not an empty list.** `ls .github/workflows/*.yml` exits 1 with `no matches found` and
-aborts a chained command, where bash would have passed the pattern through. Measured on a
-repo with no CI. Test the directory first, or use `find`:
+aborts a chained command, where bash would have passed the pattern through. Test the
+directory first, or use `find`:
 
 ```sh
 [ -d .github/workflows ] && find .github/workflows -name '*.yml' -o -name '*.yaml'
@@ -102,9 +102,9 @@ repo with no CI. Test the directory first, or use `find`:
 
 | Fact | How |
 |---|---|
-| `board` | **Ask which board THIS repo feeds**, and write `{"number": N, "owner": "<owner>"}` whenever it is not the user's machine default. This is what lets one machine work several workspaces against different boards — see [`shared/board.md`](../../shared/board.md) § Resolution for the resolution order. Omit the key when the repo uses the default; do not write a copy of it. 🚨 **Both sub-keys or neither** — a `board` with `number` and no `owner` does not fall back, it stops every board step in a repo you just green-lit. If the owner is unknown, ask; if you cannot get it, write no `board` key. |
+| `board` | **Ask which board THIS repo feeds**, and write `{"number": N, "owner": "<owner>"}` whenever it is not the user's machine default. This is what lets one machine work several workspaces against different boards — see [`shared/board.md`](../../shared/board.md) § Resolution for the resolution order. Omit the key when the repo uses the default; do not write a copy of it. **Both sub-keys or neither** — a `board` with `number` and no `owner` does not fall back, it stops every board step in a repo you just green-lit. If the owner is unknown, ask; if you cannot get it, write no `board` key. |
 | `repos` | The repo you are in (`gh repo view --json nameWithOwner`). **Ask whether other repos feed the same board** — if so, list them all, full `owner/repo`. One repo is the common answer and a perfectly good one; write the key anyway so the skills never have to guess. Listing a sibling widens the issue sweep only: its branch, gate and forbidden paths still come from **its** own file ([`shared/config.md`](../../shared/config.md) § Repo scope), so every repo keeps a file; `board` and `priorityCaps` must agree across them, and each file's `areaLabels`, `dri` and `trackForArea` name **only that repo's** areas. |
-| `integrationBranch` | `origin/` + the default branch — **after** the empty-repo check above. ⚠️ **Not always `main`** — if a `dev`/`develop` remote branch exists and is ahead of the default, the repo probably integrates there and releases from the default. **Ask; do not guess.** |
+| `integrationBranch` | `origin/` + the default branch — **after** the empty-repo check above. **Not always `main`** — if a `dev`/`develop` remote branch exists and is ahead of the default, the repo probably integrates there and releases from the default. **Ask; do not guess.** |
 | `validate` | **Read the CI workflow first** — `.github/workflows/*.yml`, the job that runs on PRs into the integration branch. Copy its step commands in order. Fall back to the toolchain only if there is no CI: `pyproject.toml`/`requirements.txt` → `ruff`/`pytest`; `package.json` → the lint/typecheck/test/build scripts that actually exist; `Cargo.toml` → `cargo clippy`/`cargo test`; `go.mod` → `go vet`/`go test ./...`. |
 | `preflight` | Anything the gate shells out to that no lockfile installs. |
 | `specFlow` | An `openspec/` directory at the repo root → `"openspec"`. |
@@ -129,7 +129,7 @@ failure as a broken repo. Run them; report any that fail.
 Schema and key meanings: [`shared/config.md`](../../shared/config.md).
 
 Write **only** what you probed. Leave a key out rather than guessing it — an absent key
-falls through to Layer-3 probing, a wrong key is believed. ⚠️ **`board` is the exception
+falls through to Layer-3 probing, a wrong key is believed. **`board` is the exception
 to "leave a key out": it is both sub-keys or no key at all**, never a half. See § 2.
 
 Add a `$comment_<key>` for each value you write. What it holds is
@@ -165,14 +165,14 @@ you here.
          key is present.
 - [ ] 8. Run § 4 and § 5b — always, even when step 1 found the keys current. § 4 creates
          any label the skills read that the repo lacks (idempotent: `gh label create`
-         exits 1 on an existing name, tolerate it). MEASURED: a repo upgraded from a
-         pre-0.5.2 setup was missing `legal`, `compliance` and `security`, which triage
-         applies and reads, because upgrade ran only the key steps. § 5b adds a header
+         exits 1 on an existing name, tolerate it). A repo whose keys are current can
+         still lack `legal`, `compliance` or `security`, which triage applies and
+         reads; the key steps never create a label. § 5b adds a header
          the skeleton gained, or a doc for evidence that appeared since, and says
          "nothing to add" otherwise. Neither depends on a schema bump.
 ```
 
-🚨 **Never touch an existing key** — not its value, not its formatting, not its comment.
+**Never touch an existing key** — not its value, not its formatting, not its comment.
 A human wrote it, possibly to override exactly what the probe would have found. If a
 probe disagrees with an existing value, **report** the disagreement in § 7; do not
 resolve it.
@@ -180,7 +180,7 @@ resolve it.
 **Check mode reports the same delta and writes nothing**: the drift line, then the keys
 upgrade would add and what each probe found.
 
-⚠️ **Check whether `.claude/` is gitignored** before declaring the file shared:
+**Check whether `.claude/` is gitignored** before declaring the file shared:
 
 ```sh
 git check-ignore -v .claude/workflow.json .claude/workflow/deploy-targets/probe.md   # the second path need not exist
@@ -220,14 +220,14 @@ gh label create security        -d "Needs a human owner — never agent-ready"  
 ```
 
 A new GitHub repo ships with `bug`, `documentation`, `duplicate`, `enhancement`,
-`good first issue`, `help wanted`, `invalid`, `question` and `wontfix` (verified) — so
+`good first issue`, `help wanted`, `invalid`, `question` and `wontfix` — so
 four of the category labels already exist. Check before creating.
 
-`gh label create` **exits 1 on an existing name** (measured) with
+`gh label create` **exits 1 on an existing name** with
 `label with name "x" already exists`. Tolerate that failure rather than passing
 `--force`, which would overwrite a description someone wrote.
 
-⚠️ **Do not pipe the loop into `head`/`tail`.** The pipeline's status becomes the pager's,
+**Do not pipe the loop into `head`/`tail`.** The pipeline's status becomes the pager's,
 so every failure reads as success — and a label loop is exactly where that bites. Capture
 the status separately, then **read the labels back** and report what actually exists:
 
@@ -235,11 +235,11 @@ the status separately, then **read the labels back** and report what actually ex
 gh label list --limit 200 --json name --jq '.[].name'
 ```
 
-🚨 **Pass each label as its own argument, never a split shell variable.** The labels API
+**Pass each label as its own argument, never a split shell variable.** The labels API
 auto-creates any name it is handed, and under a shell that does not word-split, a
 variable holding two names becomes one junk label created repo-wide. After any label
 loop, assert that no label **this run created** contains a space. Not every label:
-MEASURED, GitHub's own defaults `good first issue` and `help wanted` contain spaces, so a
+GitHub's own defaults `good first issue` and `help wanted` contain spaces, so a
 blanket check false-alarms on every fresh repo and trains you to ignore it.
 
 **Area labels are the user's taxonomy, not ours.** Ask what areas this repo has, create
@@ -286,7 +286,7 @@ gh project field-create <number> --owner <owner> --name Track \
 To create a board from scratch: `gh project create --owner <owner> --title "<name>"`,
 then `gh project link <number> --owner <owner> --repo <owner>/<repo>`.
 
-### 🚨 The one thing you must NOT automate: adding a Status option
+### The one thing you must NOT automate: adding a Status option
 
 The workflow uses a **`Hold`** Status — "a human parked this by choice" — which a new
 board does not have. `gh project` has no `field-edit`, and the GraphQL alternative
@@ -301,7 +301,7 @@ If `Hold` does not exist, the skills still work — `triage` simply has no parke
 protect, and every card it sees is fair game for `next-issue`. Say that plainly rather
 than implying the board is broken.
 
-⚠️ **Never hardcode a field or option id** into `workflow.json` or anywhere else.
+**Never hardcode a field or option id** into `workflow.json` or anywhere else.
 Resolve them from `field-list` in the same run that uses them.
 
 ## 5b. Deploy targets and `repo.md` — the repo's own operational knowledge
@@ -367,9 +367,9 @@ What those find goes in as PROBED lines with the path; the read-back that proves
 value landed stays `UNVERIFIED`, because no probe can know it.
 
 **Review bot.** Detect, do not assume — and read **both** places a bot writes, because
-they differ per bot. MEASURED on a public repo: the comment endpoints returned only two
-CI bots while `pulls/<n>/reviews` returned the review bot on every recent PR; a scan of
-comments alone would have written "no review bot" for a repo that has one.
+they differ per bot. A review bot can post only to `pulls/<n>/reviews` while the comment
+endpoints show nothing but CI bots, so a scan of comments alone writes "no review bot"
+for a repo that has one.
 
 ```sh
 # Who actually reviews. Seven REST calls; the check names are already in workflow.json -> requiredChecks (§ 2), do not re-fetch protection.
@@ -378,7 +378,7 @@ comments alone would have written "no review bot" for a repo that has one.
     | while read n; do gh api "repos/<owner>/<repo>/pulls/$n/reviews" --jq '.[].user.login'; done
 } | grep '\[bot\]$' | sort | uniq -c | grep . \
   || echo "NO bot in the last 100 comments or the last 5 merged PRs' reviews -> Bot: none"
-# MEASURED on a repo with no bot: without the final `grep . || echo`, this printed nothing at
+# Without the final `grep . || echo`, on a repo with no bot this prints nothing at
 # all — the same silent-empty result the rest of this plugin exists to prevent.
 # A config file only ANNOTATES. If it names a bot the scan did not see, the file is stale: report it, do not write it as the bot.
 ls .coderabbit.yaml .coderabbit.yml 2>/dev/null
@@ -428,9 +428,8 @@ notices when they silently are not running.
 
 **Check, do not warn.** A same-named agent in `~/.claude/agents/` or the project's
 `.claude/agents/` wins over the plugin's copy, with no error and a plausible result.
-MEASURED: five runs were spent tuning a plugin file nothing read; the story is in
-`CONTRIBUTING.md` § Testing a change to an agent, and the reason it is a check here is that
-a prose warning in this skill was ignored.
+Tuning the plugin's copy then changes nothing; `CONTRIBUTING.md` § Testing a change to an
+agent has the detail. It is a check here because a prose warning is easy to ignore.
 
 ```sh
 claude plugin list          # "No plugins installed" -> every skill here is inert
@@ -451,7 +450,7 @@ nothing — it may be deliberate; the user decides. Every skill here spawns the 
 `gh-issue-flow:<agent>`, which always resolves to the plugin's copy; a bare name resolves
 to whichever wins.
 
-🚨 **Agent types resolve at session start.** Measured: an edit or an install changes
+**Agent types resolve at session start.** An edit or an install changes
 nothing for the running session, and the spawn fails with `Agent type '<name>' not
 found`. Restart to test an agent change; `/reload-plugins` refreshes skills only.
 
@@ -479,7 +478,7 @@ Print three blocks, in this order:
 **Missing — and who can fix it.** The honest half. Separate what a human must do from
 what is merely absent.
 
-🚨 **An unset board is a narrowing, not a Missing row.** Resolve both layers first
+**An unset board is a narrowing, not a Missing row.** Resolve both layers first
 ([`shared/board.md`](../../shared/board.md) § Resolution): `workflow.json` → `board` wins,
 the machine default is second, and only when both are empty is the repo label-only. Say
 which layer answered, every run — pointing a repo's triage at the previous project's
@@ -506,14 +505,14 @@ Close with the **one next command** the user should run — usually
 `/gh-issue-flow:triage dry run` — and a one-line map of what follows it:
 `triage` gates issues → `next-issue` or `autopilot` works them → `work-summary` reports.
 
-⚠️ **Read back anything you created before claiming it.** `gh` exits 0 on writes the
+**Read back anything you created before claiming it.** `gh` exits 0 on writes the
 server rejected, so a report listing labels or fields you never actually made is the
 exact failure this skill exists to prevent. Re-list and count.
 
-🚨 **But board writes are eventually consistent — labels are not.** A label read-back is
-immediate and trustworthy. A Projects v2 read-back is **not**: measured, an `item-list`
-immediately after adding items reported 0 while every add had in fact succeeded, settling
-~30s later. Poll with backoff before concluding a board write failed, and prefer
+**But board writes are eventually consistent — labels are not.** A label read-back is
+immediate and trustworthy. A Projects v2 read-back is **not**: an `item-list` immediately
+after adding items can report 0 while every add has in fact succeeded, settling later.
+Poll with backoff before concluding a board write failed, and prefer
 resolving a returned item id over counting. See
 [`../../reference/verification.md`](../../reference/verification.md).
 

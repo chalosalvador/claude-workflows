@@ -65,7 +65,7 @@ VALIDATE (verbatim, from the repo's gate):
   .venv/bin/ruff check api/ tests/
   .venv/bin/python -m migrations check   # only because migrations/ changed
   openspec validate --all --strict
-  ⚠️ That last one exits 0 on an empty root, never reads the archive, and is
+  That last one exits 0 on an empty root, never reads the archive, and is
   switched off entirely by skip_specs — do not report a bare green from it.
 
 PROCESS:
@@ -145,7 +145,7 @@ ask before running it.
   [`../../reference/guard-tests.md`](../../reference/guard-tests.md).
 - **VALIDATE** — the exact commands for this repo, **verbatim** from the resolved
   config ([`shared/execution.md`](../../shared/execution.md) § 2). Never retype from
-  memory — the versions in the original of this file were wrong for weeks. Include the
+  memory. Include the
   preflight, and carry the caveats on what a spec validate does **not** assert so the
   fresh session does not read a green as proof.
 - **PROCESS** — the plugin-docs line, then the numbered steps as in the example: scoping comment → branch → spec

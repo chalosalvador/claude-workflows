@@ -1,7 +1,6 @@
 # Shell traps that pass lint and a green suite
 
-Every item here was measured, and every one produced a *plausible* wrong answer
-rather than an error.
+Every item here produces a *plausible* wrong answer rather than an error.
 
 ---
 
@@ -24,7 +23,7 @@ mutation results, nearly recorded.
 `${=T}` for explicit zsh splitting. In any loop whose output is *evidence*, print a
 positive baseline first so "no output" can never be mistaken for "no failures".
 
-### 🚨 The same trap pollutes a repo through `gh api .../labels`
+### The same trap pollutes a repo through `gh api .../labels`
 
 `POST /repos/{o}/{r}/issues/{n}/labels` **auto-creates any label that does not
 exist** — it does not 422. So:
@@ -34,8 +33,7 @@ for l in ${VAR}; do gh api … -f "labels[]=$l"; done   # VAR="improvement effor
 ```
 
 doesn't split, sends ONE label `"improvement effort:hard"`, and GitHub silently
-**creates that junk label repo-wide**. Exit 0, response looks fine. Measured: 4 junk
-labels born across 5 issues during one triage run.
+**creates that junk label repo-wide**. Exit 0, response looks fine.
 
 Pass each label as its own explicit `-f "labels[]=…"`. To repair, **read first, then
 delete.** The delete is repo-wide and has no undo — it strips the label from every issue
@@ -50,7 +48,7 @@ gh api -X DELETE "repos/{o}/{r}/labels/<name%20enc>"                       # onl
 **After any label-add loop, read the labels back and assert none you added contain a
 space** — not none at all: GitHub's default `good first issue` and `help wanted` do.
 
-### ⚠️ zsh applies HISTORY MODIFIERS to `$VAR:x`
+### zsh applies HISTORY MODIFIERS to `$VAR:x`
 
 `$SA:getIamPolicy` does **not** expand to `<sa>:getIamPolicy`. zsh reads `:g` / `:e`
 as parameter modifiers, so a REST URL built that way produced
@@ -68,7 +66,7 @@ rather than "your shell rewrote the string".
 
 ---
 
-## 🚨 An unmatched glob is an ERROR in zsh — and `?` counts, anywhere
+## An unmatched glob is an ERROR in zsh — and `?` counts, anywhere
 
 bash passes an unmatched pattern through unchanged. **zsh aborts the command**:
 
@@ -101,27 +99,27 @@ not own the shell the next command runs in.
 
 ## A loop's fallback never fires, and an empty `$(git rev-parse)` adopts the cwd
 
-Two shapes measured on the file-lookup block in `shared/config.md` § Resolving `workflow.json`, both
-of which read as a clean run:
+Two shapes that apply to the file-lookup block in `shared/config.md` § Resolving
+`workflow.json`, both of which read as a clean run:
 
 - **`for … done || echo "none"` never prints "none".** `continue` exits 0, so the loop
   always "succeeds" and the fallback is dead code; the not-found case prints nothing at
   all. Use an explicit `if [ -n "$FOUND" ] … else echo … fi` after the loop.
 - **An unguarded `WT=$(git rev-parse --show-toplevel)` in a non-repo cwd** leaves `WT`
-  empty, `dirname ""` is `.`, and the loop quietly tests `./.claude/workflow.json` —
-  measured: a stray file yielded `number=999  owner=WRONG-ORG`, at exit 0. Guard the
+  empty, `dirname ""` is `.`, and the loop quietly tests `./.claude/workflow.json`, so
+  a stray file there supplies the board number and owner, at exit 0. Guard the
   substitution: `WT=$(git rev-parse --show-toplevel) || { echo "NOT INSIDE A CHECKOUT — cd into a repo and rerun"; exit 1; }`
-  — and word the message as a location error, not an answer; an earlier "no repo board"
-  wording read as a verdict.
+  — and word the message as a location error, not an answer: "no repo board" reads as a
+  verdict.
 
 ## `IFS=$'\t' read -r a b c` cannot parse a row with an empty MIDDLE column
 
 TAB is an **IFS whitespace** character, so a run of tabs collapses into ONE delimiter
 and an empty middle field vanishes — every later column shifts left.
 
-Measured against a real `gcloud --format='value(...)'` row: a firewall rule with no
-target tags but a target service account parsed the SA into the `tags` variable,
-silently inverting the check that read it.
+On a `gcloud --format='value(...)'` row, a firewall rule with no target tags but a
+target service account parses the SA into the `tags` variable, silently inverting the
+check that reads it.
 
 A **trailing** empty column is harmless (the variable is just empty), which is why
 this survives casual review.
@@ -148,11 +146,10 @@ two columns alias each other.
 ## `export VAR="$(cmd)"` DISCARDS cmd's exit status
 
 `export` is a command; the substitution's status is thrown away, so `set -e` never
-fires (SC2155). Measured: a failed secret fetch left a startup script exiting **0**,
-and the service started with an empty credential and restart-looped on billed
-hardware.
+fires (SC2155). A failed secret fetch then leaves a startup script exiting **0**, and
+the service starts with an empty credential and restart-loops on billed hardware.
 
-⚠️ **shellcheck cannot see it when the line is RENDERED into a generated script**
+**shellcheck cannot see it when the line is RENDERED into a generated script**
 rather than executed in place.
 
 ```sh
@@ -198,9 +195,8 @@ p.write_text(s)                   # <-- never reached
 ```
 
 If item 5 fails its assertion, items 1–4 printed "applied" and **were not written**.
-Measured: four call sites reported applied, the file had none of them, and the next
-run failed with `$7: unbound variable` from `set -u` — which looked like a *different*
-bug in the code just written.
+The next run then fails on what the missing edits left undone — `$7: unbound variable`
+from `set -u`, say — which looks like a *different* bug in the code just written.
 
 **`write_text` inside the loop** after each edit, so partial progress is real and the
 printout matches the file. Verify with a `grep -c` of the expected result, never by
@@ -232,7 +228,7 @@ credential, do a thing, give it back" script:
 - **A piped read conflates "read failed" with "nothing found".**
   `<read the policy> | grep -qx "$ME"` produces no match in both cases, so an
   unreadable policy takes the *no binding* branch → blind grant → cleanup revokes
-  access that predated the run. ⚠️ Made **twice in one file**, the second time inside
+  access that predated the run. Made **twice in one file**, the second time inside
   the branch added to fix the first. Capture output and `$?` **separately**; treat
   unknown as a stop, not a guess.
 - **Arm the cleanup BEFORE the call that creates the grant.** A grant call
@@ -240,20 +236,20 @@ credential, do a thing, give it back" script:
   returns; a flag set *after* means Ctrl-C strands it. The flag means "this run MAY
   have created it".
 - **Consequence: cleanup must confirm before alarming.** Arming early sends every
-  failed add through cleanup, so an unconditional 🚨 fires when nothing is wrong — and
+  failed add through cleanup, so an unconditional alarm fires when nothing is wrong — and
   an alarm that cries wolf is one the operator scrolls past. Three outcomes:
   removed / still there / cannot confirm.
-- **The grant call was IDEMPOTENT on the platform measured — check yours**: add-then-remove silently revokes a
-  binding the operator already had. Only remove what this run created.
+- **If the grant call is IDEMPOTENT — check yours —** add-then-remove silently revokes
+  a binding the operator already had. Only remove what this run created.
 - **Tokens on argv are readable via `ps` by any user on the box.** Both
   `-d "access_token=$T"` and `-H "Authorization: Bearer $T"` count. Use
-  `curl --data @-` and `curl --config -` (stdin). ⚠️ Review flagged one; the other was
+  `curl --data @-` and `curl --config -` (stdin). Review flagged one; the other was
   in the polling loop, 40× per run.
 - **`trap cleanup EXIT INT TERM` RESUMES after a signal** — the handler runs,
   execution continues, then it fires again on EXIT. Use `trap cleanup EXIT` plus
   `trap 'exit 130' INT` / `trap 'exit 143' TERM`.
 
-> ⚠️ The CLI's configured account and the identity a script actually impersonates can be
+> The CLI's configured account and the identity a script actually impersonates can be
 > two independent stores. Which is which on this stack — and the commands above in this
 > stack's spelling — belongs in the repo's deploy-target doc § Secrets and env.
 

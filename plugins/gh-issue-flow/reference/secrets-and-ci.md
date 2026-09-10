@@ -14,13 +14,12 @@ as verified.
 
 ---
 
-## 🚨 A generated secret picks up a trailing byte on the way in
+## A generated secret picks up a trailing byte on the way in
 
 `openssl rand -hex 32 | <store the secret from stdin>` stores **65 bytes ending `0a`**,
-not 64, on any platform whose CLI reads stdin verbatim. Measured on one, whose runtime
-also injected the payload verbatim; unverified elsewhere, so assume it until you have read
-yours back. The service then holds `…\n` while every client
-holds the bare value.
+not 64, on any platform whose CLI reads stdin verbatim. Assume yours does, and that its
+runtime injects the payload verbatim, until you have read it back. The service then holds
+`…\n` while every client holds the bare value.
 
 For an HMAC signing secret that one byte is **401 on every request**, and nothing in any
 log says why: the verifier cannot distinguish a wrong secret from a forged signature.
@@ -41,10 +40,10 @@ The rules, whatever the store:
 
 ---
 
-## 🚨 A provisioning CLI can store EMPTY and report success
+## A provisioning CLI can store EMPTY and report success
 
-Measured on one hosting CLI — unverified elsewhere, and cheap to assume: `printf 'val' | <cli> env add NAME`
-created the variable **empty** and printed its next-steps help. No error. The same CLI
+On one hosting CLI, and cheap to assume of any: `printf 'val' | <cli> env add NAME`
+creates the variable **empty** and prints its next-steps help. No error. The same CLI
 defaulted new values to a **write-only** type, so the read-back returned `NAME=""`
 whether or not the value was set — a write-only value is indistinguishable from an
 empty one on readback.
@@ -65,11 +64,11 @@ So, on any platform:
 
 ---
 
-## 🚨 A CLI needing re-authentication fails with EMPTY output and exit 0
+## A CLI needing re-authentication fails with EMPTY output and exit 0
 
-One cloud CLI (measured; the others are unverified and worth assuming the same) prints
-*"reauthentication failed, cannot prompt during non-interactive execution"* to **stderr**. Pipe that into `grep` or `jq` and you get **empty output and
-exit 0** — measured, where an empty result read exactly like *"this project has no such
+One cloud CLI (assume the others do the same) prints *"reauthentication failed, cannot
+prompt during non-interactive execution"* to **stderr**. Pipe that into `grep` or `jq` and
+you get **empty output and exit 0**, which reads exactly like *"this project has no such
 quota"*, a false and load-bearing conclusion.
 
 - **"Account is ACTIVE" is not proof the token can refresh.**
@@ -87,24 +86,24 @@ quota"*, a false and load-bearing conclusion.
 
 A pin like `pkg>=1.36,<2` **floats**. CI installs fresh every run and resolves the newest
 matching release; a long-lived local environment keeps whatever it first installed.
-Measured: a web framework at `1.36` locally and `1.41` in CI, where `1.41` had changed the
-shape of an internal routes list — 11 tests went from green locally to `AttributeError`
-on a required check, over a line that read internals.
+A web framework can then sit at `1.36` locally and `1.41` in CI, where `1.41` changed the
+shape of an internal routes list, and tests green locally fail with `AttributeError` on a
+required check, over a line that reads internals.
 
 - **Assert on public surfaces**, never framework internals, unless the test is about
   internals. The public surface is what the framework documents as stable — for a web
   framework, its OpenAPI document — and it is also what an external post-deploy check
-  reads, so tests and runbook cannot disagree about what "mounted" means. ⚠️ The
-  framework's own routes collection is **not** that surface: measured, it looked like an
-  inventory and was the internal that changed shape between the two versions; the
-  OpenAPI document was the one that held.
-- ⚠️ **You probably cannot reproduce the CI version locally.** If worktree environments
+  reads, so tests and runbook cannot disagree about what "mounted" means. The
+  framework's own routes collection is **not** that surface: it looks like an inventory,
+  but it is the internal that changed shape between the two versions above, while the
+  OpenAPI document did not.
+- **You probably cannot reproduce the CI version locally.** If worktree environments
   are symlinks to a shared one, upgrading it mutates every other session's environment.
   Either accept that **CI is the verifier and say so explicitly** rather than implying
   local proof, or build a genuinely separate environment.
-- ⚠️ **It also invalidates local "identical behaviour" measurements.** A refactor verified
-  as "54 routes, identical" against the old version was not measured against the version
-  that ships. The conclusion happened to hold; the measurement did not.
+- **It also invalidates local "identical behaviour" measurements.** A refactor verified
+  as "54 routes, identical" against the old version says nothing about the version that
+  ships, even when the conclusion happens to hold.
 
 ---
 
@@ -112,11 +111,11 @@ on a required check, over a line that read internals.
 
 Two findings that generalize:
 
-- **A large share of a CI bill is per-job rounding** — measured at 17% in one account.
-  Caching a sub-minute step therefore saves **nothing**. Consolidating jobs does.
-- **Filter jobs by path.** In one repo 44% of PR runs touched no infrastructure and
-  still paid for the infrastructure job.
+- **A large share of a CI bill is per-job rounding.** Caching a sub-minute step
+  therefore saves **nothing**. Consolidating jobs does.
+- **Filter jobs by path.** A PR that touches no infrastructure should not pay for the
+  infrastructure job.
 
-⚠️ **A billing outage presents as a code failure.** When Actions billing lapses, jobs
+**A billing outage presents as a code failure.** When Actions billing lapses, jobs
 fail in ~3 seconds with **zero steps executed**. Read the run **annotation**, not the
 logs — the logs are empty and read like a config error.

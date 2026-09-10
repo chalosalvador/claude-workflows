@@ -23,7 +23,7 @@ Adding a genuinely new kind of file means editing ALLOWED in the same commit.
 That is the cost, and it is the feature: it forces one deliberate look at a path
 nobody chose on purpose.
 
-Run:  git add -A && python3 tests/test_no_stray_files.py
+Run:  git add <the paths you changed> && python3 tests/test_no_stray_files.py
 """
 from __future__ import annotations
 

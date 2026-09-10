@@ -18,12 +18,12 @@ layer answered when it matters.
 **None of the four is required**, and the two with defaults work unset — which is why the
 install's "N options not yet set" count is not an error.
 
-⚠️ **`pluginConfigs` is stored per person, not per repo.** MEASURED: `--config` writes
+**`pluginConfigs` is stored per person, not per repo.** `--config` writes
 to `~/.claude/settings.json` and lands there **even under `--scope project`** — a project
 `.claude/settings.json` is never consulted for it. So Layer 1 holds **one** value per
 machine and cannot by itself follow you between projects.
 
-🚨 **So Layer 1 is only the DEFAULT board, never the answer** — a repo's `workflow.json` →
+**So Layer 1 is only the DEFAULT board, never the answer** — a repo's `workflow.json` →
 `board` wins. The board half of resolution (the order, the machine default, the way back
 after a wipe, the fatal `${BOARD:-…}` idiom) is [`board.md`](board.md) § Resolution, read
 only by the skills that touch a board. Every skill runs the step below.
@@ -35,9 +35,9 @@ only by the skills that touch a board. Every skill runs the step below.
 **Step 1 — ask the repo, from its root.** A bare relative path is wrong in any cwd below
 the root.
 
-🚨 **`git rev-parse --show-toplevel` is NOT enough — in a worktree it returns the
+**`git rev-parse --show-toplevel` is NOT enough — in a worktree it returns the
 WORKTREE**, and `.claude/` is commonly gitignored, so `workflow.json` lives only in the
-main checkout and the override silently vanishes. MEASURED in a worktree of this repo:
+main checkout and the override silently vanishes. In a worktree:
 `--show-toplevel` → the worktree (no file); `--git-common-dir` → the main checkout. That
 is `autopilot`'s normal scheduled path, where an unattended run would then write to the
 machine-default board with nobody to check with. Look in both, worktree first:
@@ -74,15 +74,15 @@ done
 [ -n "$RD" ] && echo "repodoc=$RD" || echo "NO repo.md in $WT or $MAIN"
 ```
 
-⚠️ **`find`, not a glob, for the deploy-target docs.** MEASURED: `ls "$SD/"*.md` on an
+**`find`, not a glob, for the deploy-target docs.** `ls "$SD/"*.md` on an
 existing-but-empty directory is a zsh `no matches found` error at exit 0 — no listing, no
 sentinel, and the main checkout never tried. `find` prints nothing and the `else` still
 distinguishes "no directory" from "empty directory".
 
-⚠️ **The `|| { … exit 1; }` and the explicit `else` are load-bearing, not decoration.**
-Measured, both failure shapes read as a clean run: without the first, a non-repo cwd
-adopted a board from a stray file at exit 0; collapsed to `for … done || echo`, the
-boardless case printed nothing at all.
+**The `|| { … exit 1; }` and the explicit `else` are load-bearing, not decoration.**
+Both failure shapes read as a clean run: without the first, a non-repo cwd adopts a
+board from a stray file at exit 0; collapsed to `for … done || echo`, the boardless case
+prints nothing at all.
 [`../reference/shell-traps.md`](../reference/shell-traps.md) § A loop's fallback never fires.
 
 In a normal checkout the two are identical and the loop reads it once.
@@ -98,9 +98,9 @@ canonical `owner/repo` comes from `gh repo view --json nameWithOwner`, as the sk
 already say. It never calls `gh` and never aborts the block: a checkout with no `origin`
 prints `repo=-`, and a non-GitHub remote prints the URL as it is. The `| grep .` is
 load-bearing: a pipeline's status is `sed`'s, so without it the fallback never fires —
-MEASURED, a no-remote checkout printed `repo=` and nothing after it. And the fallback is
-`printf`, not `echo '-'`: MEASURED, zsh's builtin `echo` reads a lone `-` as the end of
-its options and prints nothing, so under zsh `echo '-'` printed the same empty `repo=`.
+a no-remote checkout prints `repo=` and nothing after it. And the fallback is
+`printf`, not `echo '-'`: zsh's builtin `echo` reads a lone `-` as the end of
+its options and prints nothing, so under zsh `echo '-'` prints the same empty `repo=`.
 
 **A workspace directory holding several checkouts is a supported starting point**, and a
 scheduled routine may start in one. The block cannot run *there* — a plain directory is
@@ -111,7 +111,7 @@ sweep (§ Repo scope) and run the block inside it, once per repo; each run's `nu
 `repo=` that names a different repo than the one you meant to resolve is the location
 error to catch before reading anything else.
 
-🚨 **Fetch before you trust the file.** The block reads the working tree, which is
+**Fetch before you trust the file.** The block reads the working tree, which is
 whatever the checkout is parked on: a shared checkout behind its remote prints the old
 `schema=` and `targets=`, and nothing in the output says so. So `git fetch origin` first,
 then compare the working-tree file with the integration branch's copy — take
@@ -237,10 +237,10 @@ board-level facts from this file and everything else **from the sibling's own
 (§ Repo scope). A sibling's area map comes from the sibling's own `workflow.json`,
 never this one. A file that also carries a sibling's areas keeps working — an entry for a
 label this repo does not have is never read for an issue here, and `setup check` lists it
-as cleanup. MEASURED: with
-both repos listed and one file, `work-summary` judged every ai-app commit against the
-gateway's `origin/dev` — a branch the sibling also has, 815 commits stale — and reported
-months of merged work as unmerged, silently.
+as cleanup. A `repo` key read from the wrong file fails silently: with both repos listed
+and one file, `work-summary` would judge every sibling commit against this repo's
+`integrationBranch` — a branch the sibling may also have, long stale — and report merged
+work as unmerged.
 
 ### Deploy-target docs and `repo.md` — `.claude/workflow/`
 
@@ -257,7 +257,7 @@ under `.claude/workflow/`:
   provenance carry them like every other key.
 - **`repo.md` — exactly one per repo**, from `skills/setup/repo-template.md`: which bot
   reviews pull requests and how its comments look, the invariants a reviewer checks every
-  diff against, and the measured traps. These do not vary by target, which is why they
+  diff against, and the traps. These do not vary by target, which is why they
   are not in the target docs — a repo with two targets would otherwise carry two copies
   of its review-bot patterns.
 
@@ -344,7 +344,7 @@ gh repo view --json nameWithOwner,defaultBranchRef,squashMergeAllowed,rebaseMerg
 
 | Need | Probe |
 |---|---|
-| `integrationBranch` | `origin/` + `defaultBranchRef.name`. ⚠️ Not always `main` — some repos integrate on `dev` and release from `main`. If the default branch looks like a release branch (a `dev`/`develop` branch exists and is ahead), **ask** rather than assume. |
+| `integrationBranch` | `origin/` + `defaultBranchRef.name`. Not always `main` — some repos integrate on `dev` and release from `main`. If the default branch looks like a release branch (a `dev`/`develop` branch exists and is ahead), **ask** rather than assume. |
 | `validate` | `pyproject.toml`/`requirements.txt` → `pytest`, `ruff`. `package.json` → read its `scripts` block and run lint/typecheck/test/build that exist. `Cargo.toml` → `cargo test`, `cargo clippy`. Prefer copying the **CI workflow's** commands over inventing them. |
 | `specFlow` | An `openspec/` directory at the repo root → `"openspec"`. Otherwise none. See [`../reference/openspec.md`](../reference/openspec.md). |
 | `mergeMethod` | `squashMergeAllowed` / `rebaseMergeAllowed` from `gh repo view`. |
@@ -371,7 +371,7 @@ repos. Resolve that set in this order and **say which answered**:
    and it is correct — do not go looking for siblings to widen the scope.
 3. The user named repos in the request → use exactly those, for this run only.
 
-⚠️ **A repo in `repos` is not necessarily checked out, and its checkout is not
+**A repo in `repos` is not necessarily checked out, and its checkout is not
 necessarily a sibling directory named after it.** `git -C <repo-name>` is a *guess*
 about someone's disk layout, and it fails in the ordinary single-repo case where you
 are already inside the only checkout. Before any `git -C`, resolve a real path — the
@@ -388,7 +388,7 @@ operation goes through `gh` and needs no working copy. Only commit-log reads and
 repo-level facts do. Skip those for that repo and **say you skipped them**, rather than
 silently reporting it as a quiet day.
 
-🚨 **`repos` is the issue-sweep set, not a config merge.** Listing a sibling widens which
+**`repos` is the issue-sweep set, not a config merge.** Listing a sibling widens which
 issues, PRs and merged work a run reads. It does **not** make this file's `repo`-scoped
 keys (§ Layer 2 → Schema, Scope column) apply to the sibling. For every sibling you
 sweep:
@@ -426,7 +426,7 @@ file — and lists an entry with no matching label as cleanup, not as a failure.
 
 ## Owners are per-repo, never one constant
 
-🚨 **The board owner and a repo owner are not the same thing, and two repos feeding
+**The board owner and a repo owner are not the same thing, and two repos feeding
 one board may sit under different owners.** Never build `<owner>/<repo>` from a
 single constant.
 

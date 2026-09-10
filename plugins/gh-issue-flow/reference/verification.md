@@ -9,7 +9,7 @@ the next reader stops looking.
 
 ## 1. A CLI can exit 0 on an operation that did not happen
 
-`gh` does this routinely. Measured twice in one session:
+`gh` does this routinely. Two cases:
 
 - `gh api .../pulls/<pr>/comments/<id>/replies` returned **HTTP 502** four times in
   a row. The pipeline exited 0, so `&& echo replied` printed "replied". Reading the
@@ -30,17 +30,17 @@ on it.**
 gh pr view <n> --json state,mergedAt,mergeCommit
 ```
 
-> 🚨 **The inverse also happens.** `gh pr merge` once **exited 1 on a merge that
+> **The inverse also happens.** `gh pr merge` once **exited 1 on a merge that
 > succeeded** — `state=MERGED` with a real merge commit, the non-zero exit coming
 > from a later step. Retrying on the exit code would have chased a phantom failure.
 > Same remedy in both directions: read the state back.
 
 ### The mirror image: a write that SUCCEEDED but does not read back yet
 
-Not every mismatch is a failed write. **Projects v2 is eventually consistent.** Measured:
-six `gh project item-add` calls each returned a real item id and exit 0; `item-list`
-immediately afterwards reported **0 cards**, then 5 at ~20s and 6 at ~30s. Every write had
-landed.
+Not every mismatch is a failed write. **Projects v2 is eventually consistent.** A
+`gh project item-add` returns a real item id and exit 0, yet an `item-list` immediately
+afterwards can report **0 cards** and catch up only over the next ~30s, with every write
+already landed.
 
 So a read-back that concludes from one immediate query manufactures a false failure — the
 same error as trusting exit 0, pointed the other way. **Verify the object, not the
@@ -93,27 +93,27 @@ or `Monitor`, never a backgrounded command in an unattended run — is
 When a grep **is** the acceptance criterion ("no reference to X survives"), prove
 the pattern fires on a known-present string first, then trust the empty result.
 
-- ⚠️ **`git grep -E "\bword\b"` matches ZERO lines.** git grep's POSIX ERE has no
+- **`git grep -E "\bword\b"` matches ZERO lines.** git grep's POSIX ERE has no
   `\b`. It does not error — it returns empty, which reads exactly like "clean". Use
   **`git grep -w word`**. One sweep reported clean and written into a commit
   message; `-w` returned 177 hits.
-- ⚠️ **`git grep` reads the INDEX, not the working tree.** After unstaged edits it
+- **`git grep` reads the INDEX, not the working tree.** After unstaged edits it
   reports pre-edit state — which reads exactly like "the edit didn't apply". Use
   plain `grep -rn` for a working-tree claim.
-- ⚠️ **`git check-ignore` exits 0 on ANY pattern match, a negation included.** So
+- **`git check-ignore` exits 0 on ANY pattern match, a negation included.** So
   `git check-ignore -v path && echo IGNORED` reports a path you just un-ignored with
   `!/path` as ignored. The `-v` output is the real signal: parse the pattern (third
   colon field) and test `startswith("!")`. Treat empty output as a **third state** —
   collapsing "no match" into "ignored" let a reviewer delete a blanket ignore line
   with the guard still green.
-- ⚠️ **Substring false positives cut the other way.** `grep -n "rag"` matches
+- **Substring false positives cut the other way.** `grep -n "rag"` matches
   `verify-cove`**`rag`**`e`. An "exit 0, still dirty" reading is as wrong as a false
   clean.
-- ⚠️ **Exclude with an explicit `grep -v`, never by narrowing the pattern.** A leading
+- **Exclude with an explicit `grep -v`, never by narrowing the pattern.** A leading
   `/` added to a pattern in order to exclude one longer filename also silenced every
   legal same-directory link to the short one.
 
-### 🚨 After a RENAME, a clean grep for the old string proves nothing
+### After a RENAME, a clean grep for the old string proves nothing
 
 Different failure: the pattern fired correctly and the answer was true — it was the
 wrong question. `git grep -F "<the old directory>"` returned 0 and went into a commit
@@ -152,7 +152,7 @@ changed inside a `resource` block.
 When a reviewer or bot claims a guard is too weakly scoped, the instinct is to write
 one mutation and, if the guard reds, mark the finding theoretical.
 
-Measured: a bot said an assertion searched the whole file. The first probe added a
+In one case a bot said an assertion searched the whole file. The first probe added a
 decoy under a *different* variable name; the assertion anchors on the name, so it
 killed that trivially and the finding looked wrong. The probe that actually tests the
 claim keeps the name AND the expression identical, relocating only the thing the
@@ -170,18 +170,18 @@ anchors on), it is testing your own regex, not the claim.
 Report **both directions**: pre-fix survived, post-fix killed. If pre-fix also kills,
 say so plainly and skip the change rather than fixing on speculation.
 
-**Corollary: severity labels are the reviewer's hypothesis too.** A bot tagged a
-brace-counting bug "🔵 Trivial | 💤 Low value"; measuring it showed a `}` inside a
-quoted string truncated the block so a real `count = 1` went unseen — the assertion
-passed green against exactly the mutation it existed to catch.
+**Corollary: severity labels are the reviewer's hypothesis too.** A bot can tag
+a brace-counting bug "🔵 Trivial | 💤 Low value" when a `}` inside a quoted string
+truncates the block, a real `count = 1` goes unseen, and the assertion passes green
+against exactly the mutation it exists to catch.
 
 ---
 
 ## 4. Never declare a limit you have not tested
 
 Do not write "this needs credentials I don't have" or "the tooling can't reach that"
-without probing first. Measured: a verification was reported as honest-limited for
-lack of credentials when the ambient cloud credentials were valid the whole time.
+without probing first. A verification reported as honest-limited for lack of
+credentials can have had valid ambient cloud credentials the whole time.
 
 Probe the tooling, then state the limit — or state the finding.
 
@@ -193,7 +193,7 @@ pipe** and exit 0, so a piped read returns empty and reads as "no results" rathe
 
 ## 5. Declared facts rot, and nothing tests prose
 
-A repo can state measured infrastructure facts in prose — serial numbers, resource
+A repo can state infrastructure facts in prose — serial numbers, resource
 counts, "X is applied" — and test none of them. One audit over four review rounds
 found **21 false statements**, three of which were the stated safety premise for a
 destructive action.
@@ -201,7 +201,7 @@ destructive action.
 Treat any number or state claim in a doc as **untested until a guard pins it**. See
 `guard-tests.md` §4 for pinning claims by clause and count.
 
-### 🚨 Citations rot inside their own commit
+### Citations rot inside their own commit
 
 A `file:line` citation written *during* a change is invalidated **by that same
 change**. Line-addressed mutations then land on the wrong line and score a false

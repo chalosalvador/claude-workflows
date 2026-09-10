@@ -9,7 +9,7 @@ divergent implementation of the skill it accelerates.
 | **A · triage deep pass** | up to 25 issues, judged in batches | the § 3 cap |
 | **B · autopilot** | up to 2 issues, planned/built/reviewed/PR'd | the § 2 cap of 2 |
 
-🚨 **Both are optimization layers, never replacements.** The serial path in each skill is
+**Both are optimization layers, never replacements.** The serial path in each skill is
 the contract; these are faster ways to reach the same outcome. If the Workflow tool is
 absent from the session, or the set is small, or anything here fails — run the skill as
 written. Its absence is a normal state, not an error, and not worth a line in the report.
@@ -75,8 +75,8 @@ Three conditions, all of them:
 | The untriaged set is **10 or more** | Each agent re-reads repo context it does not share with the others. Below ~10 issues that fixed overhead is most of the run. |
 | Nothing about the run is already degraded | A run that fell back to a partial board fetch should stay simple. |
 
-⚠️ **The 10 is a chosen threshold, not a measured one.** Nobody has priced the
-crossover here. If you measure it, replace the number and mark it MEASURED.
+**The 10 is a chosen threshold, not a derived one.** Nobody has priced the
+crossover here. If you price it, replace the number and put the pricing in the PR body.
 
 **Dry run works unchanged** — the fan-out is read-only by construction, so a dry run is
 the same script with § 5 skipped. That is strictly better than the serial path, where
@@ -97,9 +97,9 @@ files — the duplicated-research waste priced in
 Batching amortizes the repo exploration across the batch, and dupe detection *within* a
 batch comes free.
 
-⚠️ **The cap stays 25 deliberately.** Fan-out changes what the cap costs, not what it
+**The cap stays 25 deliberately.** Fan-out changes what the cap costs, not what it
 protects — the board still has to absorb the writes, and a human still has to read the
-receipt. Raising it is a separate decision with its own measurement.
+receipt. Raising it is a separate decision that needs its own evidence.
 
 Cross-repo duplicates (§ 3d) are the one judgment that is not issue-local: it compares
 against **all** open issues in **every** repo. Pass the full open-issue index — number,
@@ -111,7 +111,7 @@ the results in JS afterwards.
 Written against the `workflow-authoring` reference, which is the authority on this API —
 read it before changing the script, rather than pattern-matching from here.
 
-⚠️ **No `model` or `effort` override here, deliberately.** The tier table in
+**No `model` or `effort` override here, deliberately.** The tier table in
 [`../shared/execution.md`](../shared/execution.md) § 3.1 keys off the issue's effort
 label — and this is the pass that *assigns* that label, so the rule has nothing to key
 off. Inheriting the session's model is the honest default until someone measures a
@@ -209,7 +209,7 @@ if (missing.length) log(`NOT TRIAGED, no verdict returned: ${missing.join(', ')}
 return { verdicts, dupes, missing }
 ```
 
-🚨 **`missing` is the load-bearing return value.** An agent that returns four verdicts
+**`missing` is the load-bearing return value.** An agent that returns four verdicts
 for five issues has silently dropped one, and a receipt counted off `verdicts.length`
 would never show it. Any issue in `missing` is **not triaged** — leave it untriaged for
 the next run and say so on the board-health line. Never let it reach § 5 with a guessed
@@ -219,7 +219,7 @@ announce what it dropped reads as a run that covered everything.
 ### Building the batches
 
 The session already has both inputs from triage § 1: `open.json` and `board.json` under
-the run's scratch dir. ⚠️ **This is a fresh shell — re-establish the path**; a bare
+the run's scratch dir. **This is a fresh shell — re-establish the path**; a bare
 `$SCRATCH` expands to empty and the read fails on `/open.json`. Untriaged, newest first,
 in fives:
 
@@ -238,15 +238,15 @@ jq -s --arg skill "<abs path to triage/SKILL.md>" '{
 }' "$SCRATCH/open.json" > "$SCRATCH/args.json"
 ```
 
-⚠️ **`-s` slurps a STREAM into one array, so the issues are `.`, not `.[0]`.** § 1 writes
-`open.json` as newline-delimited objects — one per issue, not a JSON array — and the
-first draft of this block read `.[0]` as if slurping produced a list of pages. MEASURED
-on a 30-issue fixture: it dies with `Cannot index string with string "repo"`. A loud
+**`-s` slurps a STREAM into one array, so the issues are `.`, not `.[0]`.** § 1 writes
+`open.json` as newline-delimited objects — one per issue, not a JSON array. Read as
+`.[0]`, as if slurping produced a list of pages, the block dies with
+`Cannot index string with string "repo"`. A loud
 failure, unusually — but the same off-by-one silently returns one issue's worth of work
 if the stream ever becomes a single array.
 
-MEASURED on that fixture, corrected: 30 issues in, 10 carrying `triaged`, out come 4
-batches of 5 — newest first, no `triaged` issue leaked in. On a 28-untriaged fixture it
+With `.`, 30 issues of which 10 carry `triaged` come out as 4 batches of 5 — newest
+first, no `triaged` issue leaked in. On a 28-untriaged fixture it
 caps at 5 batches of 5 and leaves the oldest 3 for the next run, which is § 1's
 newest-25 rule with the tail reported on the board-health line.
 
@@ -312,7 +312,7 @@ same reason `missing` exists in layer A.
 | § 11 babysit to green | **session**, after | Two reasons, below. |
 | § 12 bookkeeping, § 13 report, § Handing it back | **session**, after | The state transitions. |
 
-🚨 **§ 11 cannot go in the workflow, and would be worse there anyway.**
+**§ 11 cannot go in the workflow, and would be worse there anyway.**
 `Date.now()` and `new Date()` throw inside a workflow script — they would break resume —
 so **the 45-minute cap cannot be enforced there at all**. And an agent babysitting is an
 agent polling for up to 45 minutes, where the session can arm one `Monitor` and sleep.
@@ -345,8 +345,8 @@ lens set and the default comment policy
 ([`../shared/execution.md`](../shared/execution.md) § 3). And
 `issue.model` is the § 3.1 tier for that issue's size label (`sonnet` for `effort:easy`);
 the script forwards it to the planner and the lenses, and omits `model` entirely when it
-is unset. Without it every agent inherits the session model — measured: ten agents at the
-session's tier on two `effort:easy` issues.
+is unset. Without it every agent inherits the session model, on `effort:easy` issues
+too.
 
 **The planner gets no `schema`.** Its output shape is an allowlist it enforces itself, and
 forcing a structured return would fight it. Its text is passed downstream verbatim — the
@@ -546,13 +546,13 @@ return { results: done }
 ### Concurrency rules the script cannot enforce
 
 Two agents editing one repository at once is the situation every trap in
-[`parallel-agents.md`](parallel-agents.md) was measured in. The script cannot police the
+[`parallel-agents.md`](parallel-agents.md) comes from. The script cannot police the
 filesystem, so these are the caller's job:
 
-- 🚨 **The session creates both worktrees itself, serially, before the fan-out.**
+- **The session creates both worktrees itself, serially, before the fan-out.**
   Concurrent `git worktree add` calls mutate the same `.git/worktrees` bookkeeping. Each
   agent is handed a ready path and a branch, and creates nothing.
-- 🚨 **Do not use `agent()`'s `isolation: 'worktree'` for this.** That worktree is
+- **Do not use `agent()`'s `isolation: 'worktree'` for this.** That worktree is
   ephemeral, is auto-removed when unchanged, and is not the `feat/<N>-<slug>` branch
   based on the *remote* integration tip that § 5 requires and the PR needs to outlive the
   run. Autopilot's worktree discipline is not the same object as the API's.
@@ -583,50 +583,29 @@ Stated plainly, because the serial path does not pay these:
 
 
 
-## What is measured here, and what is not
+## What is verified here, and what is not
 
-**Measured** — the two code blocks were run before this file was committed:
+Both scripts are checked by throwaway harnesses that stub `agent()`, `parallel()`,
+`pipeline()` and `log()` and run the real code block from this file. The harnesses are
+not tracked — the guard suite is Python and this is JS, and these optional layers do not
+earn a new file class in the marketplace repo's `tests/` directory (which an installed
+plugin does not carry). Rebuild and re-run them when you change either script; each is
+about twenty lines of stubs.
 
-| Claim | How |
-|---|---|
-| The batch build produces newest-first batches of 5, capped at 25, with no `triaged` issue in them | `jq` against a 30-issue and a 28-issue fixture. It also caught the `.[0]` slurp bug above, which is why that ⚠️ is there. |
-| The script's pure-JS half behaves: verdicts merge across batches, `missing` catches a dropped issue **and** an agent that returns nothing, the drop is announced via `log()`, a clean run logs nothing, reciprocal dupes collapse to one pair, self-references and unconfident dupes are dropped | 9 assertions against a throwaway harness that stubs `agent()`, `parallel()` and `log()` and runs the real script body |
-| **B** — the autopilot script's control flow: a handback short-circuits before a single lens is spawned, a dead planner spends nothing after itself, new logic opens a draft and the delta lens runs **as the lens that raised it**, the finalizer flips it to ready, a dead finalizer leaves the PR a draft and reports a handback rather than a success, and `deltaReviewed` survives the finalizer overwriting `raisingLens`; and that `args.plugin` reaches the builder and shipper prompts and `issue.model` reaches the planner and lenses but never the builder or shipper | 23 assertions against the same kind of harness, stubbing `agent()`, `parallel()`, `pipeline()` and `log()`; rebuilt for the `args.plugin` change and mutation-checked (dropping `...delta_ran` reds it) |
+**A harness can read a stale script and pass.** Re-extract the code block from this file
+on every run, and assert on a string only the current version contains: an empty or
+stale read is indistinguishable from a good one.
 
-⚠️ **A harness can read a stale script and pass.** Regenerating B's harness in place
-failed silently once, so a green run was reporting on the previous version of the script.
-Both harnesses now re-extract the code block from this file and assert on a string only
-the current version contains. That is the same failure this repo keeps recording: an
-empty or stale read is indistinguishable from a good one.
-
-⚠️ The harnesses were throwaway and are not tracked — the guard suite is Python and this is
-JS, and these optional layers do not earn a new file class in the marketplace repo's
-`tests/` directory (which an installed plugin does not carry). Rebuild them if you
-change either script; each is about twenty lines of stubs.
-
-**Measured, B, live — one run of each path on the testbed's two easy issues, board reset
-between them:**
-
-| Claim | Result |
-|---|---|
-| B produces PRs through the real agents | Yes — two ready-for-review, GPG-signed, `agent-authored` PRs, CI green, 0 threads; the same outcome the serial path produced on the same issues. |
-| Two worktrees run concurrently | Yes — both planners overlapped from launch, both worktrees were dirty at the same time, and one issue was in Review while the other was still in Plan. No stash, no `git add -A`, no cross-worktree write in any transcript. |
-| No item dies silently | `results` carried no null; 0 errors and 0 empty returns across 10 agents. |
-| Agent count | 10 for two issues naming two lenses each; the delta path was not taken. |
-| Faster, not cheaper | Faster end to end than the serial run by a few minutes on a repo whose CI takes seconds; more subagent tokens, but at a different model tier and with the builders and shippers counted, so not priced like-for-like. |
-| Review quality | Not worse: its lenses caught two mutants and one latent trap the serial run's lenses had not. |
-
-**Not measured** — still:
+**Unverified:**
 
 - **A** has not run live: no agent has produced a triage verdict through the fan-out, and
-  the 10-issue threshold is asserted, not observed. The serial deep pass on the same
-  six-issue testbed produced identical verdicts on two consecutive runs, which is the
-  baseline any A measurement has to match.
+  the 10-issue threshold is asserted, not observed. The serial deep pass gives identical
+  verdicts on consecutive runs of the same testbed, which is the baseline A has to match.
 - B on more than two lenses per plan, on a plan that triggers the delta path, or on a repo
-  whose CI takes longer than its build. One run, one repo: the wall-clock gap is a
-  sample, not a rate.
+  whose CI takes longer than its build; a single run's wall-clock gap is a sample, not a
+  rate.
 - B's cost against a serial run at the same model tier with the main session's own spend
-  counted. The one comparison made so far mixes tiers and accounting.
+  counted; a comparison that mixes tiers and accounting does not settle it.
 
 The way to settle the rest is the A/B the layered design makes free — same board, same day,
 both paths, then compare:
@@ -641,4 +620,4 @@ both paths, then compare:
   the serial pass being replaced is bounded by 25 issues, and this run is bounded by
   its slowest batch.
 
-Until that comparison exists, the honest description is "plausible and unmeasured".
+Until that comparison exists, the honest description is "plausible and unverified".

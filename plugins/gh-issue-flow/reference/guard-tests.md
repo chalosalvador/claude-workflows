@@ -6,9 +6,8 @@ this type with a caller-supplied `env`", "this runbook still says the dangerous
 thing is dangerous".
 
 Guards are unusually easy to write and unusually easy to write *wrong*, because a
-broken guard and a satisfied guard look identical: both are green. Everything
-below was measured — each item is a guard that passed its whole suite and was then
-defeated by a reviewer or a bot.
+broken guard and a satisfied guard look identical: both are green. Each item below
+is a guard shape that passes its whole suite and still loses to a reviewer or a bot.
 
 ---
 
@@ -88,10 +87,9 @@ floor cannot detect a *deleted* entry.
 
 ## 2. The bug is usually WHERE it looked, not WHAT it accepts
 
-Measured over five review rounds where every round found a real defect in the
-*previous* round's guard fix — four in a row, all the same shape: the property was
-checked correctly in one place, and a second path to the same place went
-unexamined.
+Over five review rounds, every round found a real defect in the *previous* round's
+guard fix — four in a row, all the same shape: the property is checked correctly in
+one place, and a second path to the same place goes unexamined.
 
 1. **Denylist instead of allowlist.** The guard forbade one column. A sibling
    column reintroduced the exact bug. Fixed by pinning an ALLOWLIST of the
@@ -119,7 +117,7 @@ they are both more common and harder to see, because the guard passes on the
   a sibling step, in a section outside the slice.
 - **Spelling** — the same thing written another legal way.
 
-### The spelling axis, measured
+### The spelling axis in practice
 
 A guard on an OpenAPI document keyed on the `$ref`'d *component* name and read
 only operation-level `parameters`. Six ways past it, every one legal and every one
@@ -142,7 +140,7 @@ requirement said "MUST NOT gain `page_token` on the wire", so the guard resolves
 parameter *names* — merging path-item with operation, dereferencing `$ref` chains
 — rather than matching the component name today's spelling happens to use.
 
-> ⚠️ Widening a matcher can **drop a transitive pin**. `$ref: PageSizeQuery` can
+> Widening a matcher can **drop a transitive pin**. `$ref: PageSizeQuery` can
 > only mean one schema; an inline `page_size` can mean any, so an inline
 > `maximum: 5000` passed against routers declaring `le=200`. When you widen, ask
 > what the old narrow form was pinning for free.
@@ -160,7 +158,7 @@ anchor that sits after the last thing you guard.**
 When a test asserts a token is present in source it extracted (a workflow `run:`
 body, a script region, a config block), **comments are part of that text.**
 
-Measured: a test asserted `"exit 1" in body` over a preflight step's `run:`. A
+In one case a test asserted `"exit 1" in body` over a preflight step's `run:`. A
 later commit added the comment *"The SA test used to sit after the provider
 `exit 1`, which made it unreachable"* — and from that moment, mutating the only
 real `exit 1` to `exit 0` left the assertion **passing on the comment alone**.
@@ -179,8 +177,8 @@ the comment. The code is untouched and the mutation prints SURVIVED.
 
 ### Negative vocabulary assertions permit every rewording
 
-`assert "that project's service account" not in stdout` was defeated by a reworded
-re-certification — "and the deployer SA is that project's" — measured at 0 killed.
+`assert "that project's service account" not in stdout` is defeated by a reworded
+re-certification — "and the deployer SA is that project's".
 
 **Replace with a positive, behavioural assertion:** assert the run *emits* the
 thing the operator needs, which no rewording of the other message can fake. Where
@@ -216,7 +214,7 @@ line-scoped on two is robust to neither.
 ### The opposite error: whole-file scope fails in both directions
 
 A guard extracted every `§(\d+\.\d+)` from each file citing a design doc. One file
-carried a standalone `§4.2` ~200 lines below the real citation. Measured:
+carried a standalone `§4.2` ~200 lines below the real citation. It fails both ways:
 
 - **false pass** — deleting the real `§4.1` next to the path left the guard green,
   satisfied by the far-away `§4.2`
@@ -229,7 +227,7 @@ loudly when the region comes back empty.
 
 ### For a CLAIM, drop the window entirely — pin whole clauses by COUNT
 
-⚠️ **The "±N lines around the citation" recipe is right for a CITATION and wrong
+**The "±N lines around the citation" recipe is right for a CITATION and wrong
 for a CLAIM.** A citation is a token whose neighbourhood gives it meaning. A claim
 *is* the sentence — so the sentence is what to pin, and a window around it only
 adds ways to be satisfied by something else.
@@ -256,7 +254,7 @@ per line, collapse whitespace, drop `*` and backticks). No anchor, no window.
 from one site must red, which presence alone cannot see. Pin the total AND a
 `min_count >= 1` floor.
 
-> 🚨 **A text pin freezes WORDING, not CORRECTNESS — say so in the file.** One
+> **A text pin freezes WORDING, not CORRECTNESS — say so in the file.** One
 > guarded runbook was wrong twice, in *opposite* directions, and both drafts would
 > have passed a green pin. The pin's job is to force the re-check into the same
 > commit, not to tell you the answer.
@@ -278,12 +276,12 @@ is mechanisable.
 
 ## 6. Allowlist beats ban-list for shell and workflows
 
-Guarding a workflow against a dangerous command with a ban-list regex lost **four**
-measured ways. The design that held: an **allowlist** of `uses:` values and command
+A ban-list regex guarding a workflow against a dangerous command loses — one lost
+**four** ways. The design that held: an **allowlist** of `uses:` values and command
 heads, plus a **forbid list of shell constructs** — `$(`, backticks, `#`, `eval` —
 rather than attempting to parse shell.
 
-> ⚠️ A `\s*` added to a continuation-join reintroduced the exact bug it was
+> A `\s*` added to a continuation-join reintroduced the exact bug it was
 > fixing. Re-run the old mutation after every regex tweak.
 
 ---
@@ -295,7 +293,7 @@ rather than attempting to parse shell.
   an *independent* inventory.
 - **Import the inventory; don't rebuild it.** A guard that reconstructs a
   dependency's inventory from regexes loses to any shape it didn't anticipate.
-  Import and call the dependency's own function. 🚨 A package `exports` map
+  Import and call the dependency's own function. A package `exports` map
   restricts **bare specifiers only** — a deep relative path still resolves.
 - **Emptiness must match the consumer.** A config guard's emptiness/equality test
   must match the test in the code that *consumes* the value, not the convention of
@@ -330,7 +328,7 @@ resulting value. No list of paths, no list of packages, no fresh patch when impo
 move — and crucially **as true in CI as locally**, because the child's env is
 *constructed* rather than inherited.
 
-> ⚠️ That last property is the whole trick. CI supplied the variable, which made
+> That last property is the whole trick. CI supplied the variable, which made
 > every in-process value assertion pass under all six mutations. Constructing the
 > child's environment is what removes the mask.
 
@@ -339,11 +337,11 @@ requirement is actually about, and build the situation that exhibits it.
 
 ---
 
-## 9. 🚨 A killed mutation proves the guard FIRES, not that it is AIMED
+## 9. A killed mutation proves the guard FIRES, not that it is AIMED
 
-Measured across five review lenses, a delta lens and a bot: **four findings, one
-shape** — each time the guard's predicate was right, its mutation was "killed", and
-it was pointed at something the real defect never touches.
+Five review lenses, a delta lens and a bot returned **four findings of one shape**: the
+guard's predicate is right, its mutation is "killed", and it is pointed at something the
+real defect never touches.
 
 1. An invariant read the base variables file. The documented arming path is an
    **auto-loaded override** file the tool applies on top of it. The mutation had
@@ -353,7 +351,7 @@ it was pointed at something the real defect never touches.
 3. Fixed by adding those… which globbed the two families as separate groups. The
    tool sorts them as ONE lexical sequence, so a `.json`-suffixed file loads before
    a later plain one and the guard computed a different winner than the tool.
-   (Measured on Terraform's `*.auto.tfvars` / `*.auto.tfvars.json`; any tool with
+   (Terraform's `*.auto.tfvars` / `*.auto.tfvars.json` behave this way; any tool with
    ordered override files has the same shape.)
 4. A "never `:latest`" arm scanned the `docker push` **argument**. Every builder
    pushes an expression and builds the tag in a prior step, so it inspected text a

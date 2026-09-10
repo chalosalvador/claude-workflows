@@ -18,7 +18,12 @@ claude plugin validate . --strict
 ```
 
 CI runs all of them as the `guards` job. Run them before pushing — `main` is protected, so a
-red gate means the PR simply cannot merge.
+red gate means the PR cannot merge.
+
+`test_single_owner_facts.py`, `test_no_stray_files.py` and `test_links.py` list files with
+`git ls-files`, i.e. the index, so a new file is invisible to them until it is staged.
+`git add` the paths you changed before trusting a local green, never `git add -A`: a
+sweeping add is how a stray file reaches a commit.
 
 `tests/test_comment_policy.py` reads the lines your branch adds or changes since it left
 `origin/main`, and every untracked file that is not ignored, so `git fetch origin` before
@@ -27,21 +32,60 @@ running it and keep drafts such as a PR body outside the checkout. What it enfor
 nobody touches is never read, so older text that breaks the policy stays until it is
 edited.
 
-⚠️ **A PR with NO checks is not a passing PR.** `guards` is required, so zero checks
-blocks a merge rather than allowing it — but the PR page looks clean either way, which is
-how a stacked PR once reached `MERGEABLE` having never run the gate. The workflow now
-triggers on every base, and on `edited` so that retargeting a PR re-runs it. **Look for a
-green `guards`, not for the absence of red.**
-
-⚠️ The single-owner guard enumerates via `git ls-files`, i.e. the **index**. A new
-unstaged file is invisible to it. `git add` before trusting a local green.
+**A PR with no checks is not a passing PR.** `guards` is required, so zero checks blocks a
+merge rather than allowing it, but the PR page looks clean either way. The workflow
+triggers on every base, and on `edited` so that retargeting a PR re-runs it. Look for a
+green `guards`, not for the absence of red.
 
 ## `main` is protected — everything goes through a PR
 
-`guards` is required with `enforce_admins: true`, plus linear history and required
-conversation resolution. That applies to the maintainer too. Branch, PR, merge.
+`guards` is a required check with `enforce_admins: true`, plus linear history, required
+conversation resolution and no force-pushes. That applies to the maintainer too: a direct
+push is rejected with `GH006: Protected branch update failed`. Branch, PR, merge.
 
-## Testing a change to a **skill**
+## The installed plugin is a cached copy
+
+`claude plugin install` copies the plugin into a version-keyed cache and serves it from
+there, even when the marketplace is registered as a directory source:
+
+```
+~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/
+```
+
+The copy is not a live view of the checkout: its files are not symlinks, and a
+`git checkout` here does not change what it serves. `<version>` is `plugin.json` →
+`version`, and nothing invalidates the cache while that string is unchanged, so every
+change merged since the install is invisible to every session until the version moves,
+and nothing says so.
+
+When the version did not change, both refresh commands report success and change nothing:
+
+| Command | Says | Does |
+|---|---|---|
+| `claude plugin marketplace update <name>` | `✔ Successfully updated marketplace` | refreshes the marketplace manifest only, not the cached plugin |
+| `claude plugin update <plugin>` | `✔ already at the latest version (…)` | nothing: it compares versions, and yours did not change |
+
+Once `version` changes, `claude plugin marketplace update` then `claude plugin update` is
+the right sequence. It creates the new cache directory and keeps your plugin config:
+
+```
+✔ Plugin "gh-issue-flow" updated from 0.3.0 to 0.3.1 for scope user.
+cache dirs: 0.3.0  0.3.1        # new dir created
+pluginConfigs: PRESERVED         # board number and owner survive
+```
+
+Keep uninstall and reinstall for a cache that is stale because the version did not
+change, and read § *The reinstall wipes your plugin config* below first.
+
+**Restart after any update.** The Skill tool resolves the plugin directory once per
+session: after `claude plugin update`, a skill invoked in the same session still loads
+from the directory it resolved before, and neither `plugin update` nor `/reload-plugins`
+repoints it. A check made through the Skill tool without a restart reads the old text.
+
+Unverified: whether a GitHub-source marketplace caches the same way. On a GitHub source,
+local edits reach nothing until they land on `main` regardless.
+
+## Testing a change to a skill
 
 Use `--plugin-dir`, which serves the working tree directly:
 
@@ -52,54 +96,37 @@ claude --plugin-dir ./plugins/gh-issue-flow
 Skills are read at invocation, so under `--plugin-dir` a local edit takes effect
 immediately, and `/reload-plugins` picks up further edits without a restart.
 
-🚨 **An INSTALLED plugin is a different thing entirely — it is a cached copy, and your
-edits do not reach it.** `claude plugin install` copies the plugin into
-`~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/` and serves from there.
-Nothing invalidates that cache while `plugin.json` → `version` is unchanged, and
-**`git checkout` does not change what it serves.** Both refresh commands report success
-and do nothing: `claude plugin marketplace update` refreshes only the manifest, and
-`claude plugin update` compares versions and yours did not change. See
-[`CLAUDE.md`](CLAUDE.md) for how the cache is keyed and what refreshes it.
+## Testing a change to an agent
 
-**So: use `--plugin-dir` to test.** To collect a change that has already landed with a
-version bump, `claude plugin marketplace update` then `claude plugin update` — MEASURED,
-that delivers the new cache dir **and keeps your config**. Reach for uninstall+reinstall
-only when the version did *not* change, and read § *the reinstall wipes your plugin
-config* below first: that cycle costs you something nobody warns you about.
+Two traps, and both return a plausible result from the wrong file.
 
-## 🚨 Testing a change to an **agent** — read this before you waste a day
+**Agent types resolve at session start.** Editing an agent file, or installing the plugin,
+changes nothing for the session already running: the spawn fails with
+`Agent type '<name>' not found`, listing the agents as they were at launch.
+`/reload-plugins` refreshes skills, not agents. So an agent edit cannot be tested in the
+session that made it; restart first.
 
-Two traps, both of which have already cost real work here.
-
-**1. Agent types resolve at SESSION START.** Editing an agent file changes nothing for the
-session already running. The spawn fails with `Agent type '<name>' not found`, listing the
-agents as they were at launch. `/reload-plugins` refreshes skills; do **not** assume it
-re-resolves agents. **So an agent edit cannot be tested in the session that made it.
-Restart.**
-
-**2. A same-named agent elsewhere silently wins.** If `~/.claude/agents/` or the project's
+**A same-named agent elsewhere silently wins.** If `~/.claude/agents/` or the project's
 `.claude/agents/` holds `issue-planner.md` or `diff-reviewer.md`, that file runs and the
-plugin's copy never does. There is no warning, and the shadowing agent returns a
-perfectly plausible result — so every symptom points at the file you edited, which is not
-the file executing.
+plugin's copy never does. There is no warning, and the shadowing agent returns a plausible
+result, so every symptom points at the file you edited, which is not the file executing.
+A bare `issue-planner` resolves to whichever file wins; only the namespaced
+`gh-issue-flow:issue-planner` reaches the plugin's.
 
-> Five consecutive agent runs were once spent tuning a plugin agent that nothing read.
-> Four separate explanations were constructed for the resulting behaviour. All were void.
-
-**Always verify before measuring, and always spawn the namespaced name:**
+Verify before testing:
 
 ```bash
 claude plugin list                 # must show gh-issue-flow enabled
 ls ~/.claude/agents/               # anything here with a matching name shadows the plugin
 ```
 
-Then spawn `gh-issue-flow:issue-planner`, never a bare `issue-planner`, with a `Plugin:`
-line naming the absolute path of `plugins/gh-issue-flow`. Without it the agent reads the
-lens set from the newest installed copy, not your working tree.
+Then spawn `gh-issue-flow:issue-planner` with a `Plugin:` line naming the absolute path of
+`plugins/gh-issue-flow`. Without it the agent reads the lens set from the newest installed
+copy, not your working tree.
 
-To test the **installed** path against your working tree rather than the published
-version, add the checkout as a directory source — then reinstall on every change you
-want to see, because the install is a copy, not a live view:
+To test the installed path against your working tree rather than the published version,
+add the checkout as a directory source, then reinstall on every change you want to see,
+because the install is a copy:
 
 ```bash
 claude plugin marketplace add ./
@@ -107,70 +134,55 @@ claude plugin uninstall gh-issue-flow
 claude plugin install gh-issue-flow@claude-workflows
 ```
 
-A restart is required to apply it, and agent discovery still happens at session start.
+Restart to apply it. That recipe wipes your plugin config; read the next section first.
 
-### 🚨 The reinstall wipes your plugin config, and nothing says so
+### The reinstall wipes your plugin config, and nothing says so
 
-**`claude plugin uninstall` empties your `userConfig`, and the reinstall does not put it
-back.** It lives in `~/.claude/settings.json` → `pluginConfigs`, keyed by plugin id.
-MEASURED on `0.3.0`:
+`claude plugin uninstall` empties your `userConfig`, and the reinstall does not put it
+back. It lives in `~/.claude/settings.json` → `pluginConfigs`, keyed by plugin id:
 
 | Step | `pluginConfigs` |
 |---|---|
 | `install … --config board_number=1` | `{"gh-issue-flow@claude-workflows": {"options": {"board_number": "1"}}}` |
 | `claude plugin uninstall gh-issue-flow` | `{}` |
-| `claude plugin install …` | `{}` — **not restored** |
+| `claude plugin install …` | `{}` — not restored |
 
-So the recipe above silently costs a contributor their board number and owner. **Write
-them down before you run it** — or avoid the cost entirely: `claude plugin update` on a
-bumped version delivers the same new cache dir and **preserves `pluginConfigs`**
-(measured, same run). Recovery when you have already lost them is to re-supply —
-`--config` is repeatable and works on an already-installed plugin, so this needs no
-second uninstall:
+`claude plugin marketplace remove <name>` wipes `pluginConfigs` too, for every plugin that
+marketplace provided, and dropping the `./` source is how the recipe above is undone.
+`claude plugin update` is the one command that keeps it, which is the reason to bump the
+version rather than reinstall. Write the values down before you run the recipe. To
+recover them, re-supply them; `--config` is repeatable and works on an installed plugin:
 
 ```bash
 claude plugin install gh-issue-flow@claude-workflows \
   --config board_number=<n> --config board_owner=<owner>
 ```
 
-Then **`/reload-plugins`** in any running session — option values are memoized per
-plugin id in-process, and the subprocess that wrote them cannot invalidate that map.
+Then `/reload-plugins` in any running session: option values are memoized per plugin id
+in-process, and the subprocess that wrote them cannot invalidate that map.
 
-⚠️ **Uninstall is not the only thing that clears it.** MEASURED: `claude plugin
-marketplace remove <name>` wipes `pluginConfigs` for every plugin that marketplace
-provided — which lands squarely on the directory-source recipe above, since dropping the
-`./` source is how you undo it. `claude plugin update` is the one command that preserves
-config.
-
-⚠️ **What you lose is a machine-wide *default*.** Any repo that names its own board in
+What you lose is a machine-wide default. Any repo that names its own board in
 `workflow.json` → `board` is unaffected, because that layer wins. Why `pluginConfigs`
-cannot be per-repo, with the measurement:
-[`README.md`](README.md#configuration-in-three-layers) § Layer 1.
+cannot be per-repo: [`README.md`](README.md#configuration-in-three-layers) § Layer 1.
 
-Two things this is not. It is not the same as the *"N userConfig options not yet set"*
-line the install prints — that appears whether or not you ever had config, and what it
-counts is in [`README.md`](README.md#1-install). And it is not
-something to diagnose by sharing that settings file — it also holds `permissions` and
-every other plugin's configuration. Read the one key, not the file.
+Two things this is not. It is not the *"N userConfig options not yet set"* line the install
+prints — that appears whether or not you ever had config, and what it counts is in
+[`README.md`](README.md#1-install). And it is not something to diagnose by sharing that
+settings file — it also holds `permissions` and every other plugin's configuration. Read
+the one key, not the file.
 
-## 🚨 Bump `version` in the same PR as any behaviour change
+## Bump `version` in the same PR as any behaviour change
 
-`plugin.json` → `version`, **and** both `version` fields in
-`.claude-plugin/marketplace.json`.
+`plugin.json` → `version`, and both `version` fields in
+`.claude-plugin/marketplace.json`. The bump is the only thing that gives
+`claude plugin update` anything to do; without it a merged change reaches no running
+session.
 
-⚠️ **The gate constrains two of those three, and nothing checks the third.** MEASURED:
-`plugin.json` disagreeing with `marketplace.json` → `plugins[0].version` exits **1**
-(`plugin.json wins`), so bumping either alone reds. A stale — or even deleted —
-**top-level** `version` passes `--strict` at exit 0, and nothing detects that you forgot
-to bump at all. `claude plugin tag` is no help: its own `--help` says it validates
-"plugin.json and any enclosing marketplace **entry**" — the entry, not the top level.
-`tests/test_version_agreement.py` now reds on any disagreement between the three —
-mutation-proven 3 kill / 2 must-stay-green, including the stale-top-level case
-`claude plugin validate` passes at exit 0. It still cannot tell you *forgot* to bump;
-nothing can. Read them back yourself when it matters.
-
-That bump is the only thing that gives `claude plugin update` anything to do. Skipping it
-is how eight consecutive PRs reached `main` without reaching a single running session.
+`tests/test_version_agreement.py` reds when the three disagree. `claude plugin validate`
+alone does not: `plugin.json` disagreeing with `marketplace.json` → `plugins[0].version`
+exits 1, but a stale or deleted top-level `version` passes `--strict` at exit 0, and
+`claude plugin tag` validates only "plugin.json and any enclosing marketplace entry".
+Nothing can tell you that you forgot to bump at all, so read the three back yourself.
 
 ### And bump the config schema when a PR adds a `workflow.json` key
 
@@ -204,46 +216,43 @@ quiet.
 
 ## Conventions
 
-**Prose here is measured, not asserted.** When a doc states a number or a behaviour, it
-came from running the thing. If you change a claim, re-measure it or mark it unverified.
-The measurement, and the story of a claim that turned out wrong, go in the PR body's
+**A claim here comes from running the thing.** When a doc states a number or a behaviour,
+it was checked by running it. If you change a claim, re-check it or mark it unverified.
+How it was checked, and the story of a claim that turned out wrong, go in the PR body's
 History
 ([`git-and-github.md` § Writing a PR body](plugins/gh-issue-flow/reference/git-and-github.md#writing-a-pr-body));
 the doc states the current fact. Comments and docs follow
 [`comments-and-docs.md`](plugins/gh-issue-flow/reference/comments-and-docs.md).
 
 **The single-owner guard will block you, and that is the point.**
-`tests/test_single_owner_facts.py` pins sixteen clauses to exactly one owning file. Rewrite a
-section and the pinned clause stops existing, and it fails with *"0 means the owner lost
-it — did a rewrite drop the fact?"* **Update `OWNED` in the same commit.** Do not route
-around it by deleting the entry — it has already caught its own pin going stale three
-times, which is the behaviour it was built for.
+`tests/test_single_owner_facts.py` pins each clause in `OWNED` to exactly one owning file.
+Rewrite a section so a pinned clause stops existing, and it fails with *"0 means the owner
+lost it — did a rewrite drop the fact?"* Update `OWNED` in the same commit; do not route
+around it by deleting the entry.
 
-It is mutation-proven 11/11 (7 kill + 4 must-stay-green); the two board pins added later were proven 7/7 (3 kill + 4 must-stay-green) on top, the two ops-doc pins 8/8 (4 kill + 4 must-stay-green), the area-map pin 8/8 (4 kill + 4 must-stay-green — two mutants first read wrong because the harness matched the clause unwrapped while the owner hard-wraps it; match the wrapped text), and the out-of-sweep pin 8/8 (4 kill + 4 must-stay-green, matched wrapped; one harness case first crashed on its own bug before scoring anything, which is not a survival either): a softened or inverted owner and an exact copy elsewhere red; a hard-wrap, moved emphasis, a move within the owner and a paraphrase elsewhere stay green. If you change the guard itself,
-re-prove it; the must-stay-green half is what stops it reddening on ordinary reformatting.
+**A guard is mutation-proven, and a change to it is re-proven.** A re-proof covers both
+halves: the mutants that must red, and the edits that must stay green, which is what stops
+a guard reddening on ordinary reformatting. The cases each guard's re-proof includes:
 
-`tests/test_config_schema.py` is mutation-proven **11/11 (7 kill + 4 must-stay-green)**:
-a dropped row, an example key with no row, a Since above Current, a key setup never
-mentions, a missing Current line, a duplicate row and an emptied table all red; reversed
-rows, padded cells, a reworded Meaning and a legitimate schema bump stay green.
-
-`tests/test_links.py` is mutation-proven **7/7 (5 kill + 2 must-stay-green)**: a typo'd
-path, a link to an untracked file, a link escaping the repo, a link climbing out of the
-plugin directory to a marketplace-only path, and a parser that matches nothing all red;
-an anchor link and a mix of `./`, directory, `https:` and `#` links stay green. Its
-positive-case floor (`MIN_LINKS`) is a measured number. Two lessons from its own review:
-the first run reddened on two links quoted inside code spans, so it strips fences and
-spans first; and its first version passed the very `../../../tests/` link it was written
-for, because it checked the marketplace boundary and not the plugin's — the fifth kill
-case is that link.
-
-`tests/test_doc_headers.py` is mutation-proven **8/8 (6 kill + 2 must-stay-green)**: a
-renamed skeleton header, a renamed table row, a "§ Infra" short reference, demoted
-headers, an added header the table lacks, and a header present in both skeletons all
-red; a reordered table and a mix of other § references with full header names stay
-green. Its first version matched a
-reference greedily ("§ Infra before deciding") and let the short form through; the
-word-by-word comparison is the fix.
+- `test_single_owner_facts.py`: a softened or inverted owner and an exact copy elsewhere
+  red; a hard-wrap, moved emphasis, a move within the owner and a paraphrase elsewhere stay
+  green. Match a pinned clause as the owner wraps it.
+- `test_config_schema.py`: a dropped row, an example key with no row, a Since above
+  Current, a key setup never mentions, a missing Current line, a duplicate row and an
+  emptied table red; reversed rows, padded cells, a reworded Meaning and a legitimate
+  schema bump stay green.
+- `test_links.py`: a typo'd path, a link to an untracked file, a link escaping the repo, a
+  link climbing out of the plugin directory to a marketplace-only path, and a parser that
+  matches nothing red; an anchor link and a mix of `./`, directory, `https:` and `#` links
+  stay green. It strips fences and code spans first, because a link quoted in a code span
+  is an example, and it checks the plugin boundary as well as the repo's.
+- `test_doc_headers.py`: a renamed skeleton header, a renamed table row, a "§ Infra" short
+  reference, demoted headers, an added header the table lacks, and a header present in
+  both skeletons red; a reordered table and a mix of other § references with full header
+  names stay green. References are compared word by word, because a greedy match lets a
+  short form through.
+- `test_version_agreement.py`: any disagreement among the three numbers reds, including a
+  stale top-level `version` that `claude plugin validate` passes.
 
 **Facts live in one place.** `shared/execution.md` owns mechanics; skills own policy and
 link to it. If you find yourself pasting the same rule into two skills, it belongs in

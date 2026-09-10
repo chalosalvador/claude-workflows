@@ -12,10 +12,10 @@ therefore have to agree, and prose cannot hold them:
   2. the Section column of the "Read by" table in shared/config.md § Deploy-target docs;
   3. every "§ <Section>" reference to a stack-doc section under plugins/.
 
-MEASURED: the PR that introduced the contract shipped two readers citing
-"§ Infra" while the header is "## Infra and migrations", and three copies of the
-header set that disagreed on its size. A reader matching by name finds nothing,
-and nothing distinguishes "section missing" from "section says nothing".
+A reader citing "§ Infra" while the header is "## Infra and migrations", or two
+copies of the header set that disagree on its size, pass review easily. A reader
+matching by name finds nothing, and nothing distinguishes "section missing" from
+"section says nothing".
 
 DESIGN — see plugins/gh-issue-flow/reference/guard-tests.md
 ----------------------------------------------------------

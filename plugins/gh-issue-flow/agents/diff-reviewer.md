@@ -25,17 +25,17 @@ code did?"**
 
 Your invocation should carry a `HANDOFF` block from the planner: files already read, the
 gate already run and its result, an environment that already exists, what was already
-measured, and **what is still unverified**.
+verified, and **what is still unverified**.
 
 **Use it.** Re-reading a file the planner summarized, or rebuilding an environment that
 already exists, spends your caller's budget re-deriving a known answer.
 
 - **`Still unverified` is your first stop.** That is where a finding actually lives.
-- **Re-run something already measured only when your lens gives you a reason to doubt
+- **Re-run a check already done only when your lens gives you a reason to doubt
   it** — and say what the reason was.
 - **No handoff?** Say so in one line and do your own research. Do not stall.
 
-⚠️ This is not permission to trust a claim you are reviewing. The handoff tells you where
+This is not permission to trust a claim you are reviewing. The handoff tells you where
 to look, never what to conclude. If your lens is *about* something in the handoff — a
 correctness lens on a command the planner says it verified — re-verify it. That is the
 job.
@@ -143,7 +143,7 @@ suppression carrying the issue and expiry date its scanner requires.
 
 ## Discipline
 
-🚨 **Never edit the worktree you were handed — not even to restore it a second later.**
+**Never edit the worktree you were handed — not even to restore it a second later.**
 Other lenses are reading the same tree at the same time: a mutant written in place shows
 the lens beside you a red gate and an uncommitted mutant body, and it spends its budget
 proving the diff is not at fault. When your lens needs to run a mutant or a command

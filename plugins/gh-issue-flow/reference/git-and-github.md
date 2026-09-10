@@ -10,9 +10,9 @@ commits directly, so anything that landed on the integration branch *after* you
 branched shows up **inverted** — a file the base deleted appears as your branch
 adding it back.
 
-Measured: a two-dot stat listed 32 files and ~930 insertions, including a Terraform
-root the base had just deleted, `+269`. The real change was one file, 496/50. A
-tests-only PR looked like it was re-adding a retired directory.
+The distortion is not small: a one-file, tests-only change can show as dozens of files
+and hundreds of insertions, among them a directory the base just deleted, so the PR reads
+as re-adding it.
 
 GitHub renders PRs with merge-base semantics, so **the three-dot diff is what the
 reviewer actually sees.**
@@ -23,15 +23,14 @@ reviewer actually sees.**
 
 ---
 
-## 🚨 CI tests head MERGED WITH base, so "green locally, red in CI" is often neither flake nor environment
+## CI tests head MERGED WITH base, so "green locally, red in CI" is often neither flake nor environment
 
 GitHub's `pull_request` event checks out the **merge** of head and base, not head.
 The two runs are testing **different trees**.
 
-Measured three times in one sitting: a guard pinning every file under an archive
-directory was green locally (279 files pinned, 279 in the tree) and red in CI, which
-saw 283 — because the base had archived another change after the push. The failure
-message named directories that did not exist on the branch at all.
+A guard that pins every file under an archive directory is green locally and red in CI
+when the base archives another change after the push: CI counts the base's files too,
+and the failure names directories that do not exist on the branch at all.
 
 **When CI reds on something inventory- or count-shaped and the branch is green,
 check whether the base moved before assuming flake:**
@@ -49,14 +48,14 @@ git fetch origin && git merge-base --is-ancestor <integrationBranch> HEAD   # th
   additions can coincide numerically. Compare ancestry.
 - `--match-head-commit` guards the PR **head**, not the base. It does nothing here.
 
-⚠️ **Do not fabricate the SHA for `--match-head-commit`.** Abbreviating the head
+**Do not fabricate the SHA for `--match-head-commit`.** Abbreviating the head
 yourself and padding it produces `GraphQL: Head branch was modified` and reads like a
 real race. Read it: `gh pr view <N> --json headRefOid --jq .headRefOid`. It needs the
 full 40 chars.
 
 ---
 
-## 🚨 A conflicting PR SKIPS its workflow — the check goes MISSING, not red
+## A conflicting PR SKIPS its workflow — the check goes MISSING, not red
 
 When the base moves and the PR conflicts, GitHub cannot build a merge ref, so the
 `pull_request` workflow **never fires**. `gh pr checks` then shows a healthy-looking
@@ -69,31 +68,31 @@ gh pr view <N> --json mergeable,mergeStateStatus
 
 Confirm the required check is **present**, not merely that nothing is failing.
 
-⚠️ `mergeable` is computed **asynchronously**: right after a push it reports the
-stale value (measured `CONFLICTING/DIRTY` on a branch that was actually
-`MERGEABLE`). Poll until it settles before believing it.
+`mergeable` is computed **asynchronously**: right after a push it can report a stale
+value, such as `CONFLICTING/DIRTY` on a branch that is actually `MERGEABLE`. Poll until
+it settles before believing it.
 
 ---
 
-## 🚨 A NEGATED closing keyword still closes the issue
+## A NEGATED closing keyword still closes the issue
 
 GitHub's linked-issue parser matches
 `close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved` + `#N` and **does not
 read negation in front of it.**
 
-Measured: every commit deliberately said `Refs #N`, never `Fixes` — verified by
-regex over the squash message, zero closing keywords. The issue closed anyway,
-because a review bot appended a summary to the PR body containing:
+Commits that all say `Refs #N`, never `Fixes`, do not keep the issue open: with zero
+closing keywords in the squash message it still closes when a review bot appends a
+summary to the PR body containing:
 
 > **Merging does not close #N** until Terraform is applied.
 
-`close #N` matched. **The sentence written to say the issue must stay open is what
-closed it.** Board automation then flipped the card to Done, and nothing in the repo
+`close #N` matches, so **the sentence written to say the issue must stay open is what
+closes it.** Board automation then flips the card to Done, and nothing in the repo
 detects it.
 
 - Never write a closing keyword next to `#N`, *even negated*. Phrase it as
   "#N stays open until …" — no keyword within ~1 token of the number.
-- ⚠️ **You do not control the whole PR body.** Bots append sections after you write
+- **You do not control the whole PR body.** Bots append sections after you write
   it, so a body clean at creation can acquire one.
 - When the merge must NOT close the issue, **read the issue state back after merging**
   and reopen if needed. Reopening does not restore the board card — set Status by hand.
@@ -137,14 +136,14 @@ GitHub resolves `paths:` / `paths-ignore:` **last-match-wins**, so the *order* o
 patterns is the semantics. A test asserting `"terraform/cells/prod/**" in paths` reads
 as equivalent to testing the filter and is not.
 
-Measured: moving two positive patterns to the end of the list — **all eight strings
-unchanged** — kept a membership-style test green while three previously-excluded paths
-began matching. Adding `- "**"` also stayed green.
+Moving two positive patterns to the end of the list — **every string unchanged** — keeps
+a membership-style test green while previously-excluded paths begin matching, and so does
+adding `- "**"`.
 
 **Assert OUTCOMES over corpora of real paths** (`_MUST_MATCH` / `_MUST_NOT_MATCH`),
 never membership. Import a shared evaluator rather than rebuilding one.
 
-⚠️ Two things an outcome test cannot do — pair it with shape rules:
+Two things an outcome test cannot do — pair it with shape rules:
 
 - **Widening by ADDITION is invisible** to it; it only speaks about paths someone
   thought to list. Add a rule that no pattern reaches outside the intended tree.
@@ -153,10 +152,10 @@ never membership. Import a shared evaluator rather than rebuilding one.
   is structurally invisible to an outcome test.
 
 Also: **re-derive any deploy note from the FINAL diff after review fixes.** A review
-fix that added a *comment* to one file newly armed a drift workflow and invalidated a
-note written earlier.
+fix that adds even a *comment* to one file can arm a workflow and invalidate a note
+written earlier.
 
-> 🚨 Related: a workflow that lists **its own file** in `paths:` fires a real run when
+> Related: a workflow that lists **its own file** in `paths:` fires a real run when
 > you edit the workflow — even when your diff is otherwise entirely excluded. "It only
 > touches an excluded directory" is not the whole answer.
 
@@ -184,18 +183,17 @@ Reading PR state without GraphQL: `gh api .../pulls/<n>` (`mergeable_state: clea
 `.../pulls/<n>/comments`, `.../issues/<n>/comments`, `.../pulls/<n>/reviews`,
 `.../commits/<sha>/check-runs`.
 
-⚠️ `-F body=@file` reads the file; `-f` sends the literal string.
+`-F body=@file` reads the file; `-f` sends the literal string.
 
-🚨 **Exhausted GraphQL does not always say "rate limit".** `gh issue create` reported
-`API rate limit already exceeded` while `gh project item-add` failed with **`unknown
+**Exhausted GraphQL does not always say "rate limit".** `gh issue create` reports
+`API rate limit already exceeded` while `gh project item-add` fails with **`unknown
 owner type`** — which reads like a bad `--owner` flag and sends you debugging the wrong
 thing.
 
-🚨 **`gh api rate_limit` reports a stale budget. Do not gate anything on it.** MEASURED
-on a later run: every GraphQL call — including a bare `{viewer{login}}`, the cheapest
-query there is — failed with `API rate limit already exceeded`, while `rate_limit`
-returned `graphql 5000/5000` on **13 of 14** consecutive reads. The one honest read said
-`remaining=0`. Core was equally wrong, reporting 5000 after a dozen REST calls.
+**`gh api rate_limit` reports a stale budget. Do not gate anything on it.** While every
+GraphQL call fails with `API rate limit already exceeded` — including a bare
+`{viewer{login}}`, the cheapest query there is — `rate_limit` can go on returning
+`graphql 5000/5000` on nearly every read, and its `core` figure is just as stale.
 
 **Use GraphQL's own meter instead — it is accurate, and it is free:**
 
@@ -203,15 +201,12 @@ returned `graphql 5000/5000` on **13 of 14** consecutive reads. The one honest r
 gh api graphql -f query='{rateLimit{remaining}}' --jq .data.rateLimit.remaining
 ```
 
-MEASURED: that query costs **0 points**, so it can bracket a command to price it exactly:
-`before=$(probe); <command>; after=$(probe)`. That is how the numbers in
-[`../shared/board.md`](../shared/board.md) § Board queries were obtained.
+That query costs **0 points**, so it can bracket a command to price it exactly:
+`before=$(probe); <command>; after=$(probe)`.
 
-⚠️ An earlier note here attributed a `gh project` failure to a *secondary* Projects v2
-limit, on the strength of a clean `rate_limit` read. That reading was the stale-meter
-artifact above; a bare `viewer` query failed identically, which a Projects-specific limit
-cannot explain. **Believe the error, not the meter** still holds — the diagnosis behind it
-did not.
+**Believe the error, not the meter.** A `gh project` failure beside a clean `rate_limit`
+read is the stale meter above, not a separate Projects v2 limit: a bare `viewer` query
+fails the same way.
 
 > There is no REST fallback for Projects v2. When GraphQL is exhausted, board writes
 > simply wait.
@@ -245,20 +240,20 @@ counts — a `-` in either column means binary.
   merges that did not happen *and* exits 1 on merges that did.
 - **Branch off the remote ref explicitly**: `git checkout -b feat/x <integrationBranch>`,
   resolved per `shared/config.md` — never `main` by assumption. Fetching is not pulling.
-- ⚠️ Piping a `gh` command into `tail`/`head` makes the pipeline's exit status that of
+- Piping a `gh` command into `tail`/`head` makes the pipeline's exit status that of
   `tail`, so an `||` fallback never fires and a failure looks like success.
 
 ---
 
 ## Permissions
 
-🚨 **A team grant masks an individual role.** GitHub takes the **highest** grant, so
+**A team grant masks an individual role.** GitHub takes the **highest** grant, so
 demoting a user does nothing while a team they belong to holds repo admin. And if your
 *own* admin comes only from that team, lowering the team first is a self-lockout.
 Check both paths before changing either.
 
-🚨 **A repo transfer changes the identity a cloud trusts.** MEASURED: a transfer after
-`2026-07-15` silently moved GitHub's OIDC `sub` to the immutable `owner@id/repo@id` form.
+**A repo transfer changes the identity a cloud trusts.** A transfer after `2026-07-15`
+silently moves GitHub's OIDC `sub` to the immutable `owner@id/repo@id` form.
 That is GitHub's behaviour and applies to every repo; the failure surfaces only as
 impersonation 403s, far from the cause, on a workflow that ran yesterday. Before any
 transfer, re-bind every federation trust that matches on the subject. Which bindings this

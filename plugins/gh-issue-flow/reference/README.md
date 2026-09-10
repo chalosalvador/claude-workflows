@@ -1,6 +1,6 @@
 # Reference docs
 
-Hard-won operational knowledge, distilled from measured incidents. Skills in this
+Hard-won operational knowledge, distilled from real incidents. Skills in this
 plugin link to these at the moment they become relevant — read the section, not the
 file, unless you are about to do the whole thing.
 

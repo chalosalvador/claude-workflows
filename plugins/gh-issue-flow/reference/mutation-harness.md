@@ -2,8 +2,8 @@
 
 Mutation-proving a test means: break the code, confirm the test reds. **A run that
 reports "passed" is ambiguous** — it means either the guard is vacuous *or the
-mutation never happened.* Everything below was measured on a real harness that
-reported a wrong number.
+mutation never happened.* Every item below is a way a real harness reports a wrong
+number.
 
 The headline rule: **after mutating and before running the suite, print evidence
 the mutation landed** — a `grep -c` of the changed token, a step count, a diff
@@ -59,7 +59,7 @@ line. Treat a non-kill as *unverified* until the mutation is proven present.
 9. **The sweep reads the git INDEX, so a mutation that CREATES a file is
    invisible.** Three cases reported SURVIVED against a guard derived from
    `git ls-files`; the files were untracked. `git add -N` made all three kill
-   immediately. ⚠️ **Whenever the code under test enumerates via git rather than the
+   immediately. **Whenever the code under test enumerates via git rather than the
    filesystem, a create-a-file mutation must be staged** — and that is also the
    state a real PR is in, so the staged run is the meaningful one.
 
@@ -67,7 +67,7 @@ line. Treat a non-kill as *unverified* until the mutation is proven present.
     mutations inserted a trap right after `GRANTED=1`; a later fix moved `GRANTED=1`
     *above* the call it guarded, so the mutation now placed the trap **before** the
     only dangerous call — it stopped expressing a defect and the guard passed
-    *correctly*. ⚠️ **A survival is a claim about the mutation as much as the test:
+    *correctly*. **A survival is a claim about the mutation as much as the test:
     re-read what the mutated file now says before believing it.** Re-anchor on a
     semantic boundary, not a neighbouring line that can move.
 
@@ -80,8 +80,8 @@ line. Treat a non-kill as *unverified* until the mutation is proven present.
 
 12. **Scoring "exit code != 0" as a clean kill.** A renderer **panic** (exit 11) and
     an `Invalid function argument` error also exit non-zero while printing none of
-    the authored message. Two assertions were reported "4/4 measured kills" when
-    they actually *crashed the process* on the regression they guarded.
+    the authored message. Such a run can report "4/4 kills" for assertions that
+    actually *crash the process* on the regression they guard.
     **Classify the outcome — panic / other-error / assertion-failure — not the exit
     code.** Count runs SKIPPED separately: a kill that skips the rest of the file is
     a half guard.
@@ -158,7 +158,7 @@ line. Treat a non-kill as *unverified* until the mutation is proven present.
 - **Re-run the UNMUTATED tree under the identical env before attributing any failure
   to the mutation.**
 
-> 🚨 **A control that is not green is a broken harness, not a fact about the code.**
+> **A control that is not green is a broken harness, not a fact about the code.**
 > Two successive harnesses reconstructed a pre-change tree whose control reported
 > failures, and the instinct was to *explain* them. Both failures were
 > self-inflicted — the harness had moved tracked files aside. **Fix the control
@@ -201,7 +201,7 @@ trusting a green. A docstring asserting fidelity is not fidelity.**
 
 ---
 
-## 🚨 The meta-lesson
+## The meta-lesson
 
 One harness reported **16/16 killed**. An independent reviewer then found **16
 SURVIVING mutations** against the same file — including one that let the entire
@@ -218,7 +218,7 @@ removes it"* — it found one that survived the entire suite (passing the raw en
 instead of the normalized one, because every case spelled the env canonically).
 **Deletion mutations are the ones you think of unaided.**
 
-## ⚠️ Expectations that are RIGHT but INCOMPLETE are the common failure
+## Expectations that are RIGHT but INCOMPLETE are the common failure
 
 Across three harness rounds — 6/16, then 3/22 mismatches — **every single one was an
 omission, never a wrong prediction**: a test the author did not realize also reds.

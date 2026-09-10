@@ -54,13 +54,13 @@ Otherwise pick from the **Todo column**. **Eligible = Todo AND (assigned to the
 current GitHub user OR unassigned).** Resolve the user dynamically —
 `gh api user --jq .login` — never hardcode a login.
 
-🚨 **The board is not simply your `userConfig` default — resolve it first.** This repo may
+**The board is not simply your `userConfig` default — resolve it first.** This repo may
 name its own board in `workflow.json` → `board`, which **wins** over the machine default,
 and writing to the wrong board is silent. Run the two-step resolution in
 [`shared/board.md`](../../shared/board.md) § Resolution, use the numbers it yields, and
 **say which layer answered before any board write.**
 
-⚠️ **`$BOARD_JSON` is the one board fetch this run gets** — see
+**`$BOARD_JSON` is the one board fetch this run gets** — see
 [`shared/board.md`](../../shared/board.md) § Board queries for it. This step and the
 theme sense below are two `jq` passes over that same file, not two `item-list` calls.
 
@@ -72,7 +72,7 @@ jq -r --arg me "$ME" '.items[]
    | "#\(.content.number)\t\(.content.repository|sub(".*/";""))\tP:\(.priority // "-")\t\(.assignees|if length==0 then "unassigned" else join(",") end)\t\(.content.title)"' "$BOARD_JSON"
 ```
 
-⚠️ Strip owners with `sub(".*/";"")` — never match a literal owner prefix. Repos on one
+Strip owners with `sub(".*/";"")` — never match a literal owner prefix. Repos on one
 board can sit under different owners.
 
 ### Sense the current theme
@@ -95,7 +95,7 @@ done
 git log --since="2 weeks ago" --oneline
 ```
 
-⚠️ **Do not reach for `git -C <repo-name>`.** That guesses that every repo is a sibling
+**Do not reach for `git -C <repo-name>`.** That guesses that every repo is a sibling
 directory named after itself, which is false in the ordinary case where you are already
 inside the only checkout — and it fails loudly there for no reason. Resolve a real path
 first, or skip the log for that repo and say so; the `gh pr list` half needs no working
@@ -131,7 +131,7 @@ invent work, and do not fall through to a Done or In Progress card.
 "blocked by" / "depends on #N", verify #N is closed/merged and note the blocker's real
 state in your summary.
 
-🚨 **Cards with Status `Hold` are never eligible.** A human parked it by choice.
+**Cards with Status `Hold` are never eligible.** A human parked it by choice.
 Un-parking is the user's call, not the picker's.
 
 ## 2. Repo + workstream
@@ -145,7 +145,7 @@ resolution block there: the branch, gate, workstreams and deploy-target docs for
 **the sibling's**, and a Mode A prompt must say "run from the <sibling> repo". No
 checkout → say so and stop; do not build a sibling's issue from this repo's config.
 
-⚠️ **Beware stale paths in issue bodies and docs.** An app that was split or renamed
+**Beware stale paths in issue bodies and docs.** An app that was split or renamed
 leaves the old path valid-looking — sometimes still on disk as an untracked leftover.
 Confirm against the current tree, not the issue text.
 
@@ -163,7 +163,7 @@ ISSUE_MD="${SCRATCH:-${TMPDIR:-/tmp}}/issue-<N>.md"
 } > "$ISSUE_MD"
 ```
 
-⚠️ **These are the REST spellings on purpose.** `gh issue view` is GraphQL; these bill
+**These are the REST spellings on purpose.** `gh issue view` is GraphQL; these bill
 against the separate core budget, which is the budget a planning run is *not* exhausting.
 For a transferred issue that returns empty, take the body from `$BOARD_JSON`
 (`.content.body`) — you already have that file, so it costs nothing.
@@ -177,8 +177,8 @@ not pass, it pays to re-fetch. It returns the decision, what exists vs. what cha
 scope, the test/validate plan, a HANDOFF block for the reviewers, and which review lenses
 this diff needs.
 
-🚨 **State the tier from the issue's effort label; name no sections.** Naming one
-re-establishes the whole vocabulary and the planner emits all of them — measured. Pass
+**State the tier from the issue's effort label; name no sections.** Naming one
+re-establishes the whole vocabulary and the planner emits all of them. Pass
 the facts (branch, gate, spec flow, worktree, and the `Plugin:` directory from
 [`shared/execution.md`](../../shared/execution.md) § 3) and let it choose the shape.
 
@@ -203,9 +203,8 @@ re-derive that. Name the specific lenses and why, and say which you skipped — 
 emit the generic full lens list.**
 
 Emit VALIDATE commands **verbatim** from the resolved config. Do not paraphrase from
-memory: the commands in the original of this skill were wrong for weeks — a prefetch
-script that had been renamed, a linter path list missing four directories — which is
-why they now resolve from one place.
+memory: a remembered command drifts — a prefetch script renamed, a linter path list
+missing directories — which is why they resolve from one place.
 
 ## 4B. Mode B — start now
 
@@ -221,14 +220,14 @@ Same research (steps 1–3), executed as actions, with a hard checkpoint:
 - [ ] 4b. *** Before writing any code: *** if the repo has a spec flow, create the
          change directory from the plan's SPEC IMPACT and get its validate to exit 0.
          Cheap to fix a requirement now, expensive once the code exists.
-         ⚠️ See reference/openspec.md for what that green does NOT assert.
+         See reference/openspec.md for what that green does NOT assert.
 - [ ] 5. Run the repo's full VALIDATE gate — shared/execution.md § 2, verbatim.
 - [ ] 6. Review: spawn `gh-issue-flow:diff-reviewer` subagents IN PARALLEL (effort:
          max, fresh context), one per lens the plan named — plus `scoping` whenever the
          diff adds a guard, and `comments` whenever it adds or changes a comment or doc
          line. Spawn the NAMESPACED name; a bare one can be shadowed silently.
          Adjudicate: fix every valid finding, explain any rejected. Commit BEFORE
-         spawning them. 💰 Handoff + model tiering: shared/execution.md § 3.1.
+         spawning them. Handoff + model tiering: shared/execution.md § 3.1.
 - [ ] 6b. If those fixes introduced NEW LOGIC — a new branch, gate, condition or code
          path — spawn ONE more `gh-issue-flow:diff-reviewer` over just that delta, as
          THE LENS THAT RAISED THE FINDING (correctness only if it was your own).
@@ -243,7 +242,7 @@ Same research (steps 1–3), executed as actions, with a hard checkpoint:
          on the run having gone well.
 ```
 
-🚨 **Read every GitHub mutation back before reporting it.** `gh` exits 0 on writes the
+**Read every GitHub mutation back before reporting it.** `gh` exits 0 on writes the
 server rejected, so "posted the scoping comment" and "set the card In Progress" are
 claims until you have re-read them. See
 [`../../reference/verification.md`](../../reference/verification.md).
@@ -269,7 +268,7 @@ cannot drift. **Read it — do not restate it from memory.**
 
 ## 6. Always end with the PR handoff summary
 
-🚨 **Once a PR exists, the run's last words are this summary — every time.** Not only
+**Once a PR exists, the run's last words are this summary — every time.** Not only
 on a clean finish: a run that ends at red CI, hands back, or is cut short still ends
 with it and says where it stopped. It is the only part of the run the reviewer is
 guaranteed to read.
@@ -297,7 +296,7 @@ One line first — the PR link and, in a sentence, what it does. Then these list
   deliberately left out of scope, an assumption you made because nobody was there to
   ask. `Nothing` is a fine value here, and much better than silence.
 - **For `repo.md`** — one proposed bullet for `.claude/workflow/repo.md`
-  § Traps when this run measured something about the platform that the doc does not
+  § Traps when this run learned something about the platform that the doc does not
   say (a command that lied, an ordering that bit). Written out, undated and in the
   present tense, ready to paste; you never edit the doc yourself. `Nothing` is the usual
   value.
