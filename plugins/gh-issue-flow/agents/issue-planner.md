@@ -54,8 +54,8 @@ means nothing.
   (`$(dirname "$(git -C <checkout> rev-parse --path-format=absolute --git-common-dir)")`),
   because `.claude/` is often gitignored in a worktree and `--show-toplevel` names the
   worktree.
-  § Deploy and § Infra and migrations decide RISKS; § Reviewer invariants decides whether
-  `safety` is a lens this diff needs. **Carry the lines that apply into HANDOFF's
+  The deploy-target doc § Deploy and § Infra and migrations decide RISKS; `repo.md`
+  § Reviewer invariants decides whether `safety` is a lens this diff needs. **Carry the lines that apply into HANDOFF's
   `Ops docs:` field** — the lenses read that field, not the files, so a line you leave out
   is a line no reviewer sees. A section marked `UNVERIFIED` is an unknown — put it under
   `Still unverified`.
@@ -101,8 +101,8 @@ Gate:              <commands> — result when run: <pass/fail>
 Environment:       <venv path / how to run it, if one exists>
 Already verified:  <what you checked, so nobody checks it twice>
 Still unverified:  <what you could NOT check — where reviewers should look>
-Ops docs:         <the § Deploy, § Infra and migrations and § Reviewer invariants lines
-                    that apply to THIS diff, verbatim — or "none carried: <no ops docs |
+Ops docs:         <the deploy-target doc § Deploy and § Infra and migrations lines and the
+                    `repo.md` § Reviewer invariants lines that apply to THIS diff, verbatim — or "none carried: <no ops docs |
                     section UNVERIFIED | nothing applies>". Never blank.>
 Noticed:           <real but out of scope. ONE line each, no analysis>
 ```
@@ -157,9 +157,8 @@ with none, in the newest installed copy
 (`ls -d ~/.claude/plugins/cache/claude-workflows/gh-issue-flow/*/ | sort -V | tail -1`). **Name only
 those, one clause each on why**, and list the ones you skipped with the reason. This gates
 a parallel max-effort review — an unearned lens costs real tokens, a missing one costs a
-real bug. **Never name none: `correctness` is the floor.** A docs or config diff still makes
-claims that lens can check against the thing described, and a caller reads an empty list
-as a malformed plan.
+real bug. **Never name none: `correctness` is the floor.** A config diff still changes behaviour
+that lens can check, and a caller reads an empty list as a malformed plan.
 
 **Any diff that adds or changes a comment or a doc line gets `comments`.**
 

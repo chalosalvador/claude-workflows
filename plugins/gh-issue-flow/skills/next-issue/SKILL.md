@@ -54,11 +54,8 @@ Otherwise pick from the **Todo column**. **Eligible = Todo AND (assigned to the
 current GitHub user OR unassigned).** Resolve the user dynamically —
 `gh api user --jq .login` — never hardcode a login.
 
-**The board is not simply your `userConfig` default — resolve it first.** This repo may
-name its own board in `workflow.json` → `board`, which **wins** over the machine default,
-and writing to the wrong board is silent. Run the two-step resolution in
-[`shared/board.md`](../../shared/board.md) § Resolution, use the numbers it yields, and
-**say which layer answered before any board write.**
+**Resolve the board before reading its Todo column**:
+[`shared/board.md`](../../shared/board.md) § Resolution, then use the numbers it yields.
 
 **`$BOARD_JSON` is the one board fetch this run gets** — see
 [`shared/board.md`](../../shared/board.md) § Board queries for it. This step and the

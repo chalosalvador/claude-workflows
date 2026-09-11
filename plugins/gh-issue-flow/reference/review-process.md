@@ -214,5 +214,5 @@ made all 13 results meaningless. See `mutation-harness.md`.
 the first caller leaves the second a no-op, and every PR it opens ships with no
 adversarial review while the file claims otherwise.
 
-**Never hardcode a test count in a skill or doc.** A growing suite moves by dozens within
-a day, and the stale number then contradicts a passing run. Green-vs-red is the gate.
+**Never hardcode a test count in a skill or doc**:
+[`../shared/execution.md`](../shared/execution.md) § 2.1 says why.

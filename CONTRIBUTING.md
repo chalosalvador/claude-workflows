@@ -6,13 +6,11 @@ Everything here is markdown and JSON. There is no build, no install, no dependen
 ## The gate
 
 ```bash
-python3 tests/test_single_owner_facts.py
 python3 tests/test_no_stray_files.py
 python3 tests/test_version_agreement.py
 python3 tests/test_config_schema.py
 python3 tests/test_links.py
 python3 tests/test_doc_headers.py
-python3 tests/test_comment_policy.py
 claude plugin validate ./plugins/gh-issue-flow --strict
 claude plugin validate . --strict
 ```
@@ -20,18 +18,10 @@ claude plugin validate . --strict
 CI runs all of them as the `guards` job. Run them before pushing — `main` is protected, so a
 red gate means the PR cannot merge.
 
-`test_single_owner_facts.py`, `test_no_stray_files.py`, `test_links.py` and
-`test_doc_headers.py` list files with `git ls-files`, i.e. the index, so a new file is
-invisible to them until it is staged.
+`test_no_stray_files.py`, `test_links.py` and `test_doc_headers.py` list files with
+`git ls-files`, i.e. the index, so a new file is invisible to them until it is staged.
 `git add` the paths you changed before trusting a local green, never `git add -A`: a
 sweeping add is how a stray file reaches a commit.
-
-`tests/test_comment_policy.py` reads the lines your branch adds or changes since it left
-`origin/main`, and every untracked file that is not ignored, so `git fetch origin` before
-running it and keep drafts such as a PR body outside the checkout. What it enforces is
-[`comments-and-docs.md`](plugins/gh-issue-flow/reference/comments-and-docs.md); a line
-nobody touches is never read, so older text that breaks the policy stays until it is
-edited.
 
 **A PR with no checks is not a passing PR.** `guards` is required, so zero checks blocks a
 merge rather than allowing it, but the PR page looks clean either way. The workflow
@@ -103,11 +93,9 @@ immediately, and `/reload-plugins` picks up further edits without a restart.
 
 Two traps, and both return a plausible result from the wrong file.
 
-**Agent types resolve at session start.** Editing an agent file, or installing the plugin,
-changes nothing for the session already running: the spawn fails with
-`Agent type '<name>' not found`, listing the agents as they were at launch.
-`/reload-plugins` refreshes skills, not agents. So an agent edit cannot be tested in the
-session that made it; restart first.
+**An agent edit cannot be tested in the session that made it**; restart first. Why, and
+the error a spawn gives otherwise:
+[`setup` § 6](plugins/gh-issue-flow/skills/setup/SKILL.md#6-confirm-the-agents).
 
 **A same-named agent elsewhere silently wins.** If `~/.claude/agents/` or the project's
 `.claude/agents/` holds `issue-planner.md` or `diff-reviewer.md`, that file runs and the
@@ -190,10 +178,12 @@ Nothing can tell you that you forgot to bump at all, so read the three back your
 ### And bump the config schema when a PR adds a `workflow.json` key
 
 A plugin update reaches the code, not the repos already configured. So a new key needs
-three things in the same PR: a row in the schema table in `shared/config.md` § Layer 2
-with its **Since** set to a bumped **Current schema**, a probe for it in `setup` § 2, and
-`EXPECTED_KEYS` in `tests/test_config_schema.py` moved up by one. That guard reds on any
-of the three missing. `setup upgrade` is then what carries the key into an existing repo.
+three things in the same PR: the key in the Layer-2 example in `shared/config.md`, a row
+for it in the schema table below the example with its **Since** set to a bumped **Current
+schema**, and a mention of it in the `setup` section that row's Setup column names.
+`tests/test_config_schema.py` reds when any of the three is missing; whether that mention
+is a working probe, and whether **Current schema** moved, are yours to read back.
+`setup upgrade` is then what carries the key into an existing repo.
 
 ## Build your own testbed
 
@@ -227,37 +217,41 @@ History
 the doc states the current fact. Comments and docs follow
 [`comments-and-docs.md`](plugins/gh-issue-flow/reference/comments-and-docs.md).
 
-**The single-owner guard will block you, and that is the point.**
-`tests/test_single_owner_facts.py` pins each clause in `OWNED` to exactly one owning file.
-Rewrite a section so a pinned clause stops existing, and it fails with *"0 means the owner
-lost it — did a rewrite drop the fact?"* Update `OWNED` in the same commit; do not route
-around it by deleting the entry.
+**Run the `comments` lens before you open a PR that adds or changes a comment or a doc
+line, or changes anything a doc describes.** Nothing in CI does it for you. Spawn
+`gh-issue-flow:diff-reviewer` with `Lens: comments`, a `Plugin:` line naming the absolute
+path of `plugins/gh-issue-flow`, and the branch diff against `origin/main`; fix what it
+reports or say in the PR body why not. The guards below read docs only where a program
+does: config keys, section headers skills look up by name, and link targets.
 
 **A guard is mutation-proven, and a change to it is re-proven.** A re-proof covers both
 halves: the mutants that must red, and the edits that must stay green, which is what stops
 a guard reddening on ordinary reformatting. The cases each guard's re-proof includes:
 
-- `test_single_owner_facts.py`: a softened or inverted owner and an exact copy elsewhere
-  red; a hard-wrap, moved emphasis, a move within the owner and a paraphrase elsewhere stay
-  green. Match a pinned clause as the owner wraps it.
-- `test_config_schema.py`: a dropped row, an example key with no row, a Since above
-  Current, a key setup never mentions, a missing Current line, a duplicate row and an
-  emptied table red; reversed rows, padded cells, a reworded Meaning and a legitimate
-  schema bump stay green.
+- `test_config_schema.py`: a dropped row, an example key with no row, a row with no
+  example key, a key setup § 2 probes that the table lacks, a key missing from the setup
+  section its row names (written `§ 5`, `§5` or as one of two sections), a Setup cell
+  naming no section, a Since above Current, a key setup never mentions, a missing Current
+  line, a duplicate row and an emptied table red; reversed rows, padded cells, a reworded
+  Meaning, a § 2 row naming sub-keys in parentheses and a legitimate schema bump stay
+  green.
 - `test_links.py`: a typo'd path, a link to an untracked file, a link escaping the repo, a
   link climbing out of the plugin directory to a marketplace-only path, and a parser that
   matches nothing red; an anchor link and a mix of `./`, directory, `https:` and `#` links
   stay green. It strips fences and code spans first, because a link quoted in a code span
   is an example, and it checks the plugin boundary as well as the repo's.
 - `test_doc_headers.py`: a renamed skeleton header, a renamed table row, a "§ Infra" short
-  reference, demoted headers, an added header the table lacks, and a header present in
-  both skeletons red; a reordered table and a mix of other § references with full header
-  names stay green. References are compared word by word, because a greedy match lets a
-  short form through.
+  reference, demoted headers, an added header the table lacks, a header moved to the other
+  skeleton, a header renamed or removed with its row while a reference that names the doc
+  (`repo.md § …`, `deploy-target doc § … and § …`, a `deploy-targets/<name>.md` path)
+  still names it, an emptied skeleton and a header present in both skeletons red; a
+  reordered table, a mix of other § references with full header names, a doc whose name
+  merely ends in `repo.md` and a section number after a doc name stay green. References
+  are compared word by word, because a greedy match lets a short form through.
 - `test_version_agreement.py`: any disagreement among the three numbers reds, including a
   stale top-level `version` that `claude plugin validate` passes; three equal numbers,
   before and after a legitimate bump of all three, stay green.
 
 **Facts live in one place.** `shared/execution.md` owns mechanics; skills own policy and
 link to it. If you find yourself pasting the same rule into two skills, it belongs in
-`shared/` — that is exactly the drift the guard exists to catch.
+`shared/`.

@@ -398,5 +398,6 @@ dupes`, plus any load warnings and anything you deliberately left alone.
 receipt is the integrity line, the out-of-sweep line and one sentence, nothing else. A
 clean board should read clean.
 
-**Report, don't accuse.** A low or zero lane in any per-person view is usually
-**allocation**, not underperformance. Ask the lead before inferring.
+Before a per-person view goes in the receipt, read
+[`../../reference/review-process.md`](../../reference/review-process.md) § Reporting
+findings and decisions.

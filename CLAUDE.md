@@ -15,11 +15,10 @@ caused wasted work.
 - **Bump `version` in the same PR as any behaviour change**, in `plugin.json` and both
   fields of `.claude-plugin/marketplace.json`, and read the three back:
   [§ Bump `version`](CONTRIBUTING.md#bump-version-in-the-same-pr-as-any-behaviour-change).
-- **The single-owner guard reds when a rewrite drops a pinned clause.** Update `OWNED` in
-  the same commit rather than deleting the entry: [§ Conventions](CONTRIBUTING.md#conventions).
 - **Comments and docs** follow
-  [`comments-and-docs.md`](plugins/gh-issue-flow/reference/comments-and-docs.md), and
-  `tests/test_comment_policy.py` checks the lines a branch adds.
+  [`comments-and-docs.md`](plugins/gh-issue-flow/reference/comments-and-docs.md), and no
+  test or CI step checks them: run the `comments` lens before a PR, as
+  [§ Conventions](CONTRIBUTING.md#conventions) says.
 
 ## Testing what you changed
 

@@ -2,8 +2,7 @@
 
 A **guard test** asserts an invariant about the repo itself rather than about a
 unit of behaviour: "no workflow hardcodes an identity provider", "no module constructs
-this type with a caller-supplied `env`", "this runbook still says the dangerous
-thing is dangerous".
+this type with a caller-supplied `env`", "every relative link in the docs resolves".
 
 Guards are unusually easy to write and unusually easy to write *wrong*, because a
 broken guard and a satisfied guard look identical: both are green. Each item below
@@ -13,10 +12,10 @@ is a guard shape that passes its whole suite and still loses to a reviewer or a 
 
 ## 1. Pin the inventory; don't check a property
 
-When a guard must guarantee "nothing unsafe was added", **pin the complete
-reviewed set** (address → exact normalized expression) rather than asserting a
+When a guard over code or config must guarantee "nothing unsafe was added", **pin the
+complete reviewed set** (address → exact normalized expression) rather than asserting a
 property of each item. Property checks lose to adversarial review reliably, and in
-sequence.
+sequence. A guard over a doc reads less than one over code: § 4 says what.
 
 One real case defeated **three successive** property guards on the same code, each
 verified green:
@@ -38,7 +37,7 @@ once, including mutations nobody has imagined yet.
 forces the review step every property check skips.
 
 **How to apply:** enumerate, normalize (collapse whitespace), pin as a dict, and
-add a comment recording *which* bypasses forced the pin. Keep cheap property
+add a comment naming the bypasses a property check here would miss. Keep cheap property
 assertions alongside for readable failure messages, but never let them be the
 guarantee.
 
@@ -95,9 +94,9 @@ one place, and a second path to the same place goes unexamined.
    column reintroduced the exact bug. Fixed by pinning an ALLOWLIST of the
    identifiers a `WHERE` clause may mention, so an unreviewed column fails by
    being *absent* rather than by being enumerated.
-2. **Section-wide check satisfied by a sibling's copy.** A pin anchored on a whole
+2. **Section-wide check satisfied by a sibling's copy.** A check anchored on a whole
    section passed when an entire step was deleted, because a neighbouring step
-   carried the same string. Fix: pin per step.
+   carried the same string. Fix: check per step.
 3. **Fence-style blindness.** A ``^``` `` anchor missed indented, blockquoted and
    `~~~` fences, and inline code spans. The document's dominant idiom was
    blockquote callouts, so the blind spot was one edit wide.
@@ -191,24 +190,24 @@ own negation.
 
 ---
 
-## 4. Region, not line — and for a claim, not even region
+## 4. Region, not line
 
-**Scope a prose match to the REGION, never to the line.** Shell summaries are built
-from many `echo` calls hard-wrapped at ~80 columns, so one sentence routinely spans
-two or three lines. A matcher requiring two tokens on the *same* line silently
-misses the wrapped form:
+**Scope a text match to the region, never to the line.** Shell is hard-wrapped with
+`\` continuations, so one command routinely spans two or three lines. A matcher
+requiring two tokens on the *same* line silently misses the wrapped form:
 
 ```
-echo "# merging a change here triggers the gated"
-echo "# deploy job, which rolls the corresponding service."
+gcloud run deploy "$SERVICE" \
+  --allow-unauthenticated
 ```
 
-First line has one token, second has the other, neither has both → **the guard
-could not detect its own revert.** It also failed the opposite way: re-wrapping a
-*correct* claim across two echoes made it red.
+A guard forbidding `deploy` and `--allow-unauthenticated` on one line passes this: the
+first line has one token, the second has the other → **the guard cannot detect its own
+revert.** It fails the opposite way too: a guard requiring `--region` on the `deploy`
+line reds when a correct command is re-wrapped.
 
-Pick one token that carries the meaning and assert its presence/absence over a
-whole region. Region-scoped on one token is robust to wrapping in both directions;
+Join continuation lines, pick one token that carries the meaning, and assert its
+presence or absence over the whole command. Region-scoped on one token is robust to wrapping in both directions;
 line-scoped on two is robust to neither.
 
 ### The opposite error: whole-file scope fails in both directions
@@ -225,52 +224,29 @@ Anchor the region to the thing that gives the tokens their meaning — the lines
 mentioning the cited path — then take a window of ±N *lines* around it. Assert
 loudly when the region comes back empty.
 
-### For a CLAIM, drop the window entirely — pin whole clauses by COUNT
+### A doc is reviewed, not tested
 
-**The "±N lines around the citation" recipe is right for a CITATION and wrong
-for a CLAIM.** A citation is a token whose neighbourhood gives it meaning. A claim
-*is* the sentence — so the sentence is what to pin, and a window around it only
-adds ways to be satisfied by something else.
+A window is right for a citation, a token whose neighbourhood gives it meaning. A claim
+in a doc is different: the claim *is* the sentence, and a test that holds the sentence, by
+clause, count or hash, freezes its wording and nothing else. The doc can be wrong and stay
+green, and a correct rewording goes red, so the fix for every red is to paste the new
+wording into the test, and the review the pin was meant to force never happens.
 
-An anchor+window+keywords design guarding three prose claims lost **five** ways:
-
-1. **Keywords float free of the claim.** The guarded string was one ~1,300-char
-   source line, so ±2 lines *was* the whole string: a trim deleting the substantive
-   branch but keeping the lead sentence stayed green.
-2. **Capitalisation is not a boundary.** A `THIS MODULE CREATES` needle was
-   disarmable by SHOUTING an unrelated nearby sentence.
-3. **Windows red on reformatting.** Rewriting as a heredoc moved the text out of
-   the window with the prose byte-identical.
-4. **Bounds were unpinned.** Setting a clause list to `()` leaves the inventory the
-   same length and checks nothing — `len(_SITES) == 3` cannot see it.
-5. **Pinning the correction is not pinning the claim.** With only a correction
-   paragraph pinned, reinstating the bad claim eight lines above stayed green — the
-   file then asserted and disowned the same thing.
-
-**How to apply:** `(file, whole_clause, min_count)` tuples, matched
-case-insensitively over the file normalized to one line (strip leading `#`/`//`
-per line, collapse whitespace, drop `*` and backticks). No anchor, no window.
-**Counts, not presence** — a clause appearing twice in one file means deleting it
-from one site must red, which presence alone cannot see. Pin the total AND a
-`min_count >= 1` floor.
-
-> **A text pin freezes WORDING, not CORRECTNESS — say so in the file.** One
-> guarded runbook was wrong twice, in *opposite* directions, and both drafts would
-> have passed a green pin. The pin's job is to force the re-check into the same
-> commit, not to tell you the answer.
+So a test reads a doc only where a program reads it — a config key setup writes, a header
+a skill looks up by name, a link target — and checks it against that program's source.
+Everything else a doc says is checked in review, by the `comments` lens in
+[`../agents/diff-reviewer.md`](../agents/diff-reviewer.md), which also reads the lines a
+change leaves stale. A live fact comes out of the doc altogether: give the command that
+reads it, as [`comments-and-docs.md`](comments-and-docs.md) asks.
 
 ---
 
 ## 5. Hash the exemption, not its current vocabulary
 
-When carving a file out of a lint or scan test, **pin the exemption to a content
+When carving a code file out of a lint or scan test, **pin the exemption to a content
 hash**, never to the set of bad strings it currently contains. A pinned set of bad
 strings permits every rewording; a hash forces the carve-out back through review
 the moment the file changes at all.
-
-Same for prose: when the guarded thing is a document, a vocabulary check loses to
-rewording. Pin the content hash and let derived token-exact tests carry only what
-is mechanisable.
 
 ---
 
@@ -378,7 +354,9 @@ Assert the no-false-fire direction explicitly: reformat, de-shout, re-wrap.
 
 Before trusting a new guard:
 
-- [ ] Is the guarantee an **inventory pin**, not a property check?
+- [ ] Over code or config: is the guarantee an **inventory pin**, not a property check?
+- [ ] Over a doc: does it read only what a program reads there, checked against that
+      program's source, and leave the prose to review?
 - [ ] Mutated along **what**, **where**, and **spelling**?
 - [ ] Is every mutation **a spelling a real author would write**?
 - [ ] Does the guard catch **its own revert**?

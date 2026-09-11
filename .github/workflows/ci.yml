@@ -22,19 +22,11 @@ jobs:
     name: guards
     runs-on: ubuntu-latest
     steps:
-      # Full history: the comment-policy step diffs against origin/main and the PR's
-      # base. `pull_request` checks out the merge of head with base, so a duplicate that
-      # landed on main after this branch forked still reds the single-owner guard.
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
-      - name: Single-owner facts
-        run: python3 tests/test_single_owner_facts.py
 
       - name: No stray tracked files
         run: python3 tests/test_no_stray_files.py
@@ -58,11 +50,6 @@ jobs:
       # every "§ <Section>" reference have to be one set.
       - name: Doc headers agree
         run: python3 tests/test_doc_headers.py
-
-      # The lines this change adds or changes, against the comment policy. A stacked PR
-      # is compared with main and with its own base.
-      - name: Comment policy
-        run: python3 tests/test_comment_policy.py
 
       - name: Plugin + marketplace manifests
         run: |

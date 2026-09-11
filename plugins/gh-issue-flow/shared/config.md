@@ -221,7 +221,7 @@ example above and `setup`'s probe list to the same key set.
 | `workstreams` | 0 | § 2 | repo | Monorepo path → human name |
 | `areaLabels` | 0 | § 4 | repo | **This repo's** `area:*` labels → one-line meaning; a sibling's live in its own file |
 | `dri` | 0 | § 4 | repo | **This repo's** `area:*` labels → GitHub login that owns each here |
-| `trackForArea` | 0 | § 5 | repo | **This repo's** `area:*` labels → board Track option |
+| `trackForArea` | 0 | § 2 | repo | **This repo's** `area:*` labels → board Track option |
 | `agentReadyForbiddenPaths` | 0 | § 2 | repo | Paths an unattended run must never touch |
 | `$comment*` | 0 | § 3 | file | Provenance for the human reader; never read by a skill |
 | `deployTargets` | 4 | § 5b | repo | The deploy-target doc names this repo carries, one per file in `.claude/workflow/deploy-targets/`; `[]` when the evidence names none. Schema 3 called this `stacks`; `upgrade` renames the key and the directory |
@@ -449,6 +449,6 @@ single constant.
 ## Things to resolve, never assume
 
 - **The current user**: `gh api user --jq .login`. Never hardcode a login.
-- **A test count**: never gate on one. It grows most weeks. Green-vs-red is the gate.
+- **A test count**: never gate on one ([`execution.md`](execution.md) § 2.1).
 - **A field option id**: read it from `field-list` in the same run.
 - **Whether a merge deploys**: read the workflow.
