@@ -233,6 +233,11 @@ Rewrite a section so a pinned clause stops existing, and it fails with *"0 means
 lost it — did a rewrite drop the fact?"* Update `OWNED` in the same commit; do not route
 around it by deleting the entry.
 
+It is this repo's one exception to "don't write a test that pins prose" in
+[`comments-and-docs.md`](plugins/gh-issue-flow/reference/comments-and-docs.md): a pinned
+clause is how a rule keeps one home here, and no structural check can see a copied
+sentence without comparing text.
+
 **A guard is mutation-proven, and a change to it is re-proven.** A re-proof covers both
 halves: the mutants that must red, and the edits that must stay green, which is what stops
 a guard reddening on ordinary reformatting. The cases each guard's re-proof includes:
