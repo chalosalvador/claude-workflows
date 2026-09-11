@@ -3,7 +3,8 @@ name: triage
 description: >-
   Daily triage of GitHub issues across one or more repos. An UNCAPPED integrity pass
   guarantees a clean board — every open issue on the project board, area-labeled,
-  assigned to its DRI, with a Track and Status (0 off-project, 0 unassigned). Then a
+  assigned to its DRI, with a Status and, where its area maps to one, a Track (0
+  off-project, 0 unassigned). Then a
   capped deep pass categorizes (Bug/Feature/Improvement/Question), sizes effort, sets
   priority, flags duplicates, and marks safe-and-easy ones agent-ready for the
   autopilot skill. Writes verdicts to GitHub, then prints a receipt. Use for "triage
@@ -22,7 +23,7 @@ configured, run the label half and skip every Project step.
 
 **The clean-board guarantee (§ 2):** after any run, **no open issue is off the board
 and none is unassigned** — every one is area-labeled, routed to its DRI, and has a
-Track and Status. This pass is *uncapped*, so the guarantee holds even on a day the
+Status and, where its area maps to one, a Track. This pass is *uncapped*, so the guarantee holds even on a day the
 deep pass hits its cap.
 
 **The rule that makes this useful:** every verdict is written to GitHub — labels and
@@ -42,8 +43,8 @@ both start with zero memory of it.
 ```
 - [ ] 1. Pull the working set (open issues, every repo, + the board)
 - [ ] 2. INTEGRITY PASS — uncapped, ALL open issues. Guarantee every one is:
-         on the board · has an area label · assigned to its DRI · has a Track ·
-         has a Status. This is the clean-board guarantee. (§ 2)
+         on the board · has an area label · assigned to its DRI · has a Track where
+         its area maps to one · has a Status. This is the clean-board guarantee. (§ 2)
 - [ ] 3. DEEP PASS — capped at 25 untriaged issues: category → effort → priority
          → duplicates → agent-ready gate. (§ 3–4)
 - [ ] 4. Write it: labels, board fields, assignee, dup comments, `triaged` LAST
@@ -148,16 +149,16 @@ Per issue, ensure each — **fill blanks only; never overwrite a human's choice*
 |---|---|
 | **On the board** | `gh project item-add <board_number> --owner <board_owner> --url <url>` |
 | **Has an area label** | If missing, **determine and apply it** (§ 2a) from the `areaLabels` of **the repo the issue is in**. This is the root-cause fix — don't route around a missing label, add it. |
-| **Assigned to a DRI** | From the area label via **that repo's** `workflow.json` → `dri`. Never leave an open issue unassigned. |
-| **Has a Track** | Mirror the area label to the Track field, through that repo's `trackForArea`. |
+| **Assigned to a DRI** | From **that repo's** `workflow.json`: a label listed in `driOverrides` names the owner whatever the area; otherwise `dri` maps the area label. Override labels naming different logins fall back to `dri`, and the receipt names the issue: a formatter that sorts keys leaves no order to choose by. Below schema 5 a file may state an override as prose in `$comment_dri`: apply it for that file only and say so in the receipt. An issue already assigned to its area's `dri` login is § 5's case. Never leave an open issue unassigned. |
+| **Has a Track** | Mirror the area label to the Track field, through that repo's `trackForArea`. An area with no entry there gets no Track from this pass: leave the field as it is and name the issue on the board-health line. |
+| **Has a Status** | If none, set **Todo**. Never move an existing Status. |
 
-**The map is per repo.** For a sibling in `repos` the three maps come from the
+**The map is per repo.** For a sibling in `repos` the maps come from the
 sibling's own `workflow.json` — its checkout, else the GitHub read in
 [`shared/config.md`](../../shared/config.md) § Repo scope — and never from this file. A
 sibling whose file cannot be read gets the board add and the Status only; report its
 unlabeled and unassigned issues in the receipt instead of routing them off this repo's
 map.
-| **Has a Status** | If none, set **Todo**. Never move an existing Status. |
 
 **Especially never move `Hold`** — it means a human parked the card by choice, and
 flipping it to Todo un-decides that. Hold is orthogonal to a `blocked` label: Hold =
@@ -182,14 +183,16 @@ files. Apply exactly one, from the repo's own label set (`gh label list`).
 
 If the title genuinely isn't enough, read the body — still bounded, only the few
 unlabeled issues reach here. Only if it is *still* unclassifiable does it fall to the
-lead as holding owner, flagged in the receipt as "needs area". **That last resort
+lead as holding owner — unless a `driOverrides` label already names one — flagged in
+the receipt as "needs area". **That last resort
 should be near-empty; the goal is a real label, not a default dumping ground.**
 
 **The area label drives the assignee, so get boundaries between repos right.** A
 subject-matter word in a title does not override the repo: e.g. AI/classification work
 inside a backend service is a *backend* issue, not an *agents* one, however it reads.
-Each repo's own `workflow.json` carries its boundary rules beside `dri` (a
-`$comment_dri`); read them from the file of the repo the issue is in and follow them.
+Each repo's `areaLabels` meanings say where its areas meet (below schema 5, its
+`$comment_dri` may too); read them from the file of the repo the issue is in and follow
+them.
 The candidates for an issue are the `areaLabels` of **its** repo, never a sibling's.
 
 ## 3. Deep pass — categorize, size, prioritize (CAPPED at 25)
@@ -198,8 +201,9 @@ Runs only on **untriaged** issues, newest 25 first. Read the issue **and its
 comments** before judging, and open the files it names. If `gh issue view` returns
 empty (a transferred issue), read `.content.body` out of the board JSON instead.
 
-By the time an issue reaches here it already has area, assignee, Track, Status and a
-board slot from § 2 — so this pass adds only the judgment-heavy attributes.
+By the time an issue reaches here it already has area, assignee, Status, a board slot
+and, where its area maps to one, a Track from § 2 — so this pass adds only the
+judgment-heavy attributes.
 
 **Optional — fan this pass out.** The judgments below are independent per issue, so on a
 large untriaged set they can run as parallel batched subagents instead of serially.
@@ -303,6 +307,11 @@ Integrity writes first, for every issue: add-to-board → area label if missing 
 assignee if unassigned → Track if blank → Status Todo if none. Then per deep-pass
 issue: category → effort → Priority if blank → `agent-ready` if gated → duplicate
 comment if any → **`triaged` last**.
+
+**An issue the deep pass triages that carries a `driOverrides` label, and is still
+assigned to the login `dri` maps for its area, moves to the override's login** once its
+labels are written — whether this run or an earlier one added the label. Any other
+assignee is a human's choice and stays.
 
 **`triaged` goes on last, always.** If the run dies halfway, an issue without it gets
 picked up cleanly next time; an issue marked `triaged` before its labels landed is

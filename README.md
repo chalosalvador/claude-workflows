@@ -210,7 +210,8 @@ varies per repo belongs in Layer 2. That is why the board here is only a default
   "validate": ["uv run ruff check .", "uv run pytest tests"],
   "deployOnMerge": "merging this branch deploys staging and runs migrations",
   "areaLabels": { "area:backend": "what belongs here" },
-  "dri": { "area:backend": "octocat" }
+  "dri": { "area:backend": "octocat" },
+  "driOverrides": { "security": "octocat" }
 }
 ```
 
@@ -218,7 +219,8 @@ varies per repo belongs in Layer 2. That is why the board here is only a default
 overrides the Layer-1 default, so different workspaces can target different boards on one
 machine. `dri` maps each of this repo's areas to its owner, and is what lets triage
 guarantee **0 unassigned**; a sibling repo on the same board keeps its own map in its
-own file.
+own file. `driOverrides` sends an issue carrying a label such as `security` to one person,
+whatever its area.
 
 **Layer 3 — probe.** With no config at all the skills still work, deriving the branch
 from `gh repo view` and the gate from your CI workflow or toolchain. **The config file is

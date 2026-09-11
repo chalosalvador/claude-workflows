@@ -29,7 +29,8 @@ Two modes, chosen from the user's wording:
   lists this repo's `area:*` labels (`gh label list --limit 200 --json name --jq
   '.[].name'`) and reports every label with no `dri` entry in **this** file as a
   Missing row, and every `dri` entry with no such label here as cleanup — that second
-  list is what a file carrying a sibling's areas shows, and it is not a failure.
+  list is what a file carrying a sibling's areas shows, and it is not a failure. A
+  `driOverrides` key with no label of that name here is a Missing row: it can never fire.
 - **Upgrade** ("upgrade", "migrate the config", "bring workflow.json up to date", or the
   drift line any skill prints) — an existing file, a newer plugin: add only the keys the
   schema gained since the file was written. § 3 Upgrade mode.
@@ -118,6 +119,7 @@ directory first, or use `find`:
 | `trackForArea` | Each `area:*` label → the board's Track option of the same name, from `field-list` (§ 5). Only when the board has a Track field. |
 | `agentReadyForbiddenPaths` | The infra, migration and workflow directories the deploy and protection probes found — the paths an unattended run must never touch. Record the migration directory and its apply command from the same read; § 5b writes those under the deploy-target doc § Infra and migrations. |
 | `priorityCaps` | Never probed. Written as the default `{"legal": "P1"}` with a `$comment_priorityCaps` saying what it does and that `{}` turns it off — so the rule triage applies is visible in the file rather than implied by its absence. |
+| `driOverrides` | Ask, as § 4 describes under Owner overrides. In upgrade, step 3 asks it, starting from any such rule the file's `$comment_dri` states. |
 | `schemaVersion` | Always the **Current schema** from [`shared/config.md`](../../shared/config.md) § Layer 2 → Schema. Never probed, never omitted. |
 
 **Verify each probed command actually runs before writing it into the config.** A gate
@@ -153,9 +155,12 @@ you here.
          version — PLUS any other key the file lacks that § 2 knows how to probe.
 - [ ] 3. Probe each exactly as § 2 does. Show the proposed keys with their sources and
          ASK. A probe is a proposal, not a decision. `deployTargets` is the exception: § 5b
-         both probes it and writes its files, so hand that key to § 5b.
-- [ ] 4. Write ONLY the missing keys, each with a `$comment_<key>` as § 3 describes.
-         Set `schemaVersion` to the current schema.
+         both probes it and writes its files, so hand that key to § 5b. For
+         `driOverrides`, run § 4's Owner overrides here, before step 4: it reads
+         `$comment_dri`, and its proposal is shown with the others.
+- [ ] 4. Once every proposal is accepted or declined, write only the missing keys, each
+         with a `$comment_<key>` as § 3 describes, and set `schemaVersion` to the current
+         schema.
 - [ ] 5. Re-run any formatter the repo applies to the file — a `$comment` usually says
          which — then show the diff. In `workflow.json` it must touch nothing but the
          added keys; the deploy-target docs § 5b writes are separate files.
@@ -163,7 +168,8 @@ you here.
          names the plugin version), open a PR. Never merge it.
 - [ ] 7. Read it back: `jq .schemaVersion` equals the current schema and every proposed
          key is present.
-- [ ] 8. Run § 4 and § 5b — always, even when step 1 found the keys current. § 4 creates
+- [ ] 8. Run § 4, apart from its Owner overrides, and § 5b — always, even when step 1
+         found the keys current. § 4 creates
          any label the skills read that the repo lacks (idempotent: `gh label create`
          exits 1 on an existing name, tolerate it). A repo whose keys are current can
          still lack `legal`, `compliance` or `security`, which triage applies and
@@ -256,8 +262,18 @@ only" to fence off a sibling — the file's location already does that.
 
 **On a solo repo, `dri` is every area mapped to the one person** — write it out rather
 than leaving the key off. "There is only me" is a fact worth recording; an absent key
-reads as "not configured yet" to every later run. Both keys are in
+reads as "not configured yet" to every later run. The keys are in
 [`shared/config.md`](../../shared/config.md).
+
+**Owner overrides.** Ask whether any label sends an issue to one person whatever its
+area — commonly `security`, `compliance` or `legal` — and record each in `driOverrides`,
+label → login. In upgrade, this runs at step 3 and only when the file lacks the key:
+read its `$comment_dri` for such a rule and propose it, list any area boundary stated
+there that the `areaLabels` meanings lack, and say with the proposal that schema 5 ends
+triage's reading of `$comment_dri`, so a declined rule, or an unmoved boundary, stops
+applying. `$comment_dri` itself stays untouched, like every existing key; the report
+names each sentence the new key now holds, or that belongs in `areaLabels`, for a human
+to move or trim.
 
 ## 5. Board
 
@@ -469,7 +485,7 @@ Print three blocks, in this order:
 |---|---|---|
 | integrationBranch | `origin/dev` | `gh repo view` default branch |
 | validate | 3 commands | `.github/workflows/ci.yml` job `test` |
-| schemaVersion | 2 | current schema, `shared/config.md` § Layer 2 |
+| schemaVersion | `<current>` | current schema, `shared/config.md` § Layer 2 |
 | deployTargets | `gcp-cloud-run`, `gcp-terraform` | `.github/workflows/deploy.yml`, `terraform/` (provider `google`) |
 | repo.md | written | review bot from the scan; invariants and traps UNVERIFIED |
 
