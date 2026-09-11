@@ -5,13 +5,11 @@ WHY THIS EXISTS
 ---------------
 A behaviour change that does not bump `version` reaches no running session: the
 installed plugin is served from a version-keyed cache that nothing invalidates
-while that string is unchanged. This repo has a measured incident — eight
-consecutive PRs shipped to `main` and none of them reached a session.
+while that string is unchanged.
 
-So CLAUDE.md and CONTRIBUTING.md both tell you to bump THREE numbers. The
-existing gate only enforces two of them:
+So CONTRIBUTING.md tells you to bump THREE numbers, and
+`claude plugin validate . --strict` enforces only two of them:
 
-  MEASURED, `claude plugin validate . --strict`:
     plugin.json disagrees with marketplace plugins[0].version -> exit 1
     marketplace TOP-LEVEL version stale, garbage, or DELETED  -> exit 0
 
@@ -19,9 +17,9 @@ That third field is what a marketplace listing advertises. A PR that bumps
 plugin.json and plugins[0].version and forgets the top level is green on every
 check in CI while the manifest names a version that does not exist.
 
-Both docs answer this with "read all three back yourself". That is a human
-promise where a four-line assertion will do — which is the whole argument of
-`reference/verification.md`: prove it, do not intend to.
+Reading the three back by hand is a human promise where a four-line assertion will
+do — which is the whole argument of `reference/verification.md`: prove it, do not
+intend to.
 
 WHAT THIS DOES **NOT** DO
 -------------------------

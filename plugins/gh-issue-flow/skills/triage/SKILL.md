@@ -63,7 +63,7 @@ collide across them** — always carry the repo alongside the number, and write
 cross-repo refs as `owner/repo#N`.
 
 **Nothing below is ambient — resolve each of these first.** The repo list comes from
-`workflow.json` → `repos` (absent → the repo you are in). 🚨 **The board comes from
+`workflow.json` → `repos` (absent → the repo you are in). **The board comes from
 `workflow.json` → `board` FIRST, and only then from `userConfig`** — this repo may not
 feed the board your machine defaults to, and writing to the wrong one is silent. Run the
 two-step resolution and report which layer answered:
@@ -71,10 +71,10 @@ two-step resolution and report which layer answered:
 function**, not a binary — § Board queries in the same file. Repo list:
 [`shared/config.md`](../../shared/config.md) § Repo scope.
 
-⚠️ **Each command runs in a FRESH shell — nothing you set survives to the next block.**
+**Each command runs in a FRESH shell — nothing you set survives to the next block.**
 So every block below re-establishes `SCRATCH` and re-sources `board_fetch` rather than
 trusting an earlier one. A bare `$SCRATCH` expands to empty and writes to `/open.json`,
-which fails with `read-only file system` — measured.
+which fails with `read-only file system`.
 
 ```sh
 SCRATCH="${SCRATCH:-${TMPDIR:-/tmp}}"
@@ -88,7 +88,7 @@ done > "$SCRATCH/open.json"
 wc -l < "$SCRATCH/open.json"               # prove the pull is non-empty before trusting it
 ```
 
-🚨 **`--limit 1000` is mandatory, and the count above is not decoration.** `gh issue
+**`--limit 1000` is mandatory, and the count above is not decoration.** `gh issue
 list` defaults to **30** and truncates silently — and § 2's guarantee is *uncapped*, so a
 truncated pull turns "0 off-board, 0 unassigned" into a false claim about the issues it
 never saw. `wc -l` is the whole pull, so check it **per repo** when you sweep several —
@@ -104,10 +104,10 @@ empty board as a clean one; there is nothing to have cleaned.
 # the call, or you get `command not found`.
 SCRATCH="${SCRATCH:-${TMPDIR:-/tmp}}"
 BOARD_JSON="$SCRATCH/board.json"
-board_fetch "<board_owner>" "<board_number>" "$BOARD_JSON"   # 3 points, not 102 — see config.md
+board_fetch "<board_owner>" "<board_number>" "$BOARD_JSON"   # 3 points, not 102 — see reference/board-query.md
 ```
 
-⚠️ That is this run's **only** board fetch — see [`shared/board.md`](../../shared/board.md)
+That is this run's **only** board fetch — see [`shared/board.md`](../../shared/board.md)
 § Board queries. Every pass below is `jq` over `$BOARD_JSON`; the § 5 read-back is the one
 deliberate exception, because it has to see state written after this pull.
 
@@ -151,7 +151,7 @@ Per issue, ensure each — **fill blanks only; never overwrite a human's choice*
 | **Assigned to a DRI** | From the area label via **that repo's** `workflow.json` → `dri`. Never leave an open issue unassigned. |
 | **Has a Track** | Mirror the area label to the Track field, through that repo's `trackForArea`. |
 
-🚨 **The map is per repo.** For a sibling in `repos` the three maps come from the
+**The map is per repo.** For a sibling in `repos` the three maps come from the
 sibling's own `workflow.json` — its checkout, else the GitHub read in
 [`shared/config.md`](../../shared/config.md) § Repo scope — and never from this file. A
 sibling whose file cannot be read gets the board add and the Status only; report its
@@ -159,7 +159,7 @@ unlabeled and unassigned issues in the receipt instead of routing them off this 
 map.
 | **Has a Status** | If none, set **Todo**. Never move an existing Status. |
 
-🚨 **Especially never move `Hold`** — it means a human parked the card by choice, and
+**Especially never move `Hold`** — it means a human parked the card by choice, and
 flipping it to Todo un-decides that. Hold is orthogonal to a `blocked` label: Hold =
 *won't* do now; `blocked` = *can't*, with a "Blocked by: #n" pointer.
 
@@ -185,7 +185,7 @@ unlabeled issues reach here. Only if it is *still* unclassifiable does it fall t
 lead as holding owner, flagged in the receipt as "needs area". **That last resort
 should be near-empty; the goal is a real label, not a default dumping ground.**
 
-⚠️ **The area label drives the assignee, so get boundaries between repos right.** A
+**The area label drives the assignee, so get boundaries between repos right.** A
 subject-matter word in a title does not override the repo: e.g. AI/classification work
 inside a backend service is a *backend* issue, not an *agents* one, however it reads.
 Each repo's own `workflow.json` carries its boundary rules beside `dri` (a
@@ -241,7 +241,7 @@ before deciding; **an effort label you guessed is worse than none.**
 
 `Critical→P0` · `High→P1` · `Medium→P2` · `Low→P3`.
 
-- 🚨 **P0 is code/technical-critical ONLY** — prod broken, data loss, active security
+- **P0 is code/technical-critical ONLY** — prod broken, data loss, active security
   exposure, a customer blocked.
 - **Label caps come from `workflow.json` → `priorityCaps`**, a map of label → highest
   priority that label may carry. **Absent, it means `{"legal": "P1"}`**: legal, policy
@@ -288,7 +288,7 @@ Apply it only when **every** positive condition holds:
 | Body says "Blocked by: #n" / "depends on" / "sequenced after" (unresolved) | Ordering constraint an agent will miss |
 | Priority P0 | A P0 deserves a person right now, not a queue |
 | Touches infrastructure, migrations, or CI workflow files | Human-gated, by kind. Concrete paths for this repo: `workflow.json` → `agentReadyForbiddenPaths`; the deploy-target doc § Infra and migrations names the apply commands and ordering |
-| Involves secrets, env vars, runtime config, or a credential swap | ⚠️ A credential/env change needs a **superset first** or no revision can boot — and provisioning tools silently store empty or newline-suffixed values ([`secrets-and-ci.md`](../../reference/secrets-and-ci.md)); how *this* platform is verified is in the deploy-target doc § Secrets and env |
+| Involves secrets, env vars, runtime config, or a credential swap | A credential/env change needs a **superset first** or no revision can boot — and provisioning tools silently store empty or newline-suffixed values ([`secrets-and-ci.md`](../../reference/secrets-and-ci.md)); how *this* platform is verified is in the deploy-target doc § Secrets and env |
 | Changes a store that another store derives from — a view, an index, a sync target; the deploy-target doc § Infra and migrations names them and their rebuild order | The derived store has to be rebuilt in order against the rollout, and an unattended run cannot sequence that. With no deploy-target doc, any schema change is this row |
 | Needs a coordinated change in two repos | Two PRs, one breaking moment |
 | Requires touching shared staging or prod | Merging the integration branch may deploy |
@@ -304,21 +304,21 @@ assignee if unassigned → Track if blank → Status Todo if none. Then per deep
 issue: category → effort → Priority if blank → `agent-ready` if gated → duplicate
 comment if any → **`triaged` last**.
 
-🚨 **`triaged` goes on last, always.** If the run dies halfway, an issue without it gets
+**`triaged` goes on last, always.** If the run dies halfway, an issue without it gets
 picked up cleanly next time; an issue marked `triaged` before its labels landed is
 silently lost forever.
 
-⚠️ **Pass each label as its own explicit `-f "labels[]=…"`, never a split shell
+**Pass each label as its own explicit `-f "labels[]=…"`, never a split shell
 variable** — the label endpoint auto-creates any label that does not exist, so an
 unsplit variable silently creates a junk label repo-wide. After any label-add loop,
 read the labels back and assert none **you added** contain a space — GitHub's defaults
-`good first issue` and `help wanted` do, measured. See
+`good first issue` and `help wanted` do. See
 [`../../reference/shell-traps.md`](../../reference/shell-traps.md).
 
 Don't post a per-issue "I triaged this" comment. Labels are the record; comments are
 for duplicates and for a genuine question to the DRI.
 
-### 🚨 The receipt is a claim — verify the writes landed
+### The receipt is a claim — verify the writes landed
 
 `gh api` and `gh` mutations **exit 0 on operations the server rejected**, so a run that
 looks clean can have written nothing. This run's whole value is that its verdicts reached
@@ -336,11 +336,11 @@ board_fetch "<board_owner>" "<board_number>" "$SCRATCH/board-after.json"
 gh issue list --repo <owner>/<repo> --state open --limit 1000 --json number,labels,assignees
 ```
 
-🚨 **Projects v2 writes are EVENTUALLY CONSISTENT — do not read back immediately.**
-MEASURED: six `gh project item-add` calls each returned a real item id and exit 0, and an
-`item-list` run straight afterwards reported **0 cards**. It reached 5 after ~20s and 6
-after ~30s. Every write had succeeded. A naive read-back here reports total failure on a
-run that worked, which is worse than not checking at all.
+**Projects v2 writes are EVENTUALLY CONSISTENT — do not read back immediately.**
+An `item-add` that returned a real item id and exit 0 has landed, yet an `item-list` run
+straight afterwards can report **0 cards**; the count catches up over ~30s. A naive
+read-back here reports total failure on a run that worked, which is worse than not
+checking at all.
 
 **Verify the item, not the count.** `item-add` returns the new item's id; resolving that
 id proves the write landed even while the board's `items` connection still reports zero:
@@ -370,13 +370,11 @@ Then the **out-of-sweep line**, always, even when N is 0:
 ``Out of sweep: N board cards from repos not in `repos` — <owner/repo#N, …> — left
 untouched; add the repo to `repos` or remove the card``
 
-The integrity guarantee is a claim about the swept repos only. Since 0.10.0 `repos` is the
-issue-sweep set, so a board card whose repo is not in it is never swept, never labeled,
-never assigned and never moved — by design, and this line is what stops a clean integrity
-line from overstating. MEASURED 2026-09-08: a board carried an open, unlabeled, unassigned
-card from a repo in neither sibling's `repos`; the run left it alone, correctly, and
-mentioned it only by its own initiative — nothing in the receipt shape required the
-mention, so a rewrite could drop it and the card would be invisible forever. Derive N
+The integrity guarantee is a claim about the swept repos only. `repos` is the issue-sweep
+set, so a board card whose repo is not in it is never swept, never labeled, never
+assigned and never moved — by design, and this line is what stops a clean integrity line
+from overstating. Without it such a card is invisible: nothing else in the receipt names
+it. Derive N
 from the § 1 board fetch already on disk: compare each item's `content.repository`
 (`nameWithOwner`) against `repos`, case-insensitively. An org transfer means the board's
 stored owner can differ from the canonical one, so compare against what `gh repo view
@@ -400,5 +398,5 @@ dupes`, plus any load warnings and anything you deliberately left alone.
 receipt is the integrity line, the out-of-sweep line and one sentence, nothing else. A
 clean board should read clean.
 
-⚠️ **Report, don't accuse.** A low or zero lane in any per-person view is usually
+**Report, don't accuse.** A low or zero lane in any per-person view is usually
 **allocation**, not underperformance. Ask the lead before inferring.

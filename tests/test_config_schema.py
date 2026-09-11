@@ -25,7 +25,7 @@ independent constant so a silently emptied table cannot pass by having nothing
 to disagree about. Matching is on normalized text, so reformatting a row or
 reordering the table stays green.
 
-Mutation-proven — see CONTRIBUTING.md § Conventions for the ledger.
+Mutation-proven; the cases a re-proof covers are in CONTRIBUTING.md § Conventions.
 
 Run:  python3 tests/test_config_schema.py
 Set SCHEMA_GUARD_ROOT to point it at a copy (the mutation harness does).

@@ -19,7 +19,7 @@ checks your board, and reports every gap it cannot close itself. Then:
 /gh-issue-flow:triage dry run
 ```
 
-⚠️ **Before pointing this at a repo you care about**, consider running it once against a
+**Before pointing this at a repo you care about**, consider running it once against a
 throwaway repo with real CI and a few realistic issues. `triage` writes across every open
 issue; `autopilot` opens PRs unattended. Both are reversible, neither is quiet — and a
 testbed run found four real bugs in this plugin that reading the code had not.
@@ -44,18 +44,18 @@ regardless of the session's own setting. They appear as `gh-issue-flow:<name>`.
 | Agent | Used by | Returns |
 |---|---|---|
 | [`issue-planner`](agents/issue-planner.md) | `next-issue` step 3, `autopilot` § 6 | DECIDE-FIRST, VERIFY-FIRST, SCOPE (+FOLD IN), SPEC IMPACT, TESTS, RISKS, and **REVIEW LENSES** |
-| [`diff-reviewer`](agents/diff-reviewer.md) | `next-issue` step 6, `autopilot` § 9 | Findings through **one** assigned lens: `correctness`, `contract`, `scoping`, `safety`, `tests`, `deploy` |
+| [`diff-reviewer`](agents/diff-reviewer.md) | `next-issue` step 6, `autopilot` § 9 | Findings through **one** assigned lens from [the set](agents/diff-reviewer.md#the-lenses) |
 
-🚨 **A subagent cannot fan out** — it has no Agent tool and spawns do not nest. Spawn
+**A subagent cannot fan out** — it has no Agent tool and spawns do not nest. Spawn
 `gh-issue-flow:diff-reviewer` **N times from the parent, in one message**, one per lens.
-Gate the lens list on what the planner named; six max-effort reviewers on a styling
-change is waste.
+Gate the lens list on what the planner named; the full set of max-effort reviewers on a
+styling change is waste.
 
-🚨 **Spawn the namespaced name.** A bare `diff-reviewer` resolves to whichever same-named
+**Spawn the namespaced name.** A bare `diff-reviewer` resolves to whichever same-named
 agent file wins, and a stale one in `~/.claude/agents/` shadows this one with no warning
-at all — see `skills/setup/SKILL.md` § Detect shadowing.
+at all — see `skills/setup/SKILL.md` § 6, Confirm the agents.
 
-⚠️ `issue-planner` describes the spec change; it never creates it. Its callers run it at
+`issue-planner` describes the spec change; it never creates it. Its callers run it at
 different points in the branch lifecycle, one of them before the branch exists.
 
 ### Shared
@@ -82,7 +82,8 @@ docs owns.
 
 ### Reference
 
-Twelve docs of measured operational knowledge — see [their index](reference/README.md).
+Docs of operational knowledge, and the default comment policy — see
+[their index](reference/README.md).
 Skills link into them at the moment each becomes relevant.
 
 The one idea underneath all of them: **silence, an empty result, and exit 0 are
@@ -155,4 +156,4 @@ claude --plugin-dir ./plugins/gh-issue-flow
 claude plugin validate ./plugins/gh-issue-flow --strict
 ```
 
-`/reload-plugins` picks up edits without a restart.
+`/reload-plugins` picks up skill edits without a restart; an agent edit needs a restart.

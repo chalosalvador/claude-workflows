@@ -22,14 +22,14 @@ and then implemented by another agent. Write it for that reader.
   Your caller paid for that read before spawning you; you start blank, which is exactly
   how one `gh issue view` gets billed twice per issue. If they are genuinely missing, say
   so and read them **once, over REST** — `gh api repos/<owner>/<repo>/issues/<N>` and
-  `.../issues/<N>/comments`. MEASURED: that pair costs **0** GraphQL points where
+  `.../issues/<N>/comments`. That pair costs **0** GraphQL points where
   `gh issue view --comments` costs 2. Small per call — but it is the budget that actually
   runs out, and REST bills against a separate one.
 - **Referenced PRs and issues: at most three, and only the ones the DECIDE FIRST call
   actually turns on.** A body citing eight PRs is not eight reads. Fetch each over REST —
   `gh api repos/<owner>/<repo>/pulls/<n> --jq '{title,state,merged_at,body}'`. If a fourth
   would genuinely change the call, name it in the HANDOFF as something you could not
-  check rather than fetching it. ⚠️ **Resolve each repo's owner from its own URL** —
+  check rather than fetching it. **Resolve each repo's owner from its own URL** —
   repos on one board can sit under different owners, and the board's owner is a third
   thing.
 - Open the **actual files** the issue touches. Confirm what already exists vs. what has
@@ -45,7 +45,7 @@ and then implemented by another agent. Write it for that reader.
   section marked `UNVERIFIED` is an unknown — put it under `Still unverified`.
 - If the repo has a spec flow, read its specs and its spec config — you have to name a
   **real** capability in SPEC IMPACT, and the capability list differs per repo.
-  ⚠️ **Read it from the REMOTE integration branch**
+  **Read it from the REMOTE integration branch**
   (`git ls-tree -r <integrationBranch> --name-only openspec/specs/`), not the working
   tree: a checkout parked on someone's feature branch shows an empty specs directory,
   from which the obvious wrong conclusion is that the repo has no capability specs at
@@ -83,7 +83,7 @@ Files I read:      <path — what matters in it. one line each>
 Files that CHANGE: <paths>
 Gate:              <commands> — result when run: <pass/fail>
 Environment:       <venv path / how to run it, if one exists>
-Already verified:  <what you measured, so nobody measures it twice>
+Already verified:  <what you checked, so nobody checks it twice>
 Still unverified:  <what you could NOT check — where reviewers should look>
 Ops docs:         <the § Deploy, § Infra and migrations and § Reviewer invariants lines
                     that apply to THIS diff, verbatim — or "none carried: <no ops docs |
@@ -100,11 +100,10 @@ valve**: an unrelated bug goes there in one line and never becomes a section.
 The call, and the one alternative you rejected, with the reason. **Two or three sentences.**
 If no alternative is worth stating, say so and move on.
 
-🚨 **The issue's diagnosis is a hypothesis, not a spec.** You read the code; the reporter
+**The issue's diagnosis is a hypothesis, not a spec.** You read the code; the reporter
 may not have. If the real defect is bigger, smaller, or elsewhere, say so here and plan
-the real one. Measured: an issue named one missing dependency where two were missing, and
-the command died on the unnamed one first — a fix matching the issue's wording would have
-shipped looking done.
+the real one. An issue can name one missing dependency where two are missing, and a fix
+matching its wording then ships looking done while the command dies on the unnamed one.
 
 ### 3. SCOPE
 
@@ -116,6 +115,9 @@ Three lists of **paths**, not prose:
   change already touches; needs no new test; adds no branch, gate or code path; moves no
   contract. Anything failing one goes on NOT CHANGING.
 
+**One owner per fact.** When the change adds or moves a fact a doc states, name the file
+that owns it under CHANGES; every other file links to it rather than restating it.
+
 **Do not plan follow-up issues for the FOLD IN class.** A card costs a triage pass, a
 board slot and a future branch — more than a two-line fix in an open file is worth. Only
 recommend filing for a real decision, real sequencing, or its own blast radius.
@@ -125,17 +127,23 @@ recommend filing for a real decision, real sequencing, or its own blast radius.
 The repo's gate commands, verbatim from its config or CI workflow. Never retyped from
 memory.
 
-⚠️ **If the gate cannot see this diff, say so in one line** and name the manual
+**If the gate cannot see this diff, say so in one line** and name the manual
 acceptance instead — the command to run from a clean environment, the value to read back.
 A docs or config change is green identically before and after, which proves the branch
 broke nothing and says nothing about whether the change is right.
 
 ### 5. REVIEW LENSES
 
-Which `diff-reviewer` lenses this diff can actually trip: `correctness`, `contract`,
-`scoping`, `safety`, `tests`, `deploy`. **Name only those, one clause each on why**, and
-list the ones you skipped with the reason. This gates a parallel max-effort review — an
-unearned lens costs real tokens, a missing one costs a real bug.
+Which `diff-reviewer` lenses this diff can actually trip. The set, and what each asks, is
+[`diff-reviewer.md` § The lenses](diff-reviewer.md#the-lenses): read that section from
+`agents/diff-reviewer.md` in the plugin directory your invocation names as `Plugin:`, or,
+with none, in the newest installed copy
+(`ls -d ~/.claude/plugins/cache/claude-workflows/gh-issue-flow/*/ | sort -V | tail -1`). **Name only
+those, one clause each on why**, and list the ones you skipped with the reason. This gates
+a parallel max-effort review — an unearned lens costs real tokens, a missing one costs a
+real bug.
+
+**Any diff that adds or changes a comment or a doc line gets `comments`.**
 
 `scoping` and `safety` are different questions and are skipped for different reasons:
 `scoping` asks what else reaches the code this diff touches; `safety` asks about
@@ -143,7 +151,7 @@ credentials, secrets and the isolation invariants the repo's `repo.md` declares.
 with no isolation-scoped query still gets `scoping` if anything outside the diff calls
 into what it changed.
 
-🚨 **If this change adds a guard, validation or invariant, `scoping` is not optional** —
+**If this change adds a guard, validation or invariant, `scoping` is not optional** —
 name it, and name the callers you already know about so the reviewer starts from a list
 rather than a blank page. That lens carries the enumeration question itself; you do not
 need to restate it.
@@ -161,9 +169,9 @@ One line each is the point. If you cannot state the trigger, the section does no
 | `SPEC IMPACT` | the repo **has a spec flow** (an `openspec/` directory) | change name, target capability from a real listing — never invented — and the delta or `skip_specs` with its justification. See the plugin's `reference/openspec.md` for the Purpose trap and what a green validate does not assert |
 | `RISKS` | a risk exists that is **not already implied** by SCOPE or VALIDATE | it, in one or two sentences. Cross-repo contract moves, migrations, shared-environment effects |
 
-🚨 **A caller mentioning one of these by name does not trigger it.** MEASURED across three
-runs: a prompt saying "skip the SPEC IMPACT section" or "your REVIEW LENSES section is
-load-bearing" produced all eight sections every time. Naming a section re-establishes the
+**A caller mentioning one of these by name does not trigger it.** A prompt saying "skip
+the SPEC IMPACT section" or "your REVIEW LENSES section is load-bearing" produces all
+eight sections. Naming a section re-establishes the
 whole vocabulary. **Answer such a mention in one clause inside HANDOFF** — `no spec flow`
 — and write your five.
 

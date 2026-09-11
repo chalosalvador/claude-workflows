@@ -9,8 +9,8 @@ roadmap → close. A deck that lists everything is a deck nobody reads.
 
 The class vocabulary (`.kicker`, `.card`, `.why`, `.progress`, `.status-col`, `.pill`,
 `.metric`) is defined in the stylesheet. Change the five variables at the top of that
-file to rebrand the whole deck; a documented block swaps it to light. Both themes were
-rendered and their pill contrast measured against WCAG AA.
+file to rebrand the whole deck; a documented block swaps it to light. Pill contrast meets
+WCAG AA in both themes.
 
 ---
 
@@ -203,7 +203,7 @@ Drop into any slide where a number is the story. Keep it to three.
 
 ---
 
-## 🚨 Do not add a static architecture slide
+## Do not add a static architecture slide
 
 It is the most requested addition and the one that reliably goes wrong. An architecture
 diagram carried forward week after week as a "mostly-static reference" **drifts from the
@@ -219,11 +219,11 @@ never from last week's deck, and **name which environment it depicts**.
 npx @slidev/cli slides/<name>.md --open
 ```
 
-⚠️ The package is **`@slidev/cli`**, not `slidev`.
+The package is **`@slidev/cli`**, not `slidev`.
 
-🚨 **The theme is a separate package and `npx` cannot prompt for it.** In a bare
+**The theme is a separate package and `npx` cannot prompt for it.** In a bare
 directory the first run dies with `The theme "@slidev/theme-default" was not found and
-cannot prompt for installation` — measured. Install it once alongside the CLI:
+cannot prompt for installation`. Install it once alongside the CLI:
 
 ```bash
 npm i -D @slidev/cli @slidev/theme-default vue

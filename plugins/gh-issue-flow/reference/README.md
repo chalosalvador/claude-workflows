@@ -1,6 +1,6 @@
 # Reference docs
 
-Hard-won operational knowledge, distilled from measured incidents. Skills in this
+Hard-won operational knowledge, distilled from real incidents. Skills in this
 plugin link to these at the moment they become relevant — read the section, not the
 file, unless you are about to do the whole thing.
 
@@ -11,6 +11,7 @@ file, unless you are about to do the whole thing.
 | [`mutation-harness.md`](mutation-harness.md) | You are about to mutation-prove a test, or you are reading a harness's numbers. |
 | [`board-query.md`](board-query.md) | A run is hitting the GraphQL budget, or you are changing what the board fetch returns. Holds the hand-written query that replaces `gh project item-list` at 3 points instead of 102. |
 | [`git-and-github.md`](git-and-github.md) | Checking diff scope, diagnosing CI-vs-local, writing a PR body, or merging. |
+| [`comments-and-docs.md`](comments-and-docs.md) | Writing or reviewing a code comment, a doc, a template or a `$comment` key in a repo. The default policy; a repo's own wins. |
 | [`review-process.md`](review-process.md) | Before opening any PR. Also when adjudicating reviewer findings. |
 | [`parallel-agents.md`](parallel-agents.md) | Before spawning parallel reviewers, or before any worktree squash/reset. |
 | [`workflow-fanout.md`](workflow-fanout.md) | You are considering running the triage deep pass, or autopilot's two candidates, as parallel agents via the Workflow tool. Holds both scripts, and the two different write boundaries — which are not the same rule, and must not be merged. |

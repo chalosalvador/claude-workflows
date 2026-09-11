@@ -8,26 +8,27 @@ paths or hardcoded logins.
 
 ## Worked example
 
-Mirror this structure, level of specificity, and tone. Only the content changes.
+Mirror this structure, level of specificity, and tone. Only the content changes. `#N` is
+the issue being started; `#M` and `#P` stand for an earlier issue and its PR.
 
 ```
-Implement GitHub issue #412 in the acme-api repo: "Carry the order note through the
+Implement GitHub issue #N in the acme-api repo: "Carry the order note through the
 event envelope into the reporting store".
-https://github.com/acme/acme-api/issues/412
+https://github.com/acme/acme-api/issues/N
 
 Repo: acme-api/ (run from the repo root; it is its own git root). Use the .venv
 there. git fetch, then branch off origin/dev — the integration branch, NOT main.
 
-CONTEXT: Direct follow-up to #399 (merged, PR #401), which added a free-text `note`
+CONTEXT: Direct follow-up to #M (merged, PR #P), which added a free-text `note`
 to cancelled-order events on the primary-database path. Today the event envelope
 drops `note`, so once a customer is switched to the reporting feed,
 GET /api/orders?kind=cancelled returns `note: null` — a silent regression. This
 issue carries `note` end-to-end so both stores return IDENTICAL values. Refund
 events are unaffected.
 
-DECIDE FIRST: Confirm product wants note parity in production. Given #399 exists
+DECIDE FIRST: Confirm product wants note parity in production. Given #M exists
 specifically to feed the cancellation-reason report, the answer is almost certainly
-YES — but post a short comment on #412 stating the decision + plan, and proceed with
+YES — but post a short comment on #N stating the decision + plan, and proceed with
 "carry it through" unless told otherwise.
 
 SCOPE:
@@ -36,9 +37,9 @@ SCOPE:
 - Reporting store: migration adding a nullable `note` column, mirroring the existing
   `reason` column exactly — migrations/0042_order_note.sql.
 - Read path: surface it in the orders query, matching the primary store's shape.
-- NOT changing: refund events, the primary write path (#399 already did it).
+- NOT changing: refund events, the primary write path (#M already did it).
 
-SPEC: change `412-order-note-reporting`, capability `order-feed` (confirmed via
+SPEC: change `N-order-note-reporting`, capability `order-feed` (confirmed via
 `openspec list --specs`). Delta, not skip_specs.
   ## MODIFIED Requirements
   ### Requirement: The order feed SHALL return an identical note on both stores
@@ -46,13 +47,13 @@ SPEC: change `412-order-note-reporting`, capability `order-feed` (confirmed via
   #### Scenario: A cancelled order is read back from the reporting store
   WHEN a cancelled-order event with a non-null note is published
   THEN GET /api/orders?kind=cancelled returns the same note as the primary store
-Gate: `openspec validate 412-order-note-reporting --type change --strict` exits 0
+Gate: `openspec validate N-order-note-reporting --type change --strict` exits 0
 BEFORE any implementation.
 
 VERIFY-FIRST: read api/events.py (build_order_event — confirm note is dropped
 today, not merely unused), api/orders.py (the read path's column list), and
 migrations/0041_order_reason.sql (the `reason` column is the precedent to mirror).
-The primary-store writer in api/store.py must stay UNCHANGED — #399 owns it.
+The primary-store writer in api/store.py must stay UNCHANGED — #M owns it.
 
 TESTS: parity test asserting the two stores return byte-identical notes for the
 same event. Mirror tests/test_order_parity.py. Mutation-check it: drop `note` from
@@ -64,11 +65,13 @@ VALIDATE (verbatim, from the repo's gate):
   .venv/bin/ruff check api/ tests/
   .venv/bin/python -m migrations check   # only because migrations/ changed
   openspec validate --all --strict
-  ⚠️ That last one exits 0 on an empty root, never reads the archive, and is
+  That last one exits 0 on an empty root, never reads the archive, and is
   switched off entirely by skip_specs — do not report a bare green from it.
 
 PROCESS:
-1. Post the scoping plan as a comment on #412 first; set the board card to In
+Plugin docs: `ls -d ~/.claude/plugins/cache/claude-workflows/gh-issue-flow/*/ | sort -V |
+tail -1`. Pass that directory as `Plugin: <dir>` to every planner and reviewer you spawn.
+1. Post the scoping plan as a comment on #N first; set the board card to In
    Progress. Then branch, then create the SPEC block's change directory and get its
    validate to exit 0 BEFORE writing code.
 2. Review with parallel gh-issue-flow:diff-reviewer subagents (effort: max, fresh
@@ -76,25 +79,28 @@ PROCESS:
    be absent, null, or huge); `contract` (the envelope is consumed by the reporting
    reader — a shape change is two coordinated PRs); `tests` (parity across two
    stores); `deploy` (additive nullable column; the migration runs in the staging
-   deploy, so it IS in the CD path). Skip `scoping` — this adds no guard, and every
-   caller of the writer is in the diff. Skip `safety` — no new account-scoped query
-   and no credential moves. Commit before spawning them. Fix every valid finding;
-   explain any rejected in the PR body.
+   deploy, so it IS in the CD path); `comments` (the migration and the parity test
+   add comments). Skip `scoping` — this adds no guard, and every caller of the
+   writer is in the diff. Skip `safety` — no new account-scoped query and no
+   credential moves. Commit before spawning them. Fix every valid finding; explain
+   any rejected in the PR body's History.
 2b. If those fixes added NEW LOGIC — a branch, gate, condition, or code path — one
    more gh-issue-flow:diff-reviewer over just that delta, run as the lens that raised
    the finding. Once, not a loop. Skip for test/comment/doc-only fixes.
-2c. `openspec archive 412-order-note-reporting -y --json` as the LAST commit of
+2c. `openspec archive N-order-note-reporting -y --json` as the LAST commit of
    this PR — never post-merge. Assert specsUpdated: true, then re-validate the
    folded tree.
-3. Branch feat/412-order-note-reporting; commit referencing "Fixes #412". Every
+3. Branch feat/N-order-note-reporting; commit referencing "Fixes #N". Every
    commit GPG-signed — if signing fails, stop. Never commit secrets.
-4. Open a PR, then drive CI + review-bot threads to green: reply, verify the reply
+4. Open a PR whose body follows reference/git-and-github.md § Writing a PR body
+   in that plugin directory; history goes in its History section, never in code or
+   docs. Then drive CI + review-bot threads to green: reply, verify the reply
    posted, THEN resolve. Watch review THREADS as well as checks — a bot posts as a
    thread, so a checks-only poll never sees it. Do not assume a babysit skill
    exists; do the loop inline. Re-check 0 unresolved threads at the merge instant.
    Do NOT merge without my go-ahead.
-5. Board tracking: resolve the #412 card's item id by querying the project for
-   issue 412 in acme-api, then set Status → In Progress on start, Done only at
+5. Board tracking: resolve the #N card's item id by querying the project for
+   issue N in acme-api, then set Status → In Progress on start, Done only at
    merge. Resolve field and option ids from `gh project field-list` in the same
    run — never hardcode them. Keep the existing assignee, or assign yourself if
    unassigned.
@@ -139,13 +145,15 @@ ask before running it.
   [`../../reference/guard-tests.md`](../../reference/guard-tests.md).
 - **VALIDATE** — the exact commands for this repo, **verbatim** from the resolved
   config ([`shared/execution.md`](../../shared/execution.md) § 2). Never retype from
-  memory — the versions in the original of this file were wrong for weeks. Include the
+  memory. Include the
   preflight, and carry the caveats on what a spec validate does **not** assert so the
   fresh session does not read a green as proof.
-- **PROCESS** — the numbered steps as in the example: scoping comment → branch → spec
-  change before code → **named** review lenses from the plan (never the generic list)
-  → conditional delta re-review → archive as the last commit → commit → PR → babysit
-  threads *and* checks → board tracking.
+- **PROCESS** — the plugin-docs line, then the numbered steps as in the example: scoping comment → branch → spec
+  change before code → **named** review lenses from the plan, never the generic list
+  ([the set](../../agents/diff-reviewer.md#the-lenses)) → conditional delta re-review →
+  archive as the last commit → commit → PR with the body
+  [`git-and-github.md` § Writing a PR body](../../reference/git-and-github.md#writing-a-pr-body)
+  gives → babysit threads *and* checks → board tracking.
 - **DEPLOY NOTE** — schema/infra/deploy caveats. State plainly whether merging the
   integration branch deploys. If you claim a diff does **not** deploy, derive that from
   the live `paths-ignore` against **every** changed path — it is all-or-nothing per

@@ -9,12 +9,11 @@ consequence of two writers believing they are alone.
 
 Never work in a shared main checkout. Its HEAD moves without warning.
 
-Measured twice in one session: a checkout was switched to the integration branch
-mid-task by another session — the branch was intact on the remote, but
-`git log origin/<base>..HEAD` read `0 commits ahead` until noticed. A second checkout
-sat on a third session's feature branch, so a file that was expected did not exist.
-Earlier the same session, `git add -A` in a shared checkout swept **another session's
-untracked work** into a commit — twice.
+Another session can switch a shared checkout to the integration branch mid-task — the
+branch stays intact on the remote, but `git log origin/<base>..HEAD` reads
+`0 commits ahead` — or leave it on a third session's feature branch, where an expected
+file does not exist. And `git add -A` in a shared checkout sweeps **another session's
+untracked work** into your commit.
 
 ```bash
 git worktree add <scratch>/wt-<issue> -b feat/<issue>-<slug> origin/<base>
@@ -25,13 +24,13 @@ git worktree add <scratch>/wt-<issue> -b feat/<issue>-<slug> origin/<base>
 - **Stage by explicit path.** Never `git add -A` or a directory glob, even inside a
   worktree.
 - Gitignored assets the suite needs (model files, fixtures) do not come with a
-  worktree — symlink them. ⚠️ A relative symlink like `ln -s ../../../models models`
+  worktree — symlink them. A relative symlink like `ln -s ../../../models models`
   can resolve *inside* the tracked directory and produce a suite that crashes at ~83%
   with no summary.
 - Some harnesses branch a new worktree off a **stale base**. Verify the base commit
   after creating one.
 
-### 🚨 `git reset --soft <remote-ref>` + `git add -A` SILENTLY REVERTS merged work
+### `git reset --soft <remote-ref>` + `git add -A` SILENTLY REVERTS merged work
 
 The worktree was branched off the base at commit A. While the work proceeded, **two
 PRs merged and the base moved to B** — fetches from the *main* checkout update the
@@ -57,7 +56,7 @@ did not intend to touch".
 
 ---
 
-## 🚨 Review subagents MUTATE the tree they review
+## Review subagents MUTATE the tree they review
 
 A read-only-sounding reviewer with Bash access will verify a mutation check *for
 real* — editing a helper into a naive mutant, injecting a statement into a script,
@@ -73,10 +72,9 @@ Both restored correctly, but neither knew the other existed.
 silently reverts your edit; and if you commit while one is resident, you ship the
 mutant.
 
-Worse, measured: a lens left a **live mutant behind** after failing to restore it, and
-separately **clobbered two edits mid-write** by restoring a file while it was being
-edited — an Edit call warned "modified on disk", and the diffstat showed 6 insertions
-where there should have been ~100.
+Worse, a lens can leave a **live mutant behind** after failing to restore it, and can
+**clobber edits mid-write** by restoring a file while it is being edited — the tell is an
+Edit call warning "modified on disk" and a diffstat far smaller than the edit.
 
 **Three habits, all cheap:**
 
@@ -93,8 +91,8 @@ where there should have been ~100.
 the fixed lines are actually fixed.
 
 > Corollary: a reviewer reporting mutation-check numbers **actually ran them**, so
-> those numbers are real evidence — but they were measured on a tree that may not be
-> the tree you ship. Re-run the gate on the settled tree before opening the PR.
+> those numbers are real evidence — but they come from a tree that may not be the
+> tree you ship. Re-run the gate on the settled tree before opening the PR.
 
 ---
 
@@ -136,12 +134,12 @@ Mechanism: subagent frontmatter supports **`effort`** (`low|medium|high|xhigh|ma
 and it **overrides the session effort level**. There is no way to declare per-phase
 effort in a prompt alone.
 
-⚠️ **A subagent cannot fan out** — it has no Agent tool and spawns do not nest. **The
+**A subagent cannot fan out** — it has no Agent tool and spawns do not nest. **The
 parallelism has to live in the parent**: spawn the reviewer N times, one per lens, in
-one message. Gate the lens list on what the planner named; six max-effort reviewers
-on a styling change is pure waste.
+one message. Gate the lens list on what the planner named; the full set of max-effort
+reviewers on a styling change is pure waste.
 
-⚠️ **Project agent discovery walks up from cwd only to the repository root.** An
+**Project agent discovery walks up from cwd only to the repository root.** An
 umbrella directory above two repo roots is not a git repo, so agents defined there are
 invisible to a session started inside either repo. `~/.claude/agents/` is
 cwd-independent.

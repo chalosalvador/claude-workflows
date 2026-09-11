@@ -8,10 +8,10 @@ the agent follows the link at the moment the fact matters. A link that points at
 a file that moved is therefore not a cosmetic defect — the skill silently runs
 without the rule, and nothing in the run says so.
 
-MEASURED: `reference/workflow-fanout.md` linked `../../../tests/`, a path that
-exists in this marketplace checkout and nowhere in an installed plugin. Every
-review passed it. That is the failure shape this repo's docs are about — a
-missing thing that reads as nothing — applied to the docs themselves.
+A plugin file that links `../../../tests/` resolves in this marketplace checkout and
+nowhere in an installed plugin, and review does not catch it. That is the failure shape
+this repo's docs are about — a missing thing that reads as nothing — applied to the docs
+themselves.
 
 DESIGN — see plugins/gh-issue-flow/reference/guard-tests.md
 ----------------------------------------------------------
@@ -21,14 +21,14 @@ a parser that matched nothing cannot report a clean tree. Targets must be in
 to an untracked file reds — that file will not ship. And a file under
 `plugins/<name>/` may only link inside `plugins/<name>/`: the installed copy is
 that directory alone, so a link that climbs out of it resolves here and nowhere
-a user runs it. MEASURED: without that rule the guard passed its own motivating
-case (`../../../tests/` from inside the plugin), exit 0. Anchors (`#…`) are stripped
+a user runs it, and a check of the repo boundary alone lets `../../../tests/` from
+inside the plugin through. Anchors (`#…`) are stripped
 and not checked, and links inside fenced blocks or inline code spans are ignored as
 quoted examples; both are known gaps, stated here rather than hidden.
 
-Mutation-proven — ledger in CONTRIBUTING.md § Conventions.
+Mutation-proven; the cases a re-proof covers are in CONTRIBUTING.md § Conventions.
 
-Run:  git add -A && python3 tests/test_links.py
+Run:  git add <the paths you changed> && python3 tests/test_links.py
 Set LINK_GUARD_ROOT to point it at a copy (the mutation harness does); the copy
 must be a git repo with the files added.
 """
@@ -43,7 +43,7 @@ from pathlib import Path, PurePosixPath
 ROOT = Path(os.environ.get("LINK_GUARD_ROOT") or Path(__file__).resolve().parent.parent)
 
 # Refuse to pass on a suspiciously small parse. Independent of the real count.
-MIN_LINKS = 100   # measured 130 at ecbd9c5 on 2026-09-07; K4 (parser matching nothing) yields 0
+MIN_LINKS = 100   # well under the real count; K4 (parser matching nothing) yields 0
 
 LINK = re.compile(r"\]\(([^)\s]+)\)")
 SKIP = ("http://", "https://", "mailto:", "#")
@@ -53,8 +53,7 @@ SPAN = re.compile(r"`[^`\n]*`")
 
 def prose(text: str) -> str:
     """Drop fenced blocks and inline code spans: `](./x.md)` quoted in a code span is
-    an example of a link, not a link. MEASURED: two such spans in the reference docs
-    reddened the first version of this guard."""
+    an example of a link, not a link."""
     return SPAN.sub("`", FENCE.sub("", text))
 
 

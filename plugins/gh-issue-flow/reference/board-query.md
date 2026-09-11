@@ -5,7 +5,7 @@ hand-written GraphQL replacement, why it is cheaper, and what it deliberately dr
 
 Read this when a run is hitting the GraphQL budget, or before changing what the board
 fetch returns. Everything else about board reads — the one-fetch-per-run rule, the
-read-back exception — lives in [`../shared/config.md`](../shared/config.md) § Board
+read-back exception — lives in [`../shared/board.md`](../shared/board.md) § Board
 queries.
 
 ## Why the CLI is expensive
@@ -13,7 +13,7 @@ queries.
 GraphQL bills on the **node count a query could return**, not on what it does return.
 `gh project item-list` asks for a generic 100-item page with every nested connection
 opened wide, so it is billed for a maximal board whatever your board actually holds.
-MEASURED on a **6-item** board: `--limit 1000` and `--limit 100` both cost **102 points**,
+On a **6-item** board, `--limit 1000` and `--limit 100` both cost **102 points**,
 `--limit 30` costs **31**. The price tracks the requested page size and ignores the
 content.
 
@@ -25,11 +25,11 @@ the query string is the only lever, and it is worth a lot:
 | `gh project item-list --limit 1000` | **102 points** |
 | the query below | **3 points** |
 
-MEASURED, same board, same run, priced with GraphQL's own free meter.
+Both rows are the same board, priced with GraphQL's own free meter.
 
-🚨 **Cost tracks the `items(first:)` page cap and nothing else.** Measured: `first: 100`
-costs 3, `first: 20` costs 1, `first: 2` costs 1 — and widening every *nested* cap
-(`labels`, `assignees`, `fieldValues`) from 10 to 100 left the cost at **3**. Nested
+**Cost tracks the `items(first:)` page cap and nothing else.** `first: 100` costs 3,
+`first: 20` costs 1, `first: 2` costs 1 — and widening every *nested* cap
+(`labels`, `assignees`, `fieldValues`) from 10 to 100 leaves the cost at **3**. Nested
 selections are effectively free, so **do not narrow them to save points**; narrowing only
 buys silent truncation. Budget ~3 points per page of 100 cards.
 
@@ -70,7 +70,7 @@ GQL
 }
 ```
 
-🚨 **`user` and `organization` are different roots and there is no shared interface that
+**`user` and `organization` are different roots and there is no shared interface that
 exposes `projectV2`.** Resolve which one applies first — over REST, so it costs no
 GraphQL at all:
 
@@ -118,7 +118,7 @@ board_fetch() {                    # $1 owner login, $2 project number, $3 outpu
 }
 ```
 
-⚠️ **`-f` for the login, `-F` for the number.** `-F` coerces a value that looks numeric,
+**`-f` for the login, `-F` for the number.** `-F` coerces a value that looks numeric,
 so `-F login=...` would silently turn an all-digits login into an integer and fail the
 `String!` type check.
 
@@ -133,8 +133,8 @@ point: this is a drop-in for the fetch line, not a rewrite of the consumers.
   have, so they were already unusable — but if you add a consumer that wants drafts,
   this is where they went.
 - **Anything past 100** labels, assignees or project fields on a single card. That is
-  GitHub's own page maximum, not a budget compromise — the caps were widened from 10 to
-  100 after measuring that it changed the cost by zero. A card that exceeds one needs a
+  GitHub's own page maximum, not a budget compromise — widening the caps from 10 to 100
+  changes the cost by zero. A card that exceeds one needs a
   second page, which this function does not do for nested connections.
 - **Non-single-select fields.** `Status`, `Priority` and `Track` are single-selects. A
   text, number, date or iteration field needs its own inline fragment

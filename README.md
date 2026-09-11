@@ -47,18 +47,17 @@ project board** — the skills fall back to labels and `gh issue list`.
 
 **The two install paths differ here, and neither is broken.** From a terminal,
 `claude plugin install` prints a line like *"4 userConfig options not yet set"*.
-MEASURED: the terminal path prints that count. The in-session `/plugin install` does
-**not** — it may show a configuration step instead, or simply report the plugin enabled.
-⚠️ That second half is **read from the CLI, not yet confirmed by a run**; treat it as
-unverified. Either way, seeing neither a form nor a count is expected, not a failure.
+The in-session `/plugin install` does **not** — it may show a configuration step instead,
+or simply report the plugin enabled. That second half is **unverified**. Either way,
+seeing neither a form nor a count is expected, not a failure.
 
 That count is **not an error**. It counts options declared but not stored — including
 the two that already carry working defaults (`status_in_progress` → `In Progress`,
 `ready_label` → `agent-ready`) — and **none of the four is required**. On the boardless
 path it is expected and nothing is wrong.
 
-⚠️ **What you enter here is a machine-wide DEFAULT, not a per-repo setting** — why, and
-the measurement behind it, in [§ Configuration](#configuration-in-three-layers) below.
+**What you enter here is a machine-wide DEFAULT, not a per-repo setting** — why, in
+[§ Configuration](#configuration-in-three-layers) below.
 
 **So a workspace that targets a different board overrides it in that repo**, in
 `.claude/workflow.json`, which wins over this default:
@@ -135,16 +134,15 @@ adapting the skills, do this first.
 Worth knowing before you point `autopilot` at a queue, because the caps exist for this
 reason.
 
-MEASURED 2026-09-07 on plugin 0.8.1
-([PR 24](https://github.com/chalosalvador/claude-workflows/pull/24) holds the record): two
-`effort:easy` issues, end to end and unattended — triage in 3 minutes; autopilot **28
-minutes** from selection to report, 14 of them from first push to green; **262k subagent
-tokens** across six agents, the planner and lenses at `sonnet` as the tier table below
-prescribes for easy issues. The Workflow layer did the same two issues in 22 minutes for
-485k tokens at a stronger tier — faster, not cheaper. The earlier measurement, on 0.5.x
-with the planner and two lenses pinned at `effort: max`, spent ~110k tokens in ~12
-minutes on a one-line docs fix; the tier table exists because of that difference. A
-substantial change costs more.
+Two `effort:easy` issues, end to end and unattended, with the planner and lenses at
+`sonnet` as the tier table below prescribes for easy issues: triage takes 3 minutes;
+autopilot **28 minutes** from selection to report, 14 of them from first push to green,
+and **262k subagent tokens** across two planners and four lenses; a diff that also gets the
+`comments` lens adds one more. The Workflow layer does the same two
+issues in 22 minutes for 485k tokens at a stronger tier — faster, not cheaper. With the
+planner and two lenses pinned at `effort: max`, a one-line docs fix costs ~110k tokens in
+~12 minutes; the tier table exists because of that difference. A substantial change
+costs more.
 
 That is the justification for three rules you might otherwise be tempted to relax:
 
@@ -166,29 +164,17 @@ times, for about a third of the spend.**
 So the skills pass a **research handoff** forward (what was read, what the gate returned,
 and pointedly what is *still unverified*), gate the lens list on the plan, tier the model
 by the issue's size label, and let the planner scale its own output. Rules and the
-measured numbers: [`shared/execution.md`](plugins/gh-issue-flow/shared/execution.md)
+numbers: [`shared/execution.md`](plugins/gh-issue-flow/shared/execution.md)
 § 3.1 — one place, so they cannot drift.
 
-⚠️ **None of it cuts scrutiny.** It removes duplicated research and unearned lenses. If
+**None of it cuts scrutiny.** It removes duplicated research and unearned lenses. If
 you find yourself skipping the review to save budget, the honest move is to not run the
 agent on that issue at all.
 
-**Measured, two issues, same prompt and worktree, only the planner spec differing:**
-
-| | tokens before → after | |
-|---|---|---|
-| a 2-file code change | 52,075 → 40,790 | **−22%** |
-| a 1-file docs change | 55,169 → 53,861 | −2%, flat |
-
-So this **reallocates effort rather than uniformly cutting it.** The simple issue got
-cheaper; the subtle one spent the same and used it better — on the docs change the planner
-replayed six candidate strings through a consuming script and found one that passes its
-guard, fails its rewrite, and destroys a fixture while printing success.
-
-Section discipline held **17/17** across both, and the triggers discriminated in both
-directions: `VERIFY-FIRST`/`TESTS` fired on the code change and stayed silent on the docs
-one; `RISKS` did the reverse. **Treat this as a compliance-and-quality result, not a cost
-result** — the saving is real only on easy issues.
+The planner's output rules **reallocate effort rather than cutting it uniformly**: a
+simple issue gets cheaper, and a subtle one spends about the same and uses it better.
+Treat them as a compliance-and-quality measure, not a cost one — the saving is real only
+on easy issues.
 
 ## Prerequisites
 
@@ -209,7 +195,7 @@ Missing the board or signing does not break anything — it narrows what the ski
 owner, status names, the autopilot label. Per person, one set per machine — a repo's
 `workflow.json` → `board` overrides the board half.
 
-⚠️ Claude Code reads `pluginConfigs` **only** from user-level settings — MEASURED: it
+Claude Code reads `pluginConfigs` **only** from user-level settings — it
 lands there even under `--scope project`, and a project `.claude/settings.json` is never
 consulted for it. So Layer 1 is **one set of values per machine**, and anything that
 varies per repo belongs in Layer 2. That is why the board here is only a default.
@@ -268,7 +254,8 @@ review, babysit, board, deploy — facts, not policy).
 by the repo: deploy, secrets, infra, review bot, reviewer invariants, traps. Nothing
 stack-specific ships in the plugin.
 
-**Reference** — twelve docs of measured operational knowledge, stack-neutral; see
+**Reference** — operational knowledge, stack-neutral, and the default comment
+policy; see
 [its README](plugins/gh-issue-flow/reference/README.md).
 
 ## Develop
@@ -281,7 +268,7 @@ claude --plugin-dir ./plugins/gh-issue-flow
 claude plugin validate ./plugins/gh-issue-flow --strict
 ```
 
-`/reload-plugins` picks up edits without a restart.
+`/reload-plugins` picks up skill edits without a restart; an agent edit needs a restart.
 
 ## Recommended: pair this with OpenSpec
 
@@ -315,7 +302,7 @@ repo tends toward a handful of capability specs distilled from dozens of changes
   arrive unattended: the plan and the delta say what the agent understood, so a reviewer
   can reject the *understanding* without reading the code.
 
-⚠️ Read [`reference/openspec.md`](plugins/gh-issue-flow/reference/openspec.md) before
+Read [`reference/openspec.md`](plugins/gh-issue-flow/reference/openspec.md) before
 trusting the gate. A green `validate --all --strict` asserts less than it looks: it exits
 0 on an empty root, never reads the archive, and `skip_specs: true` switches it off for
 that change entirely.
@@ -347,8 +334,8 @@ npx @slidev/cli slides/weekly-update.md --open
 surface, ink, and two status colours — with a documented swap for a light deck. The cover
 carries a placeholder mark to replace with your own.
 
-Both themes were rendered and checked: the status pills mix toward the ink colour so they
-stay WCAG AA at 4.7–4.9 on light and ~14 on dark, rather than washing out.
+The status pills mix toward the ink colour, so they meet WCAG AA in both themes rather
+than washing out.
 
 The deck is a *rendering of the summary*, not a separate investigation — if the commits
 do not support a claim, the slide does not get to make it.

@@ -46,7 +46,7 @@ Use **today's date from the environment**, never a remembered one.
 | "this week" / "Friday update" | since the previous Friday |
 | "standup" | **two days**: the last working day *and* today, separate sections (§ Standup) |
 
-⚠️ **On a Monday, "the last working day" is Friday, not the empty Sunday.**
+**On a Monday, "the last working day" is Friday, not the empty Sunday.**
 
 The window is a half-open day range: `--since` = `00:00` of the first day, `--until` =
 `00:00` of the day **after** the last day, so the whole last day is included.
@@ -59,7 +59,7 @@ complete answer — say so rather than implying a wider sweep happened. For a mo
 split by the paths in `workflow.json` → `workstreams`. Narrow only when the user names
 one.
 
-⚠️ **Resolve each repo to a real checkout path before reading its log.** A workspace root
+**Resolve each repo to a real checkout path before reading its log.** A workspace root
 holding several repos is usually **not itself a git repo**, so `git -C <path>` is right
 there — but `<path>` must be proven, not guessed from the repo name
 ([`shared/config.md`](../../shared/config.md) § Repo scope):
@@ -74,13 +74,13 @@ no commits *to you*; that is not the same as no commits. List it under "not cove
 the reason — this is the same failure as the stale-workstream-path one below, and it
 reads identically in the output.
 
-🚨 **A sibling's integration ref and workstreams come from ITS `workflow.json`, never this
+**A sibling's integration ref and workstreams come from ITS `workflow.json`, never this
 one.** Run the resolution block from the sibling's checkout and take `integrationBranch`
-and `workstreams` from what it prints. MEASURED: judging a sibling's commits against
-this file's `origin/dev` — a branch the sibling also had, 815 commits stale — reported
-months of merged work as unmerged, with no error.
+and `workstreams` from what it prints. Judging a sibling's commits against this file's
+`integrationBranch` — a branch the sibling may also have, but stale — reports merged work
+as unmerged, with no error.
 
-⚠️ **Read the workstream paths from config, not from memory.** An app that was split or
+**Read the workstream paths from config, not from memory.** An app that was split or
 renamed leaves the old path in every doc and half the skills; a stale path silently
 reports zero commits for a live workstream.
 
@@ -89,12 +89,12 @@ design-system sweep can hit all of them — so it will appear under more than on
 workstream. **Attribute it to the workstream it is *about* and mention it once**; don't
 repeat it under every app it touched. The mirror case: a commit touching **no**
 workstream path — a runbook under `documentation/`, a root config — is invisible to the
-per-path pull. MEASURED: a cutover-runbook fix reported every stream empty for its day.
+per-path pull. A day whose only work is such a commit reports every stream empty.
 Always run the unscoped pull too, and attribute by what the commit is about.
 
 ## 3. Pull the commits
 
-🚨 **Fetch first.** A local checkout is routinely dozens of commits behind, and a stale
+**Fetch first.** A local checkout is routinely dozens of commits behind, and a stale
 checkout silently under-reports the day — which reads exactly like a quiet day.
 
 ### Resolve the identities BEFORE filtering
@@ -123,11 +123,11 @@ git -C <repo> log --all "${AUTHORS[@]}" \
   --since="$START" --until="$END_EXCL" --pretty=tformat:"%h|%ad|%s"
 ```
 
-⚠️ **Sanity check:** if a stream looks emptier than the window felt, or something you
+**Sanity check:** if a stream looks emptier than the window felt, or something you
 know merged still reads as un-merged, re-run step 1 before writing it up. It is almost
 always a second identity, not a quiet day.
 
-⚠️ Drop `--author` entirely when summarizing the **team's** work rather than your own.
+Drop `--author` entirely when summarizing the **team's** work rather than your own.
 Say which you did — "my commits" and "the team's commits" are different reports and the
 difference is invisible in the output.
 
@@ -155,11 +155,11 @@ for P in <workstream paths>; do
 done
 ```
 
-🚨 **Read the REMOTE integration ref, not the local branch or `HEAD`.** A checkout parked
+**Read the REMOTE integration ref, not the local branch or `HEAD`.** A checkout parked
 on someone's feature branch reports that branch's history as the team's day. This is the
 single most common way a summary comes out wrong.
 
-🚨 **One exception — a standup reads `--all`, not `$INTEGRATION`.** A standup answers
+**One exception — a standup reads `--all`, not `$INTEGRATION`.** A standup answers
 "what I worked on", not "what shipped", so work still sitting on an un-merged feature
 branch has to appear or the day reads as half-empty. Substitute `--all` for
 `"$INTEGRATION"` in both commands above, then establish merge status **per commit** rather
@@ -173,7 +173,7 @@ Anything that is not an ancestor is un-merged and must be marked as such — see
 § Standup. Skipping this check is how a standup claims something shipped that is still
 sitting on a branch.
 
-🚨 **Use `--pretty=tformat:`, never `format:`, whenever the output is piped.** `format:`
+**Use `--pretty=tformat:`, never `format:`, whenever the output is piped.** `format:`
 omits the trailing newline on the final record, so `... | while read` never runs the loop
 body for it and **silently drops the oldest commit in the window**, once per repo. It
 fails plausibly — the list looks complete and is short by one real item. `tformat:`
@@ -188,9 +188,9 @@ not one per commit.
 
 One feature typically leaves **three** kinds of commit in the window:
 
-- the feature commit, carrying its PR number — `... (#6)`;
-- its review-fix commits — `Address PR review …`, `fix(...): … (PR #34 review)`;
-- a **double-numbered** merge — `... (#6) (#70)` — where the squash of a branch that
+- the feature commit, carrying its PR number — `... (#N)`;
+- its review-fix commits — `Address PR review …`, `fix(...): … (PR #N review)`;
+- a **double-numbered** merge — `... (#N) (#M)` — where the squash of a branch that
   already had a number in its subject picks up the merge's number too.
 
 Match on the PR number in the subject and on subject similarity, and prefer the **merge**
@@ -227,9 +227,9 @@ These are what make the summary worth reading:
 - **A merged PR is not a deployed one** unless you have checked that merging deploys —
   see [`shared/execution.md`](../../shared/execution.md) § 7.
 - **Never infer a status from a label.** Labels lag.
-- ⚠️ **Report, don't accuse.** A zero or low lane for a person is usually **allocation**,
+- **Report, don't accuse.** A zero or low lane for a person is usually **allocation**,
   not underperformance. Ask the lead before inferring, and make any target conditional.
-- ⚠️ **Frame decisions, not retreats.** If an approach changed and the prior one was
+- **Frame decisions, not retreats.** If an approach changed and the prior one was
   never actually deployed, write it as the decision it is — not as "instead of X".
 - If you could not verify something, **say the summary is from commit subjects alone.**
 
@@ -250,11 +250,11 @@ invented. It is the file that was tuned against real drafts; this skill only dec
 
 Three rules are load-bearing enough to repeat here:
 
-- 🚨 **A standup is YOUR work, and only yours.** Keep the `--author` filter on with every
+- **A standup is YOUR work, and only yours.** Keep the `--author` filter on with every
   one of your identities (§ 3). Never a "Team:" bullet, never someone else's landing.
-- 🚨 **Selection, not ordering.** Ask of every candidate "who else needs to know this, and
+- **Selection, not ordering.** Ask of every candidate "who else needs to know this, and
   what would they do differently?" — nobody means it does not go in.
-- 🚨 **`- None.` is the expected Blockers answer.** Never pad it; an invented blocker sends
+- **`- None.` is the expected Blockers answer.** Never pad it; an invented blocker sends
   someone chasing nothing.
 
 ---
@@ -294,7 +294,7 @@ than the format does:
    mkdir -p slides && cp "${CLAUDE_PLUGIN_ROOT}/skills/work-summary/assets/style.css" slides/style.css
    ```
 
-   ⚠️ Slidev auto-loads `style.css` — **singular**. `styles.css` silently does not load,
+   Slidev auto-loads `style.css` — **singular**. `styles.css` silently does not load,
    and the deck renders unstyled with no error.
 
    Do **not** overwrite an existing `slides/style.css` — it is probably already branded.

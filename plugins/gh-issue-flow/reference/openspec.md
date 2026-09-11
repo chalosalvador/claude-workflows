@@ -49,12 +49,12 @@ openspec init
 That generates the skills and the `openspec/` scaffold for whichever assistants you
 select.
 
-⚠️ **Do not fall back to `npx --yes @fission-ai/openspec@… …` inside a skill.** Repos
+**Do not fall back to `npx --yes @fission-ai/openspec@… …` inside a skill.** Repos
 typically allowlist only `openspec validate *` for npx, so a fallback for `archive` or
 `new change` needs more allowlist entries per repo and adds a second code path that
 gets exercised approximately never.
 
-⚠️ **Preflight it, don't assume it.** The binary normally resolves under a
+**Preflight it, don't assume it.** The binary normally resolves under a
 version-managed Node prefix, and under the reduced `PATH` of an unattended run it is
 simply **not found**:
 
@@ -115,10 +115,10 @@ is precisely what a silently-empty delta produces. A missing change name exits 1
 
 ---
 
-## 🚨 What `openspec validate --all --strict` does NOT assert
+## What `openspec validate --all --strict` does NOT assert
 
-Run it, but do not read a green from it as more than it is. Three measured caveats on
-1.8.0, each of which has a way of being mistaken for coverage:
+Run it, but do not read a green from it as more than it is. Three caveats on 1.8.0, each
+of which has a way of being mistaken for coverage:
 
 1. **It exits 0 on `No items found to validate.`** An empty `openspec/` root is green.
    A fresh worktree or a mis-scoped run puts you back to green-on-nothing. If the gate
@@ -129,14 +129,14 @@ Run it, but do not read a green from it as more than it is. Three measured cavea
 
 3. **`skip_specs: true` switches it off for that change.** The delta is the only thing
    checked on a change, so a change carrying `skip_specs` is not *partially* checked —
-   it is **not checked**. Measured: a change directory holding *only* `.openspec.yaml`,
+   it is **not checked**. A change directory holding *only* `.openspec.yaml`,
    with `proposal.md` deleted, passes `--all --strict`.
 
 > On a `skip_specs` change the gate asserts nothing, and the justification written
 > above the key is a claim a **human** has to check. **Say which case you are in
 > rather than reporting a bare green.**
 
-### ⚠️ A green `--strict` does not mean a spec will survive CI
+### A green `--strict` does not mean a spec will survive CI
 
 Archiving a delta for a capability with **no spec yet** auto-generates:
 
@@ -144,8 +144,8 @@ Archiving a delta for a capability with **no spec yet** auto-generates:
 TBD - created by archiving <change>. Update Purpose after archive.
 ```
 
-Its length scales with the change name (78 and 91 chars both measured), so it **always
-clears `--strict`'s 50-char floor and validates green** — and a repo's own
+Its length scales with the change name and the fixed text alone is over 50 chars, so it
+**always clears `--strict`'s 50-char floor and validates green** — and a repo's own
 "every spec has a real purpose" test then **fails it** under a required check.
 
 **Write the `## Purpose` into the delta.** It survives the fold verbatim. That is the
@@ -158,7 +158,7 @@ fix.
 - **Never invent a capability.** Get the target from an actual `openspec list --specs`
   run in that repo. If the work genuinely needs one that does not exist, say **new
   capability** explicitly and apply the Purpose rule above.
-- ⚠️ **Read the spec list from the REMOTE integration branch**, not the working tree:
+- **Read the spec list from the REMOTE integration branch**, not the working tree:
   `git ls-tree -r <integrationBranch> --name-only openspec/specs/`. A checkout parked
   on someone's feature branch shows an empty `openspec/specs/`, from which the obvious
   wrong conclusion is that the repo has no capability specs at all.
@@ -176,7 +176,7 @@ fix.
 ### Regenerating an archive on rebase
 
 ```sh
-# ⚠️ `reset --hard` discards uncommitted work with no undo. Prove there is none, and
+# `reset --hard` discards uncommitted work with no undo. Prove there is none, and
 # that HEAD is the archive commit and nothing else, BEFORE running it.
 [ -z "$(git status --porcelain)" ] || { echo "uncommitted changes — commit them first"; exit 1; }
 git show --stat --oneline HEAD          # must list ONLY the archive commit's openspec/ paths

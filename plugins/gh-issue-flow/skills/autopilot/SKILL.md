@@ -20,12 +20,12 @@ back** rather than making a judgment call. A skipped issue costs a day. A confid
 wrong PR costs a teammate's afternoon and their trust in the routine.
 
 Resolve board, repos, branches and gate commands via
-[`shared/config.md`](../../shared/config.md). 🚨 **Resolve the board from the MAIN
+[`shared/config.md`](../../shared/config.md). **Resolve the board from the MAIN
 checkout, not the worktree** — [`shared/config.md`](../../shared/config.md) § Resolving `workflow.json` shows the spelling; a worktree does not carry
 gitignored `.claude/`, and this routine normally starts inside one, unattended, with
 nobody to catch a write to the wrong board.
 
-## 🚨 Two hard rules, no exceptions
+## Two hard rules, no exceptions
 
 1. **Never merge.** Merging the integration branch may auto-deploy and run migrations.
    This includes **queuing** a merge: never run `gh pr merge` in any form, and
@@ -61,7 +61,7 @@ was launched.
 loop's effort, and a scheduled-task tool may not set it either. Set it in the routine's
 own configuration if a given routine needs more than the default.
 
-💰 **Spend rules — model tiering, the handoff, lens gating — live in
+**Spend rules — model tiering, the handoff, lens gating — live in
 [`shared/execution.md`](../../shared/execution.md) § 3.1.** Autopilot-specific: only
 `effort:easy` issues pass § 3's gate, so **the cheap tier is the common case here**. If
 the work turns out bigger than `easy`, that is a handback — never a reason to quietly
@@ -75,11 +75,10 @@ session claims the issues, **creates both worktrees itself**, and afterwards bab
 PRs together under one § 11 cap — which is the second reason to bother.
 
 Take that path only when the Workflow tool is in this session and § 2 actually selected
-two candidates; on one issue it buys nothing. Hand the script the plugin's base directory
-(the path the Skill tool printed for this file) and the § 3.1 model tier per issue — its
-agents cannot find either on their own, measured. Without it, work them in order exactly
-as below. That file also states plainly what the layer costs, which is not nothing, and
-what one live run measured.
+two candidates; on one issue it buys nothing. Hand the script the plugin directory
+([`shared/execution.md`](../../shared/execution.md) § 3) and the § 3.1 model tier per issue — its
+agents cannot find either on their own. Without it, work them in order exactly as below.
+That file also states plainly what the layer costs, which is not nothing.
 
 ## 1. Backpressure
 
@@ -109,13 +108,13 @@ jq -r --arg ready "<ready_label>" '.items[] | select(.status=="Todo")
    | "#\(.content.number)\t\(.content.repository|sub(".*/";""))\tP:\(.priority // "-")\t\(.content.title)"' "$BOARD_JSON"
 ```
 
-🚨 **The board is not simply your `userConfig` default — resolve it first.** This repo may
+**The board is not simply your `userConfig` default — resolve it first.** This repo may
 name its own board in `workflow.json` → `board`, which **wins** over the machine default,
 and writing to the wrong board is silent. Run the two-step resolution in
 [`shared/board.md`](../../shared/board.md) § Resolution, use the numbers it yields, and
 **say which layer answered before any board write.**
 
-⚠️ `$BOARD_JSON` is this run's single board fetch — see
+`$BOARD_JSON` is this run's single board fetch — see
 [`shared/board.md`](../../shared/board.md) § Board queries. Every later step that needs
 the board reads that file; only a post-write read-back re-fetches.
 
@@ -149,7 +148,7 @@ ISSUE_MD="${SCRATCH:-${TMPDIR:-/tmp}}/issue-<N>.md"
 } > "$ISSUE_MD"
 ```
 
-⚠️ REST on purpose — `gh issue view` is GraphQL, and an unattended run that plans two
+REST on purpose — `gh issue view` is GraphQL, and an unattended run that plans two
 issues is the last thing that should be spending the GraphQL budget on a read it can get
 from the core one.
 
@@ -204,10 +203,9 @@ git worktree add ../.autopilot/<repo>-<N> -b feat/<N>-<slug> "$INTEGRATION"
 Prune stale ones first: `git worktree list` → `git worktree remove <path>` for any
 whose branch is merged or older than 7 days.
 
-⚠️ **A removed worktree leaves its local branch behind** (§ 12 keeps it on purpose), so
+**A removed worktree leaves its local branch behind** (§ 12 keeps it on purpose), so
 the next run on the same issue fails at `-b feat/<N>-<slug>` with `a branch named …
-already exists`. MEASURED 2026-09-07 on the second run of the day. Before the `add`,
-check for it and decide from evidence, not by force:
+already exists`. Before the `add`, check for it and decide from evidence, not by force:
 
 ```sh
 git rev-parse --verify -q feat/<N>-<slug> && {
@@ -223,11 +221,11 @@ A branch whose every commit is already on the remote — merged, or pushed to a 
 was closed — is safe to delete. One with unpushed commits is someone's work: handback.
 Never `-B` or `git worktree add --force` past it.
 
-### 🚨 In case A, the base is a LOCAL branch and is probably stale
+### In case A, the base is a LOCAL branch and is probably stale
 
 The routine forks the worktree from a local `sourceBranch`, and **a local branch does
 not move when you fetch.** Building on it produces a PR based on a checkout dozens of
-commits behind — a mistake already made once here on a five-commit-stale base.
+commits behind.
 
 ```sh
 INTEGRATION="<integrationBranch>"   # literal, in this block — same rule as above
@@ -241,7 +239,7 @@ git reset --hard "$INTEGRATION"  # only in a FRESH worktree, nothing to lose
 Confirm `git status --porcelain` is empty **before** the reset — if it is not, something
 already went wrong; hand it back rather than discarding work.
 
-⚠️ Never squash with `git reset --soft "$INTEGRATION" && git add -A` — see
+Never squash with `git reset --soft "$INTEGRATION" && git add -A` — see
 [`../../reference/parallel-agents.md`](../../reference/parallel-agents.md) for how that
 silently reverts merged work with a clean `git status` and a green suite.
 
@@ -254,10 +252,10 @@ Spawn `issue-planner` (read-only, `effort: max`) with the issue number, repo, wo
 path, and **`$ISSUE_MD` from § 3 pasted verbatim — body and comments both**. A subagent
 starts blank: every fact you hold and do not pass is one it pays to fetch again.
 
-🚨 **State the tier, and name no sections.** MEASURED: a prompt that said "skip the SPEC
-IMPACT section" and "your REVIEW LENSES section is load-bearing" made the planner emit
-all eight sections including every one its tier suppresses — naming a section
-re-establishes the whole vocabulary, and the caller's prompt beats the agent's own rules.
+**State the tier, and name no sections.** Naming a section, even to skip it or to call it
+load-bearing, makes the planner emit every section including the ones its tier
+suppresses: it re-establishes the whole vocabulary, and the caller's prompt beats the
+agent's own rules.
 
 Pass the facts, not the shape:
 
@@ -268,6 +266,7 @@ Repo has no spec flow.
 Integration branch: <branch>. Merging it <deploys X / is inert>.
 Gate: <commands>
 Worktree (read-only): <path>
+Plugin: <dir>      # the plugin directory, shared/execution.md § 3
 ```
 
 Let the planner decide what to emit. If you need something specific back, ask for the
@@ -299,7 +298,7 @@ cases, and the difference matters more unattended than with a human watching —
 [`../../reference/openspec.md`](../../reference/openspec.md) for both, the Purpose
 trap, and what a green does not assert.
 
-🚨 **`skip_specs` disables validation for the change entirely.** The justification is a
+**`skip_specs` disables validation for the change entirely.** The justification is a
 claim the *reviewer* has to check by eye — exactly the kind of claim an unattended run
 must not overstate. **If you cannot write a reason that survives being read by a
 skeptic, that is a handback, not a `skip_specs`.**
@@ -309,7 +308,8 @@ skeptic, that is a handback, not a `skip_specs`.**
 Stay inside what the issue asks for. **An unattended run is the worst possible place for
 opportunistic refactors:** the reviewer cannot tell your improvement from your mistake,
 and every extra hunk is a reason to reject the whole PR. Follow the conventions already
-in the file; match its idiom.
+in the file; match its idiom. Comments and docs follow
+[`shared/execution.md`](../../shared/execution.md) § 4.
 
 ### The fold-in threshold — when to just fix it here
 
@@ -344,10 +344,8 @@ the repo's deploy-target doc § Secrets and env for this platform's spelling.
 ## 8. Validation gate
 
 **Commands: [`shared/execution.md`](../../shared/execution.md) § 2, verbatim.** Do not
-retype from memory — this section used to carry its own copy, and that copy named a
-script that had been renamed (so the first command errored) and hardcoded a test count
-~1400 tests stale (so the "any red is yours" rule was anchored to a number that no
-longer existed).
+retype from memory: a copy drifts, naming a script that has since been renamed or
+hardcoding a test count that no longer holds.
 
 - **Any red is yours.** § 2.1 lists the two classes that are genuinely not your change.
   Anything else red → § Handing it back, rather than a judgment call about whether it
@@ -363,20 +361,20 @@ longer existed).
 gated on the § 6 plan's REVIEW LENSES, then the delta re-review if the fixes added new
 logic — run as the lens that raised the finding.
 
-🚨 **Spawn `gh-issue-flow:diff-reviewer`, never the bare name.** Nobody is watching to
+**Spawn `gh-issue-flow:diff-reviewer`, never the bare name.** Nobody is watching to
 notice that a shadowing file in `~/.claude/agents/` answered instead, and it returns a
 plausible review either way.
 
-💰 Paste the plan's `HANDOFF` block into every lens prompt, plus the § 8 gate result and
-the worktree path — [`shared/execution.md`](../../shared/execution.md) § 3.1.
+Paste the plan's `HANDOFF` block into every lens prompt, plus the § 8 gate result, the
+worktree path and the `Plugin:` line — [`shared/execution.md`](../../shared/execution.md)
+§ 3 and § 3.1.
 
-⚠️ **Never a `disable-model-invocation` built-in review skill** — the call errors. This
-step said to run one until it was noticed, which meant unattended PRs shipped with **no
-adversarial review at all** while this file claimed they had been reviewed. That is the
-failure mode this skill can least afford: nobody was watching.
+**Never a `disable-model-invocation` built-in review skill** — the call errors, and an
+unattended PR then ships with **no adversarial review at all** while claiming one, with
+nobody watching to notice.
 
 Unattended specifics: fix every valid finding; for any you reject, **put the reason in
-the PR body** — a silent drop is invisible to the only human who will look. If review
+the PR body's History** — a silent drop is invisible to the only human who will look. If review
 surfaces something that changes the *shape* of the fix, that is a scope escape →
 § Handing it back.
 
@@ -395,17 +393,17 @@ git add <explicit paths> && git commit -m "<type>: <what> (Fixes #<N>)"   # GPG-
 git push -u origin feat/<N>-<slug>
 ```
 
-⚠️ **All commits GPG-signed.** Never `--no-gpg-sign`. If signing fails, **stop** — do
+**All commits GPG-signed.** Never `--no-gpg-sign`. If signing fails, **stop** — do
 not push unsigned. Surface it in the report.
-⚠️ **Stage explicit paths, never `git add -A`** — see
+**Stage explicit paths, never `git add -A`** — see
 [`../../reference/parallel-agents.md`](../../reference/parallel-agents.md).
 
 Open the PR **ready for review** against the integration branch, with
 `--label agent-authored`, and request review from **the issue's assignee**; if
 unassigned or assigned to the agent's own account, request the lead.
 
-🚨 **`gh pr edit --add-reviewer` exits 0 when GitHub silently refuses the request.**
-MEASURED: requesting review from the PR's own author returns exit 0 and adds nobody —
+**`gh pr edit --add-reviewer` exits 0 when GitHub silently refuses the request.**
+Requesting review from the PR's own author returns exit 0 and adds nobody —
 GitHub does not allow self-review. That is the normal case on a solo repo, or whenever
 the run authenticates as the lead it is trying to notify. **Read it back:**
 
@@ -419,35 +417,16 @@ requested and why. Never report "review requested" off the exit code.
 
 Tag them in the body too — a requested review alone is easy to miss.
 
-PR body must contain, in order:
+The PR body is
+[`reference/git-and-github.md` § Writing a PR body](../../reference/git-and-github.md#writing-a-pr-body),
+every section in its order, History included. Unattended, two things matter more than
+usual: the Deploy note, where the test you added in § 8 is itself enough to arm a deploy,
+and a closing line: *opened unattended by autopilot; not merged — <reviewer> decides.*
 
-- `Fixes #<N>` (use `owner/repo#N` across repos)
-- **What changed** — 2–4 lines, plain language. 🚨 **If the plan contradicted the
-  issue's own diagnosis, lead with that.** The reporter needs to learn what was actually
-  wrong, and a reviewer skimming for "does this match the issue" will otherwise read the
-  mismatch as scope creep.
-- **How it was verified** — the exact gate commands and their result, plus the
-  mutation-check result for any new test
-- **Noticed, not fixed** — anything out of scope you saw
-- **For `repo.md`** — a proposed, dated bullet for `.claude/workflow/repo.md`
-  § Traps when the run measured something about the platform the doc does not say.
-  Proposed only; the reviewer commits it or drops it.
-- **Spec** — which change was archived, and whether specs were updated or the change
-  carried `skip_specs` with what reason. On a `skip_specs` change **say plainly that the
-  validate gate asserted nothing**, so the reviewer knows the justification is theirs to
-  check.
-- **Deploy note** — state whether merging deploys. 🚨 **Only claim a diff does NOT
-  deploy if you checked every changed path in the FINAL diff against the live
-  `paths-ignore`** ([`shared/execution.md`](../../shared/execution.md) § 7) — it is
-  all-or-nothing per push, and `tests/**` is commonly not ignored, so the test you added
-  in § 8 is itself enough to arm the deploy. **When unsure, say it deploys.** This is
-  the one that has actually gone wrong.
-- A closing line: *opened unattended by autopilot; not merged — <reviewer> decides.*
-
-⚠️ **Never write a closing keyword next to an issue number you do not want closed, even
+**Never write a closing keyword next to an issue number you do not want closed, even
 negated** — and note that review bots append sections to your body after you write it.
 
-🚨 **Read every mutation back.** `gh` exits 0 on rejected writes, so an unattended run
+**Read every mutation back.** `gh` exits 0 on rejected writes, so an unattended run
 can report a PR opened, a label swapped or a thread resolved that never happened — and
 nobody is watching to notice. After the PR: `gh pr view <n> --json state,url,isDraft`.
 See [`../../reference/verification.md`](../../reference/verification.md).
@@ -455,13 +434,13 @@ See [`../../reference/verification.md`](../../reference/verification.md).
 ## 11. Babysit to green — 45-minute cap
 
 **Loop and commands: [`shared/execution.md`](../../shared/execution.md) § 5.** Watch
-checks **and** review threads — an old version of this step polled checks only, so a
-bot's findings were never seen. Do not assume a babysit skill exists; do the loop
-inline, or arm a `Monitor` and let it wake you.
+checks **and** review threads — a checks-only poll never sees a bot's findings. Do not
+assume a babysit skill exists; do the loop inline, or arm a `Monitor` and let it wake
+you.
 
-🚨 **Never close a turn waiting on a backgrounded poll** —
-[`shared/execution.md`](../../shared/execution.md) § 5 has the rule and the measured
-run it comes from. This routine is the one that pays for it: nobody is awake to notice
+**Never close a turn waiting on a backgrounded poll** —
+[`shared/execution.md`](../../shared/execution.md) § 5 has the rule. This routine is the
+one that pays for it: nobody is awake to notice
 the notification never arrived, so the PR keeps whatever state the last foreground
 action left it in. **Whatever is true when your final foreground command returns is what
 a reviewer will find**, so reach a reportable end-state *before* the turn ends rather
