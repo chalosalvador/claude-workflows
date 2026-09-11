@@ -233,10 +233,13 @@ Rewrite a section so a pinned clause stops existing, and it fails with *"0 means
 lost it — did a rewrite drop the fact?"* Update `OWNED` in the same commit; do not route
 around it by deleting the entry.
 
-It is this repo's one exception to "don't write a test that pins prose" in
-[`comments-and-docs.md`](plugins/gh-issue-flow/reference/comments-and-docs.md): a pinned
-clause is how a rule keeps one home here, and no structural check can see a copied
-sentence without comparing text.
+The guards that hold docs to each other — `test_single_owner_facts.py`,
+`test_config_schema.py` and `test_doc_headers.py` — are this repo's exception to "don't
+write a test that pins prose" in
+[`comments-and-docs.md`](plugins/gh-issue-flow/reference/comments-and-docs.md). In a
+repo of markdown the only source a doc can be checked against is another doc, so they
+pin clauses, headers and counts; no structural check can see a copied sentence without
+comparing text.
 
 **A guard is mutation-proven, and a change to it is re-proven.** A re-proof covers both
 halves: the mutants that must red, and the edits that must stay green, which is what stops
