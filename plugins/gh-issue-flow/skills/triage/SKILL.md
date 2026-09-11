@@ -149,7 +149,7 @@ Per issue, ensure each — **fill blanks only; never overwrite a human's choice*
 |---|---|
 | **On the board** | `gh project item-add <board_number> --owner <board_owner> --url <url>` |
 | **Has an area label** | If missing, **determine and apply it** (§ 2a) from the `areaLabels` of **the repo the issue is in**. This is the root-cause fix — don't route around a missing label, add it. |
-| **Assigned to a DRI** | From **that repo's** `workflow.json`: a label listed in `driOverrides` names the owner whatever the area; otherwise `dri` maps the area label. Precedence, the § 5 case and the fallback below schema 5: [`shared/config.md`](../../shared/config.md) § Layer 2, `driOverrides`. Never leave an open issue unassigned. |
+| **Assigned to a DRI** | From **that repo's** `workflow.json`: a label listed in `driOverrides` names the owner whatever the area; otherwise `dri` maps the area label. Override labels naming different logins fall back to `dri`, and the receipt names the issue: a formatter that sorts keys leaves no order to choose by. Below schema 5 a file may state an override as prose in `$comment_dri`: apply it for that file only and say so in the receipt. An issue already assigned to its area's `dri` login is § 5's case. Never leave an open issue unassigned. |
 | **Has a Track** | Mirror the area label to the Track field, through that repo's `trackForArea`. An area with no entry there gets no Track from this pass: leave the field as it is and name the issue on the board-health line. |
 | **Has a Status** | If none, set **Todo**. Never move an existing Status. |
 
@@ -191,8 +191,8 @@ should be near-empty; the goal is a real label, not a default dumping ground.**
 subject-matter word in a title does not override the repo: e.g. AI/classification work
 inside a backend service is a *backend* issue, not an *agents* one, however it reads.
 Each repo's `areaLabels` meanings say where its areas meet (below schema 5, its
-`$comment_dri` may too: [`shared/config.md`](../../shared/config.md) § Layer 2,
-`driOverrides`); read them from the file of the repo the issue is in and follow them.
+`$comment_dri` may too); read them from the file of the repo the issue is in and follow
+them.
 The candidates for an issue are the `areaLabels` of **its** repo, never a sibling's.
 
 ## 3. Deep pass — categorize, size, prioritize (CAPPED at 25)
@@ -201,8 +201,9 @@ Runs only on **untriaged** issues, newest 25 first. Read the issue **and its
 comments** before judging, and open the files it names. If `gh issue view` returns
 empty (a transferred issue), read `.content.body` out of the board JSON instead.
 
-By the time an issue reaches here it already has area, assignee, Track, Status and a
-board slot from § 2 — so this pass adds only the judgment-heavy attributes.
+By the time an issue reaches here it already has area, assignee, Status, a board slot
+and, where its area maps to one, a Track from § 2 — so this pass adds only the
+judgment-heavy attributes.
 
 **Optional — fan this pass out.** The judgments below are independent per issue, so on a
 large untriaged set they can run as parallel batched subagents instead of serially.
@@ -310,8 +311,7 @@ comment if any → **`triaged` last**.
 **An issue the deep pass triages that carries a `driOverrides` label, and is still
 assigned to the login `dri` maps for its area, moves to the override's login** once its
 labels are written — whether this run or an earlier one added the label. Any other
-assignee is a human's choice and stays ([`shared/config.md`](../../shared/config.md)
-§ Layer 2, `driOverrides`).
+assignee is a human's choice and stays.
 
 **`triaged` goes on last, always.** If the run dies halfway, an issue without it gets
 picked up cleanly next time; an issue marked `triaged` before its labels landed is

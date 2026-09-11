@@ -158,7 +158,7 @@ you here.
          both probes it and writes its files, so hand that key to § 5b. For
          `driOverrides`, run § 4's Owner overrides here, before step 4: it reads
          `$comment_dri`, and its proposal is shown with the others.
-- [ ] 4. Once every proposal is accepted or declined, write ONLY the missing keys, each
+- [ ] 4. Once every proposal is accepted or declined, write only the missing keys, each
          with a `$comment_<key>` as § 3 describes, and set `schemaVersion` to the current
          schema.
 - [ ] 5. Re-run any formatter the repo applies to the file — a `$comment` usually says
@@ -485,7 +485,7 @@ Print three blocks, in this order:
 |---|---|---|
 | integrationBranch | `origin/dev` | `gh repo view` default branch |
 | validate | 3 commands | `.github/workflows/ci.yml` job `test` |
-| schemaVersion | 5 | current schema, `shared/config.md` § Layer 2 |
+| schemaVersion | `<current>` | current schema, `shared/config.md` § Layer 2 |
 | deployTargets | `gcp-cloud-run`, `gcp-terraform` | `.github/workflows/deploy.yml`, `terraform/` (provider `google`) |
 | repo.md | written | review bot from the scan; invariants and traps UNVERIFIED |
 

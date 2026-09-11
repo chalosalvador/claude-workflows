@@ -224,7 +224,7 @@ example above and `setup`'s probe list to the same key set.
 | `dri` | 0 | § 4 | repo | **This repo's** `area:*` labels → GitHub login that owns each here |
 | `trackForArea` | 0 | § 2 | repo | **This repo's** `area:*` labels → board Track option |
 | `agentReadyForbiddenPaths` | 0 | § 2 | repo | Paths an unattended run must never touch |
-| `$comment*` | 0 | § 3 | file | Provenance for the human reader. `setup upgrade` reads them for hints, and triage reads `$comment_dri` only as the fallback the `driOverrides` bullet describes |
+| `$comment*` | 0 | § 3 | file | Provenance for the human reader. `setup upgrade` reads them for hints, and triage reads `$comment_dri` only below schema 5, as its § 2 says |
 | `deployTargets` | 4 | § 5b | repo | The deploy-target doc names this repo carries, one per file in `.claude/workflow/deploy-targets/`; `[]` when the evidence names none. Schema 3 called this `stacks`; `upgrade` renames the key and the directory |
 | `priorityCaps` | 3 | § 2 | board | Label → highest priority that label may carry, applied by `triage` § 3c. Absent means `{"legal": "P1"}`; `{}` turns caps off |
 | `driOverrides` | 5 | § 4 | repo | Label → GitHub login that owns an issue carrying it in **this repo**, whatever its area; the issue keeps its area's Track |
@@ -232,8 +232,8 @@ example above and `setup`'s probe list to the same key set.
 **Scope is what `repos` cannot widen.** A `board` key describes the Projects v2 board
 every repo in `repos` feeds — `board` and `priorityCaps`, nothing else — and applies to
 every issue a run sweeps. A `repo` key describes **the repo this file lives in** and
-nothing else: its branch, gate, forbidden paths, deploy-target docs, **and its area
-map** — `areaLabels`, `dri` and `trackForArea` name the `area:*` labels this repo
+nothing else: its branch, gate, forbidden paths, deploy-target docs, owner overrides,
+**and its area map** — `areaLabels`, `dri` and `trackForArea` name the `area:*` labels this repo
 carries, described from this repo's point of view, and no other repo's. A `file` key is
 about the file itself. So a run that sweeps a sibling from `repos` reads the two
 board-level facts from this file and everything else **from the sibling's own
@@ -324,18 +324,11 @@ These carry weight the others do not:
   routing table and can only report the gap. Keep it beside `areaLabels`; an area with no
   DRI is the same failure as no area label.
 - **`driOverrides`** maps a label to the login that owns an issue carrying it in this
-  repo, whatever its area — commonly `security`, `compliance` or `legal` going to one
-  person; the issue keeps its area's Track. Triage assigns from it before `dri` in
-  triage § 2, and in triage § 5 moves an issue it is deep-triaging to the override's
-  login when the issue carries such a label and is still assigned to its area's `dri`
-  login. Any other assignee is kept. An issue whose override labels name different
-  logins is assigned from `dri` and named in the receipt, since a key's order does not
-  survive a formatter that sorts keys. Where one area ends and the next begins belongs
-  in the `areaLabels` meanings, not here. A file below schema 5 may still state an
-  override, or an area boundary, as prose in `$comment_dri`: triage applies it from
-  there for that file only and says so in its receipt. `setup upgrade` proposes the key
-  from that prose and lists any boundary the `areaLabels` meanings lack, because schema 5
-  ends the fallback.
+  repo, whatever its area; the issue keeps its area's Track. How triage assigns from it
+  is [`triage`](../skills/triage/SKILL.md) § 2 and § 5. Where one area ends and the next
+  begins belongs in the `areaLabels` meanings, not here. Below schema 5, triage reads
+  such a rule from `$comment_dri` until `setup upgrade` adds the key
+  ([`setup`](../skills/setup/SKILL.md) § 4, Owner overrides).
 - **`validate`** runs every time. **`validateWhenChanged`** maps a glob to a command run
   only when the diff touches it — keep slow or narrow gates here, not in `validate`.
 - **`ciOnly`** names a required check you must **not** attempt locally, *with the reason*.
@@ -417,7 +410,7 @@ sweep:
 | You need the sibling's | Read it from |
 |---|---|
 | board, priority caps | **this** file; they describe the shared board |
-| area labels, DRI, owner overrides, Track — its area map | **the sibling's own** `.claude/workflow.json`: its checkout when one resolves, else the same file read from GitHub (below). Label, assign and set Track on a sibling's issue only from **its** map |
+| area labels, DRI, Track — its area map — and its owner overrides | **the sibling's own** `.claude/workflow.json`: its checkout when one resolves, else the same file read from GitHub (below). Label, assign and set Track on a sibling's issue only from **its** map |
 | integration branch, gate, forbidden paths, deploy-target docs, workstreams | **the sibling's own** `.claude/workflow.json` (its checkout, worktree then main, per the block in § Resolving `workflow.json` run from that checkout) |
 | branch, gate, forbidden paths, docs with no checkout | nothing — the sibling is **board-only** this run: sweep its issues for the integrity pass, never gate one `agent-ready`, never judge its merges, never pick it to implement, and say so once |
 
@@ -431,17 +424,16 @@ gh api "repos/<owner>/<repo>/contents/.claude/workflow.json?ref=$ref" --jq .cont
 # if the result's integrationBranch names another branch, read again at that ref
 ```
 
-That read gives you the area map only — never run a gate or judge a merge from it. A
+That read gives you the area map and owner overrides only — never run a gate or judge a
+merge from it. A
 404 means the sibling has no tracked file (most often `.claude/` is gitignored there,
 see `setup` § 3): then the sibling has no map this run either — add its issues to the
 board and set Status, report every unlabeled or unassigned one as a gap, and label
 nothing there. Never fall back to this file's map for a sibling's issue.
 
 Two files that both list each other must agree on `board` and `priorityCaps`; their area
-maps are per repo by design and are not compared. `setup check` diffs the two shared keys
-when both files can be read and reports a disagreement as a Missing row; for the map it
-checks **coverage** — every `area:*` label the repo has maps to a DRI in the repo's own
-file — and lists an entry with no matching label as cleanup, not as a failure.
+maps and owner overrides are per repo by design and are not compared. What `setup check`
+reports for each is in [`setup`](../skills/setup/SKILL.md), under its Check mode.
 
 ---
 
