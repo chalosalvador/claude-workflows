@@ -237,20 +237,25 @@ halves: the mutants that must red, and the edits that must stay green, which is 
 a guard reddening on ordinary reformatting. The cases each guard's re-proof includes:
 
 - `test_no_copied_sentences.py`: a sentence copied into another doc reds, including
-  re-wrapped, re-cased, with other emphasis or link targets, and moved into a list item,
-  a blockquote, a heading, a table cell, a skill's `description` or an untracked doc; so
-  do a three-word copy, a copy in a quoted `description`, a sentence repeated in its own
-  file, a copied table row, one long cell in two tables of one file, a sentence the two
-  setup templates share, and a fence left open or closed by the other fence character. A
-  paraphrase, a two-word repeat, a bare link in two docs, the same command in two fences,
-  one value down a table's column, a header row or a placeholder row reused by another
-  table, two sentences that share words up to a "vs.", a setting two agents' frontmatter
-  share, a re-wrap in place and a move within one file stay green.
+  re-wrapped, re-cased, with other emphasis, link targets or final period, and moved into
+  a list item, a blockquote, a table cell, a skill's `description` (quoted or not) or an
+  untracked doc; so do a heading copied into another heading, a three-word copy, a
+  sentence repeated in its own file, a copied table row, one long cell in two tables of
+  one file however they are separated, a sentence the two setup templates share, a
+  sentence ending in a word like "envs.", and a fence left open or closed by the other
+  fence character. A paraphrase, a two-word repeat, a bare link in two docs, a sentence
+  quoting another doc's heading, two numbered step headings with a short shared title,
+  the same command in two fences, one value down a table's column even with an escaped
+  pipe in a neighbouring cell, a header row or a placeholder row reused by another table,
+  two sentences that share words up to a "vs.", a setting two agents' frontmatter share,
+  a re-wrap in place and a move within one file stay green.
 - `test_config_schema.py`: a dropped row, an example key with no row, a row with no
   example key, a key setup § 2 probes that the table lacks, a key missing from the setup
-  section its row names, a Since above Current, a key setup never mentions, a missing
-  Current line, a duplicate row and an emptied table red; reversed rows, padded cells, a reworded
-  Meaning and a legitimate schema bump stay green.
+  section its row names (written `§ 5`, `§5` or as one of two sections), a Setup cell
+  naming no section, a Since above Current, a key setup never mentions, a missing Current
+  line, a duplicate row and an emptied table red; reversed rows, padded cells, a reworded
+  Meaning, a § 2 row naming sub-keys in parentheses and a legitimate schema bump stay
+  green.
 - `test_links.py`: a typo'd path, a link to an untracked file, a link escaping the repo, a
   link climbing out of the plugin directory to a marketplace-only path, and a parser that
   matches nothing red; an anchor link and a mix of `./`, directory, `https:` and `#` links
@@ -258,10 +263,12 @@ a guard reddening on ordinary reformatting. The cases each guard's re-proof incl
   is an example, and it checks the plugin boundary as well as the repo's.
 - `test_doc_headers.py`: a renamed skeleton header, a renamed table row, a "§ Infra" short
   reference, demoted headers, an added header the table lacks, a header moved to the other
-  skeleton, a header removed with its row while a `repo.md § …` reference still names it,
-  an emptied skeleton and a header present in both skeletons red; a reordered table and a mix of other § references
-  with full header names stay green. References are compared word by word, because a greedy match lets a
-  short form through.
+  skeleton, a header renamed or removed with its row while a reference that names the doc
+  (`repo.md § …`, `deploy-target doc § … and § …`, a `deploy-targets/<name>.md` path)
+  still names it, an emptied skeleton and a header present in both skeletons red; a
+  reordered table, a mix of other § references with full header names, a doc whose name
+  merely ends in `repo.md` and a section number after a doc name stay green. References
+  are compared word by word, because a greedy match lets a short form through.
 - `test_version_agreement.py`: any disagreement among the three numbers reds, including a
   stale top-level `version` that `claude plugin validate` passes; three equal numbers,
   before and after a legitimate bump of all three, stay green.

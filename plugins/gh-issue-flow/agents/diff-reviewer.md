@@ -130,10 +130,10 @@ nothing exercises, and assertions on shape rather than behavior.
 
 **deploy** — Migration and rollout safety. Destructive vs. additive/nullable.
 Ordering between migration, backfill, and image roll. Start from your HANDOFF's
-`Ops docs:` line — the § Deploy and § Infra and migrations lines the planner carried:
-what a merge runs, the ordering rules, what is not in the CD path — then verify against
-the live workflow; the doc is a snapshot and the workflow wins. Check whether merging
-the integration branch auto-deploys and runs migrations — read
+`Ops docs:` line — the deploy-target doc § Deploy and § Infra and migrations lines the
+planner carried: what a merge runs, the ordering rules, what is not in the CD path — then
+verify against the live workflow; the doc is a snapshot and the workflow wins. Check
+whether merging the integration branch auto-deploys and runs migrations — read
 `.claude/workflow.json` -> `deployOnMerge`, or the repo's CD workflow, rather
 than assuming a merge is inert.
 

@@ -13,8 +13,8 @@ works if three things never drift:
      ("Since");
   2. no row claims a version newer than **Current schema**;
   3. setup knows how to probe every key in the table, in the section the table's
-     Setup column names, and probes no key the table lacks — a key it has never
-     heard of is a key `upgrade` can never add.
+     Setup column names, and setup § 2 probes no key the table lacks — a key it has
+     never heard of is a key `upgrade` can never add.
 
 A PR that adds a key to the example but not to the table, or to the table but
 not to setup, passes every other check and ships a config nobody can migrate
@@ -118,11 +118,16 @@ def main() -> int:
         if needle not in setup:
             problems.append(f"setup/SKILL.md never mentions `{key}` — `upgrade` cannot add a key setup cannot probe")
             continue
-        m = re.fullmatch(r"§ (\w+)", where[key])
-        if m and needle not in sections.get(m.group(1), ""):
-            problems.append(f"schema table says setup § {m.group(1)} sets `{key}`, and that section never mentions it")
+        named = re.findall(r"§\s*(\w+)", where[key])
+        if not named and where[key] != "always written":
+            problems.append(f"`{key}` has Setup cell {where[key]!r}, which names no setup section")
+        for sec in named:
+            if needle not in sections.get(sec, ""):
+                problems.append(f"schema table says setup § {sec} sets `{key}`, and that section never mentions it")
 
-    for key in sorted(set(re.findall(r"`([^`]+)`", " ".join(PROBE_ROW.findall(sections.get("2", ""))))) - rows.keys()):
+    # A parenthesised aside in a probe row names sub-keys, not keys.
+    probed = " ".join(re.sub(r"\([^)]*\)", "", cell) for cell in PROBE_ROW.findall(sections.get("2", "")))
+    for key in sorted(set(re.findall(r"`([^`]+)`", probed)) - rows.keys()):
         if key.isidentifier() and not key.startswith("$"):
             problems.append(f"setup § 2 probes `{key}` but the schema table has no row for it")
 

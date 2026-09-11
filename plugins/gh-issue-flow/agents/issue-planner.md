@@ -54,8 +54,8 @@ means nothing.
   (`$(dirname "$(git -C <checkout> rev-parse --path-format=absolute --git-common-dir)")`),
   because `.claude/` is often gitignored in a worktree and `--show-toplevel` names the
   worktree.
-  § Deploy and § Infra and migrations decide RISKS; § Reviewer invariants decides whether
-  `safety` is a lens this diff needs. **Carry the lines that apply into HANDOFF's
+  The deploy-target doc § Deploy and § Infra and migrations decide RISKS; `repo.md`
+  § Reviewer invariants decides whether `safety` is a lens this diff needs. **Carry the lines that apply into HANDOFF's
   `Ops docs:` field** — the lenses read that field, not the files, so a line you leave out
   is a line no reviewer sees. A section marked `UNVERIFIED` is an unknown — put it under
   `Still unverified`.
@@ -101,8 +101,8 @@ Gate:              <commands> — result when run: <pass/fail>
 Environment:       <venv path / how to run it, if one exists>
 Already verified:  <what you checked, so nobody checks it twice>
 Still unverified:  <what you could NOT check — where reviewers should look>
-Ops docs:         <the § Deploy, § Infra and migrations and § Reviewer invariants lines
-                    that apply to THIS diff, verbatim — or "none carried: <no ops docs |
+Ops docs:         <the deploy-target doc § Deploy and § Infra and migrations lines and the
+                    `repo.md` § Reviewer invariants lines that apply to THIS diff, verbatim — or "none carried: <no ops docs |
                     section UNVERIFIED | nothing applies>". Never blank.>
 Noticed:           <real but out of scope. ONE line each, no analysis>
 ```

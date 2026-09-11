@@ -23,10 +23,12 @@ DESIGN — see plugins/gh-issue-flow/reference/guard-tests.md
 The table's (Section, File) pairs and the skeletons' (header, skeleton) pairs are
 compared as sets, so a dropped, demoted or moved header reds on the row it leaves
 behind. A "§ X" whose X is a strict word-prefix of a header ("Infra" for "Infra and
-migrations") is that header spelled short, and reds. A "§ X" right after `repo.md` or
-"deploy-target doc" must name a header, so a section removed with its row still reds
-on every reference to it; any other "§ X" that matches no header ("§ Layer 1", "§ 5b")
-is some other section and is ignored.
+migrations") is that header spelled short, and reds. A reference that names its doc
+(`repo.md`, "deploy-target doc" or a `deploy-targets/<name>.md` path) followed by one
+or more "§ X" must name headers, so a section renamed or removed with its row reds on
+those references. A "§ X" with no doc named is not tied to either skeleton: it reds
+only when spelled short, and one that matches no header ("§ Layer 1", "§ 5b") is some
+other section.
 
 Mutation-proven; the cases a re-proof covers are in CONTRIBUTING.md § Conventions.
 
@@ -52,8 +54,10 @@ TABLE_ROW = re.compile(r"^\| ([A-Z][^|]*?) \| ([^|]*?) \|", re.M)
 TABLE_FILE = {"target": "target", "repo.md": "repo"}
 # A wrapped reference ("§ Review\n  bot") is still one phrase: allow one line break between words.
 REF = re.compile(r"§ ([A-Z][A-Za-z]+(?:[ \n][ \t]*[a-z]+)*)")
-# A reference into a stack doc by name: it has to land on a header.
-DOC_REF = re.compile(r"(?:`?repo\.md`?|deploy-target docs?)[ \n][ \t]*§ ([A-Z][A-Za-z]+(?:[ \n][ \t]*[a-z]+)*)")
+# A reference that names its stack doc, then one or more sections: each has to land on a header.
+SECTION = r"§ [A-Z][A-Za-z]+(?:[ \n][ \t]*[a-z]+)*"
+DOC_REF = re.compile(r"(?i:(?<![\w-])`?repo\.md`?|deploy-target docs?|`?\.?[\w./-]*deploy-targets/<name>\.md`?)[ \n][ \t]*("
+                     + SECTION + r"(?:,?[ \n][ \t]*(?:and[ \n][ \t]*)?" + SECTION + r")*)")
 
 
 def fail(msg: str) -> int:
@@ -92,10 +96,11 @@ def main() -> int:
     for rel in md:
         text = (ROOT / rel).read_text(encoding="utf-8")
         for m in DOC_REF.finditer(text):
-            words = re.sub(r"\s+", " ", m.group(1)).split(" ")
-            if not any(words[:len(h.split(" "))] == h.split(" ") for h in hset):
-                line = text.count("\n", 0, m.start()) + 1
-                problems.append(f"{rel}:{line}: '§ {words[0]}' after a stack-doc name matches no skeleton header")
+            for s in re.finditer(SECTION, m.group(1)):
+                words = re.sub(r"\s+", " ", s.group(0)[2:]).split(" ")
+                if not any(words[:len(h.split(" "))] == h.split(" ") for h in hset):
+                    line = text.count("\n", 0, m.start(1) + s.start()) + 1
+                    problems.append(f"{rel}:{line}: '§ {words[0]}' after a stack-doc name matches no skeleton header")
         for m in REF.finditer(text):
             words = re.sub(r"\s+", " ", m.group(1)).split(" ")
             # Word by word against each header: a phrase that matches the first k words of a

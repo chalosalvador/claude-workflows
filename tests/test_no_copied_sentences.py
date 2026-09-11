@@ -5,10 +5,11 @@ A copied sentence is a second home for one fact: a later edit updates one copy a
 leaves the other contradicting it. This compares the docs with each other and holds
 none of their wording, so rewording never reds it; only a copy does.
 
-It reads sentences, list items, headings and table cells, with emphasis, code ticks
-and whole links removed so one pointer in two docs is not a copy, and whole table
-rows. Fenced code repeats commands on purpose and is not read. A clause pasted into
-a longer sentence is not seen. The re-proof cases are in CONTRIBUTING.md § Conventions.
+It reads sentences, list items, table cells and whole table rows, with emphasis, code
+ticks, links and end punctuation removed, so one pointer in two docs is not a copy; a
+heading is compared only with headings. Fenced code repeats commands on purpose and is
+not read. A clause pasted into a longer sentence is not seen. The re-proof cases are in
+CONTRIBUTING.md § Conventions.
 
 Run:  python3 tests/test_no_copied_sentences.py
 Set COPY_GUARD_ROOT to point it at a copy (the mutation harness does).
@@ -29,8 +30,10 @@ MIN_WORDS = 3
 # A body row this wide is read whole as well, so a copied table reds even when its cells
 # are short. Header rows are labels and are not read.
 MIN_ROW_CELLS = 3
-# A period after these does not end a sentence.
-ABBREVIATIONS = ("vs.", "e.g.", "i.e.", "cf.")
+# A period after one of these words does not end a sentence.
+ABBREVIATION = re.compile(r"(?:^|\s)(?:vs|e\.g|i\.e|cf)\.$")
+# A pipe escaped for a code span inside a table cell does not split the cell.
+CELL_SPLIT = re.compile(r"(?<!\\)\|")
 
 FENCE = re.compile(r"^(`{3,}|~{3,})(.*)$")
 LINK = re.compile(r"!?\[(?:[^\[\]]|\[[^\]]*\])*\]\([^)]*\)")
@@ -51,7 +54,7 @@ def normalize(text: str) -> str:
 def sentences(text: str) -> list[str]:
     out: list[str] = []
     for part in SENTENCE_END.split(text):
-        if out and out[-1].endswith(ABBREVIATIONS):
+        if out and ABBREVIATION.search(out[-1]):
             out[-1] += " " + part
         else:
             out.append(part)
@@ -73,12 +76,14 @@ def units(text: str, rel: str) -> list[tuple[str, int, Cell]]:
     fence: tuple[str, int] | None = None
     fence_line = 0
     table = 0
-    in_table = False
+    table_row = -1
 
     def flush(cell: Cell = None) -> None:
         nonlocal para
         if para:
             for s in sentences(normalize(" ".join(para))):
+                # A cell rarely ends in a period; the same sentence with one is still a copy.
+                s = s.rstrip(".!?:; ")
                 if words(s) >= MIN_WORDS:
                     out.append((s, para_line, cell))
             para = []
@@ -120,6 +125,9 @@ def units(text: str, rel: str) -> list[tuple[str, int, Cell]]:
         n = i + 1
         body = re.sub(r"^\s*(?:>\s?)*", "", lines[i])
         stripped = body.strip()
+        # Any line that is not a row ends the table, so the next table gets its own id.
+        if not stripped.startswith("|"):
+            table_row = -1
         m = FENCE.match(stripped)
         if fence:
             if m and m.group(1)[0] == fence[0] and len(m.group(1)) >= fence[1] and not m.group(2).strip():
@@ -135,13 +143,16 @@ def units(text: str, rel: str) -> list[tuple[str, int, Cell]]:
             continue
         if stripped.startswith("|"):
             flush()
-            if not in_table:
+            table_row += 1
+            if table_row == 0:
                 table += 1
-                in_table = True
             nxt = re.sub(r"^\s*(?:>\s?)*", "", lines[i + 1]).strip() if i + 1 < len(lines) else ""
-            if SEPARATOR_ROW.match(stripped) or (nxt.startswith("|") and SEPARATOR_ROW.match(nxt)):
+            # The first row is a header when a separator row follows it; the separator is skipped.
+            if table_row == 0 and nxt.startswith("|") and SEPARATOR_ROW.match(nxt):
                 continue
-            cells = [c.strip() for c in stripped.strip("|").split("|")]
+            if table_row == 1 and SEPARATOR_ROW.match(stripped):
+                continue
+            cells = [c.strip() for c in CELL_SPLIT.split(stripped.strip("|"))]
             row = normalize(" | ".join(cells))
             if len(cells) >= MIN_ROW_CELLS and words(row) >= MIN_WORDS:
                 out.append((row, n, None))
@@ -149,11 +160,13 @@ def units(text: str, rel: str) -> list[tuple[str, int, Cell]]:
                 add(c, n)
                 flush(cell=(table, col))
             continue
-        in_table = False
         if stripped.startswith("#"):
+            # A heading is compared only with headings: a sentence that quotes one is a pointer.
             flush()
-            add(stripped.lstrip("#"), n)
-            flush()
+            # A step number ("5. Write it") is not part of what the heading says.
+            heading = re.sub(r"^\d+[a-z]?\.\s*", "", normalize(stripped.lstrip("#"))).rstrip(".!?:; ")
+            if words(heading) >= MIN_WORDS:
+                out.append(("## " + heading, n, None))
             continue
         if LIST_ITEM.match(stripped):
             flush()
