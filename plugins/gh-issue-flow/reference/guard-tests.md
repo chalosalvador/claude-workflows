@@ -14,8 +14,8 @@ is a guard shape that passes its whole suite and still loses to a reviewer or a 
 
 When a guard over code or config must guarantee "nothing unsafe was added", **pin the
 complete reviewed set** (address → exact normalized expression) rather than asserting a
-property of each item. A guard over a doc is narrower; § 4 says what it may read. Property checks lose to adversarial review reliably, and in
-sequence.
+property of each item. Property checks lose to adversarial review reliably, and in
+sequence. A guard over a doc reads less than one over code: § 4 says what.
 
 One real case defeated **three successive** property guards on the same code, each
 verified green:
@@ -235,10 +235,9 @@ wording into the test, and the review the pin was meant to force never happens.
 So a test reads a doc only where a program reads it — a config key setup writes, a header
 a skill looks up by name, a link target — and checks it against that program's source.
 Everything else a doc says is checked in review, by the `comments` lens in
-[`../agents/diff-reviewer.md`](../agents/diff-reviewer.md): whether it is still true,
-whether another file already says it, whether it carries history. A live fact comes out
-of the doc altogether: give the command that reads it, as
-[`comments-and-docs.md`](comments-and-docs.md) asks.
+[`../agents/diff-reviewer.md`](../agents/diff-reviewer.md), which also reads the lines a
+change leaves stale. A live fact comes out of the doc altogether: give the command that
+reads it, as [`comments-and-docs.md`](comments-and-docs.md) asks.
 
 ---
 

@@ -140,8 +140,9 @@ than assuming a merge is inert.
 **comments** — Each comment and doc line the diff adds or changes
 (`git diff -U0 <integration-branch>...HEAD`), against the repo's own comment policy: a
 section titled "Comments and docs" in its agent or contributor instructions, wherever they
-sit (`git grep -n -i -E '^#+ .*comments and docs' -- '*.md'`), which wins. With none, apply the plugin default, `reference/comments-and-docs.md` in the plugin
-directory. Say in one line which policy you applied. Report a line that carries:
+sit (`git grep -n -i -E '^#+ .*comments and docs' -- '*.md'`), which wins. With none,
+apply the plugin default, `reference/comments-and-docs.md` in the plugin directory. Say in
+one line which policy you applied. Report a line that carries:
 
 - an issue or PR number;
 - a date;
@@ -152,6 +153,11 @@ directory. Say in one line which policy you applied. Report a line that carries:
 - live state written as a value instead of the command that reads it;
 - a block over the policy's size limit;
 - an alarm marker.
+
+Then the lines the diff does not touch: for each name, value, path or behaviour the diff
+changes, `git grep` the comments and docs for what they say about it, and report a line
+the change makes false, with the change that falsifies it. A claim goes stale when its
+subject moves, and its own line is never in the diff.
 
 The policy's exceptions are never findings. Under the plugin default those are an
 OpenSpec change folder outside its spec deltas, which names its issue, and a security

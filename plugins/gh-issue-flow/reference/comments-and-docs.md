@@ -38,9 +38,9 @@ Write it in the present tense, and only if it stays true without anyone editing 
 - **Answer a reviewer in the thread, not in the code.** Make the code clearer, or reply.
 - **Comments and docs are reviewed, not tested.** No test or CI step checks what a
   comment or a doc says; the `comments` lens in
-  [`../agents/diff-reviewer.md`](../agents/diff-reviewer.md) does, on every line a change
-  adds. A test reads a doc only where a program reads it, as
-  [`guard-tests.md`](guard-tests.md) § 4 says.
+  [`../agents/diff-reviewer.md`](../agents/diff-reviewer.md) does. A test reads a comment
+  or a doc only where a program reads it, such as a suppression format a scanner requires
+  or a header a skill looks up ([`guard-tests.md`](guard-tests.md) § 4).
 
 ## Exceptions
 

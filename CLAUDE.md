@@ -16,8 +16,9 @@ caused wasted work.
   fields of `.claude-plugin/marketplace.json`, and read the three back:
   [§ Bump `version`](CONTRIBUTING.md#bump-version-in-the-same-pr-as-any-behaviour-change).
 - **Comments and docs** follow
-  [`comments-and-docs.md`](plugins/gh-issue-flow/reference/comments-and-docs.md). Review
-  checks them, through the `comments` lens; no test or CI step does.
+  [`comments-and-docs.md`](plugins/gh-issue-flow/reference/comments-and-docs.md), and no
+  test or CI step checks them: run the `comments` lens before a PR, as
+  [§ Conventions](CONTRIBUTING.md#conventions) says.
 
 ## Testing what you changed
 

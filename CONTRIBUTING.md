@@ -217,12 +217,12 @@ History
 the doc states the current fact. Comments and docs follow
 [`comments-and-docs.md`](plugins/gh-issue-flow/reference/comments-and-docs.md).
 
-**Comments and docs are reviewed, not tested.** No test or CI step reads what a comment
-or a doc says; the `comments` lens in
-[`diff-reviewer.md`](plugins/gh-issue-flow/agents/diff-reviewer.md) checks each line a
-change adds for history, dates, issue numbers, a fact another file owns, and a claim
-something else contradicts. The guards below read docs only where the plugin reads them:
-config keys, section headers skills look up by name, and link targets.
+**Run the `comments` lens before you open a PR that adds or changes a comment or a doc
+line, or changes anything a doc describes.** Nothing in CI does it for you. Spawn
+`gh-issue-flow:diff-reviewer` with `Lens: comments`, a `Plugin:` line naming the absolute
+path of `plugins/gh-issue-flow`, and the branch diff against `origin/main`; fix what it
+reports or say in the PR body why not. The guards below read docs only where a program
+does: config keys, section headers skills look up by name, and link targets.
 
 **A guard is mutation-proven, and a change to it is re-proven.** A re-proof covers both
 halves: the mutants that must red, and the edits that must stay green, which is what stops

@@ -157,9 +157,8 @@ with none, in the newest installed copy
 (`ls -d ~/.claude/plugins/cache/claude-workflows/gh-issue-flow/*/ | sort -V | tail -1`). **Name only
 those, one clause each on why**, and list the ones you skipped with the reason. This gates
 a parallel max-effort review — an unearned lens costs real tokens, a missing one costs a
-real bug. **Never name none: `correctness` is the floor.** A docs or config diff still makes
-claims that lens can check against the thing described, and a caller reads an empty list
-as a malformed plan.
+real bug. **Never name none: `correctness` is the floor.** A config diff still changes behaviour
+that lens can check, and a caller reads an empty list as a malformed plan.
 
 **Any diff that adds or changes a comment or a doc line gets `comments`.**
 
