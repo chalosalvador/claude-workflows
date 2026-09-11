@@ -319,14 +319,17 @@ These carry weight the others do not:
   DRI is the same failure as no area label.
 - **`driOverrides`** maps a label to the login that owns an issue carrying it in this
   repo, whatever its area — commonly `security`, `compliance` or `legal` going to one
-  person. Triage assigns from it before `dri` whenever it assigns: in triage § 2, and in
-  triage § 5 when its own deep pass adds such a label to an issue it has just assigned.
-  An issue a human already assigned keeps its owner. With more than one such label, the
-  first in the key's order wins; either way the issue keeps its area's Track. Where one
-  area ends and the next begins belongs in the `areaLabels` meanings, not here. A file
-  below schema 5 may still state an override, or an area boundary, as prose in
-  `$comment_dri`: triage applies it from there for that file only and says so in its
-  receipt, and `setup upgrade` proposes the key.
+  person; the issue keeps its area's Track. Triage assigns from it before `dri` in
+  triage § 2, and in triage § 5 moves an issue it is deep-triaging to the override's
+  login when the issue carries such a label and is still assigned to its area's `dri`
+  login. Any other assignee is kept. An issue whose override labels name different
+  logins is assigned from `dri` and named in the receipt, since a key's order does not
+  survive a formatter that sorts keys. Where one area ends and the next begins belongs
+  in the `areaLabels` meanings, not here. A file below schema 5 may still state an
+  override, or an area boundary, as prose in `$comment_dri`: triage applies it from
+  there for that file only and says so in its receipt. `setup upgrade` proposes the key
+  from that prose and lists any boundary the `areaLabels` meanings lack, because schema 5
+  ends the fallback.
 - **`validate`** runs every time. **`validateWhenChanged`** maps a glob to a command run
   only when the diff touches it — keep slow or narrow gates here, not in `validate`.
 - **`ciOnly`** names a required check you must **not** attempt locally, *with the reason*.

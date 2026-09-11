@@ -3,7 +3,8 @@ name: triage
 description: >-
   Daily triage of GitHub issues across one or more repos. An UNCAPPED integrity pass
   guarantees a clean board — every open issue on the project board, area-labeled,
-  assigned to its DRI, with a Track and Status (0 off-project, 0 unassigned). Then a
+  assigned to its DRI, with a Status and, where its area maps to one, a Track (0
+  off-project, 0 unassigned). Then a
   capped deep pass categorizes (Bug/Feature/Improvement/Question), sizes effort, sets
   priority, flags duplicates, and marks safe-and-easy ones agent-ready for the
   autopilot skill. Writes verdicts to GitHub, then prints a receipt. Use for "triage
@@ -22,7 +23,7 @@ configured, run the label half and skip every Project step.
 
 **The clean-board guarantee (§ 2):** after any run, **no open issue is off the board
 and none is unassigned** — every one is area-labeled, routed to its DRI, and has a
-Track and Status. This pass is *uncapped*, so the guarantee holds even on a day the
+Status and, where its area maps to one, a Track. This pass is *uncapped*, so the guarantee holds even on a day the
 deep pass hits its cap.
 
 **The rule that makes this useful:** every verdict is written to GitHub — labels and
@@ -42,8 +43,8 @@ both start with zero memory of it.
 ```
 - [ ] 1. Pull the working set (open issues, every repo, + the board)
 - [ ] 2. INTEGRITY PASS — uncapped, ALL open issues. Guarantee every one is:
-         on the board · has an area label · assigned to its DRI · has a Track ·
-         has a Status. This is the clean-board guarantee. (§ 2)
+         on the board · has an area label · assigned to its DRI · has a Track where
+         its area maps to one · has a Status. This is the clean-board guarantee. (§ 2)
 - [ ] 3. DEEP PASS — capped at 25 untriaged issues: category → effort → priority
          → duplicates → agent-ready gate. (§ 3–4)
 - [ ] 4. Write it: labels, board fields, assignee, dup comments, `triaged` LAST
@@ -149,7 +150,7 @@ Per issue, ensure each — **fill blanks only; never overwrite a human's choice*
 | **On the board** | `gh project item-add <board_number> --owner <board_owner> --url <url>` |
 | **Has an area label** | If missing, **determine and apply it** (§ 2a) from the `areaLabels` of **the repo the issue is in**. This is the root-cause fix — don't route around a missing label, add it. |
 | **Assigned to a DRI** | From **that repo's** `workflow.json`: a label listed in `driOverrides` names the owner whatever the area; otherwise `dri` maps the area label. Precedence, the § 5 case and the fallback below schema 5: [`shared/config.md`](../../shared/config.md) § Layer 2, `driOverrides`. Never leave an open issue unassigned. |
-| **Has a Track** | Mirror the area label to the Track field, through that repo's `trackForArea`. An area with no entry there gets no Track from this pass: leave the field as it is and name the issue in the receipt. |
+| **Has a Track** | Mirror the area label to the Track field, through that repo's `trackForArea`. An area with no entry there gets no Track from this pass: leave the field as it is and name the issue on the board-health line. |
 | **Has a Status** | If none, set **Todo**. Never move an existing Status. |
 
 **The map is per repo.** For a sibling in `repos` the maps come from the
@@ -306,9 +307,11 @@ assignee if unassigned → Track if blank → Status Todo if none. Then per deep
 issue: category → effort → Priority if blank → `agent-ready` if gated → duplicate
 comment if any → **`triaged` last**.
 
-**When the deep pass adds a `driOverrides` label to an issue whose assignee this run wrote
-from `dri`, replace that assignee with the override's login once the label is written.**
-Both assignments are this run's own, so no human choice is overwritten.
+**An issue the deep pass triages that carries a `driOverrides` label, and is still
+assigned to the login `dri` maps for its area, moves to the override's login** once its
+labels are written — whether this run or an earlier one added the label. Any other
+assignee is a human's choice and stays ([`shared/config.md`](../../shared/config.md)
+§ Layer 2, `driOverrides`).
 
 **`triaged` goes on last, always.** If the run dies halfway, an issue without it gets
 picked up cleanly next time; an issue marked `triaged` before its labels landed is
