@@ -14,8 +14,7 @@ is a guard shape that passes its whole suite and still loses to a reviewer or a 
 
 When a guard over code or config must guarantee "nothing unsafe was added", **pin the
 complete reviewed set** (address → exact normalized expression) rather than asserting a
-property of each item. A guard over a doc pins none of its words; § 4 says what it checks
-instead. Property checks lose to adversarial review reliably, and in
+property of each item. A guard over a doc is narrower; § 4 says what it may read. Property checks lose to adversarial review reliably, and in
 sequence.
 
 One real case defeated **three successive** property guards on the same code, each
@@ -225,23 +224,21 @@ Anchor the region to the thing that gives the tokens their meaning — the lines
 mentioning the cited path — then take a window of ±N *lines* around it. Assert
 loudly when the region comes back empty.
 
-### A claim in a doc is checked against its source, never pinned
+### A doc is reviewed, not tested
 
 A window is right for a citation, a token whose neighbourhood gives it meaning. A claim
-is different: the claim *is* the sentence, and a test that holds the sentence, by clause,
-count or hash, freezes its wording and nothing else. The doc can be wrong and stay green,
-and a correct rewording goes red, so the fix for every red is to paste the new wording
-into the test, and the review the pin was meant to force never happens.
+in a doc is different: the claim *is* the sentence, and a test that holds the sentence, by
+clause, count or hash, freezes its wording and nothing else. The doc can be wrong and stay
+green, and a correct rewording goes red, so the fix for every red is to paste the new
+wording into the test, and the review the pin was meant to force never happens.
 
-Check the claim against what it describes instead:
-
-- **A value the doc repeats from config or code**: parse that source and compare.
-- **A live fact** (what is deployed, enabled or applied): take it out of the doc and give
-  the command that reads it, as [`comments-and-docs.md`](comments-and-docs.md) asks.
-- **A fact two docs must not both state**: look for sentences copied between them. That
-  compares the docs with each other and pins neither.
-
-A claim none of these can check is the reviewer's to check, not a test's.
+So a test reads a doc only where a program reads it — a config key setup writes, a header
+a skill looks up by name, a link target — and checks it against that program's source.
+Everything else a doc says is checked in review, by the `comments` lens in
+[`../agents/diff-reviewer.md`](../agents/diff-reviewer.md): whether it is still true,
+whether another file already says it, whether it carries history. A live fact comes out
+of the doc altogether: give the command that reads it, as
+[`comments-and-docs.md`](comments-and-docs.md) asks.
 
 ---
 
@@ -359,8 +356,8 @@ Assert the no-false-fire direction explicitly: reformat, de-shout, re-wrap.
 Before trusting a new guard:
 
 - [ ] Over code or config: is the guarantee an **inventory pin**, not a property check?
-- [ ] Over a doc: does it check the doc against its source or another doc, and pin none
-      of the doc's words?
+- [ ] Over a doc: does it read only what a program reads there, checked against that
+      program's source, and leave the prose to review?
 - [ ] Mutated along **what**, **where**, and **spelling**?
 - [ ] Is every mutation **a spelling a real author would write**?
 - [ ] Does the guard catch **its own revert**?

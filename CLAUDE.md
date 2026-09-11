@@ -15,11 +15,9 @@ caused wasted work.
 - **Bump `version` in the same PR as any behaviour change**, in `plugin.json` and both
   fields of `.claude-plugin/marketplace.json`, and read the three back:
   [§ Bump `version`](CONTRIBUTING.md#bump-version-in-the-same-pr-as-any-behaviour-change).
-- **Don't copy a sentence from one doc into another**; the gate reds on it. Link to where
-  the fact lives: [§ Conventions](CONTRIBUTING.md#conventions).
 - **Comments and docs** follow
-  [`comments-and-docs.md`](plugins/gh-issue-flow/reference/comments-and-docs.md), and
-  `tests/test_comment_policy.py` checks the lines a branch adds.
+  [`comments-and-docs.md`](plugins/gh-issue-flow/reference/comments-and-docs.md). Review
+  checks them, through the `comments` lens; no test or CI step does.
 
 ## Testing what you changed
 

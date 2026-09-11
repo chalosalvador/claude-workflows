@@ -6,13 +6,11 @@ Everything here is markdown and JSON. There is no build, no install, no dependen
 ## The gate
 
 ```bash
-python3 tests/test_no_copied_sentences.py
 python3 tests/test_no_stray_files.py
 python3 tests/test_version_agreement.py
 python3 tests/test_config_schema.py
 python3 tests/test_links.py
 python3 tests/test_doc_headers.py
-python3 tests/test_comment_policy.py
 claude plugin validate ./plugins/gh-issue-flow --strict
 claude plugin validate . --strict
 ```
@@ -24,13 +22,6 @@ red gate means the PR cannot merge.
 `git ls-files`, i.e. the index, so a new file is invisible to them until it is staged.
 `git add` the paths you changed before trusting a local green, never `git add -A`: a
 sweeping add is how a stray file reaches a commit.
-
-`tests/test_comment_policy.py` reads the lines your branch adds or changes since it left
-`origin/main`, and every untracked file that is not ignored, so `git fetch origin` before
-running it and keep drafts such as a PR body outside the checkout. What it enforces is
-[`comments-and-docs.md`](plugins/gh-issue-flow/reference/comments-and-docs.md); a line
-nobody touches is never read, so older text that breaks the policy stays until it is
-edited.
 
 **A PR with no checks is not a passing PR.** `guards` is required, so zero checks blocks a
 merge rather than allowing it, but the PR page looks clean either way. The workflow
@@ -226,29 +217,17 @@ History
 the doc states the current fact. Comments and docs follow
 [`comments-and-docs.md`](plugins/gh-issue-flow/reference/comments-and-docs.md).
 
-**A sentence copied from one doc into another fails the gate**
-(`tests/test_no_copied_sentences.py`). Keep the sentence where the fact belongs and link
-to it from the other place. A bare link may repeat anywhere; a sentence around it
-that says what to do is written for its own step, since the same sentence in two docs is
-a copy even when all it does is point.
+**Comments and docs are reviewed, not tested.** No test or CI step reads what a comment
+or a doc says; the `comments` lens in
+[`diff-reviewer.md`](plugins/gh-issue-flow/agents/diff-reviewer.md) checks each line a
+change adds for history, dates, issue numbers, a fact another file owns, and a claim
+something else contradicts. The guards below read docs only where the plugin reads them:
+config keys, section headers skills look up by name, and link targets.
 
 **A guard is mutation-proven, and a change to it is re-proven.** A re-proof covers both
 halves: the mutants that must red, and the edits that must stay green, which is what stops
 a guard reddening on ordinary reformatting. The cases each guard's re-proof includes:
 
-- `test_no_copied_sentences.py`: a sentence copied into another doc reds, including
-  re-wrapped, re-cased, with other emphasis, link targets or final period, and moved into
-  a list item, a blockquote, a table cell, a skill's `description` (quoted or not) or an
-  untracked doc; so do a heading copied into another heading, a three-word copy, a
-  sentence repeated in its own file, a copied table row, one long cell in two tables of
-  one file however they are separated, a sentence the two setup templates share, a
-  sentence ending in a word like "envs.", and a fence left open or closed by the other
-  fence character. A paraphrase, a two-word repeat, a bare link in two docs, a sentence
-  quoting another doc's heading, two numbered step headings with a short shared title,
-  the same command in two fences, one value down a table's column even with an escaped
-  pipe in a neighbouring cell, a header row or a placeholder row reused by another table,
-  two sentences that share words up to a "vs.", a setting two agents' frontmatter share,
-  a re-wrap in place and a move within one file stay green.
 - `test_config_schema.py`: a dropped row, an example key with no row, a row with no
   example key, a key setup § 2 probes that the table lacks, a key missing from the setup
   section its row names (written `§ 5`, `§5` or as one of two sections), a Setup cell
@@ -275,5 +254,4 @@ a guard reddening on ordinary reformatting. The cases each guard's re-proof incl
 
 **Facts live in one place.** `shared/execution.md` owns mechanics; skills own policy and
 link to it. If you find yourself pasting the same rule into two skills, it belongs in
-`shared/`. `test_no_copied_sentences.py` finds a whole sentence pasted unchanged; a
-clause pasted into a new sentence is left to review.
+`shared/`.

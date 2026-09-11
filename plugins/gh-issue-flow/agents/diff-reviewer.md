@@ -148,6 +148,7 @@ directory. Say in one line which policy you applied. Report a line that carries:
 - history narration: what changed, what it used to be, what an earlier draft or a
   reviewer said;
 - a fact restated where another file owns it — name the owner;
+- a claim the code, the config or another doc contradicts — name the source;
 - live state written as a value instead of the command that reads it;
 - a block over the policy's size limit;
 - an alarm marker.

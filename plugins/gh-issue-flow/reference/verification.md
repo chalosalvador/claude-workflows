@@ -198,9 +198,8 @@ counts, "X is applied" — and test none of them. One audit over four review rou
 found **21 false statements**, three of which were the stated safety premise for a
 destructive action.
 
-Treat any number or state claim in a doc as **untested**, and check it the way
-`guard-tests.md` § 4, *A claim in a doc is checked against its source, never pinned*,
-says.
+Treat any number or state claim in a doc as **untested**: review checks it, as
+`guard-tests.md` § 4, *A doc is reviewed, not tested*, says.
 
 ### Citations rot inside their own commit
 
