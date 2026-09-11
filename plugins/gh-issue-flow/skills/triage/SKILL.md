@@ -148,8 +148,9 @@ Per issue, ensure each — **fill blanks only; never overwrite a human's choice*
 |---|---|
 | **On the board** | `gh project item-add <board_number> --owner <board_owner> --url <url>` |
 | **Has an area label** | If missing, **determine and apply it** (§ 2a) from the `areaLabels` of **the repo the issue is in**. This is the root-cause fix — don't route around a missing label, add it. |
-| **Assigned to a DRI** | From **that repo's** `workflow.json`: a label listed in `driOverrides` names the owner whatever the area; otherwise `dri` maps the area label. Below schema 5, see [`shared/config.md`](../../shared/config.md) § Layer 2, `driOverrides`. Never leave an open issue unassigned. |
-| **Has a Track** | Mirror the area label to the Track field, through that repo's `trackForArea`. |
+| **Assigned to a DRI** | From **that repo's** `workflow.json`: a label listed in `driOverrides` names the owner whatever the area; otherwise `dri` maps the area label. Precedence, the § 5 case and the fallback below schema 5: [`shared/config.md`](../../shared/config.md) § Layer 2, `driOverrides`. Never leave an open issue unassigned. |
+| **Has a Track** | Mirror the area label to the Track field, through that repo's `trackForArea`. An area with no entry there gets no Track from this pass: leave the field as it is and name the issue in the receipt. |
+| **Has a Status** | If none, set **Todo**. Never move an existing Status. |
 
 **The map is per repo.** For a sibling in `repos` the maps come from the
 sibling's own `workflow.json` — its checkout, else the GitHub read in
@@ -157,7 +158,6 @@ sibling's own `workflow.json` — its checkout, else the GitHub read in
 sibling whose file cannot be read gets the board add and the Status only; report its
 unlabeled and unassigned issues in the receipt instead of routing them off this repo's
 map.
-| **Has a Status** | If none, set **Todo**. Never move an existing Status. |
 
 **Especially never move `Hold`** — it means a human parked the card by choice, and
 flipping it to Todo un-decides that. Hold is orthogonal to a `blocked` label: Hold =
@@ -182,14 +182,16 @@ files. Apply exactly one, from the repo's own label set (`gh label list`).
 
 If the title genuinely isn't enough, read the body — still bounded, only the few
 unlabeled issues reach here. Only if it is *still* unclassifiable does it fall to the
-lead as holding owner, flagged in the receipt as "needs area". **That last resort
+lead as holding owner — unless a `driOverrides` label already names one — flagged in
+the receipt as "needs area". **That last resort
 should be near-empty; the goal is a real label, not a default dumping ground.**
 
 **The area label drives the assignee, so get boundaries between repos right.** A
 subject-matter word in a title does not override the repo: e.g. AI/classification work
 inside a backend service is a *backend* issue, not an *agents* one, however it reads.
-Each repo's `areaLabels` meanings say where its areas meet; read them from the file of the
-repo the issue is in and follow them.
+Each repo's `areaLabels` meanings say where its areas meet (below schema 5, its
+`$comment_dri` may too: [`shared/config.md`](../../shared/config.md) § Layer 2,
+`driOverrides`); read them from the file of the repo the issue is in and follow them.
 The candidates for an issue are the `areaLabels` of **its** repo, never a sibling's.
 
 ## 3. Deep pass — categorize, size, prioritize (CAPPED at 25)
@@ -303,6 +305,10 @@ Integrity writes first, for every issue: add-to-board → area label if missing 
 assignee if unassigned → Track if blank → Status Todo if none. Then per deep-pass
 issue: category → effort → Priority if blank → `agent-ready` if gated → duplicate
 comment if any → **`triaged` last**.
+
+**When the deep pass adds a `driOverrides` label to an issue whose assignee this run wrote
+from `dri`, replace that assignee with the override's login once the label is written.**
+Both assignments are this run's own, so no human choice is overwritten.
 
 **`triaged` goes on last, always.** If the run dies halfway, an issue without it gets
 picked up cleanly next time; an issue marked `triaged` before its labels landed is

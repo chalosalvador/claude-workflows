@@ -29,7 +29,8 @@ Two modes, chosen from the user's wording:
   lists this repo's `area:*` labels (`gh label list --limit 200 --json name --jq
   '.[].name'`) and reports every label with no `dri` entry in **this** file as a
   Missing row, and every `dri` entry with no such label here as cleanup — that second
-  list is what a file carrying a sibling's areas shows, and it is not a failure.
+  list is what a file carrying a sibling's areas shows, and it is not a failure. A
+  `driOverrides` key with no label of that name here is a Missing row: it can never fire.
 - **Upgrade** ("upgrade", "migrate the config", "bring workflow.json up to date", or the
   drift line any skill prints) — an existing file, a newer plugin: add only the keys the
   schema gained since the file was written. § 3 Upgrade mode.
@@ -118,6 +119,7 @@ directory first, or use `find`:
 | `trackForArea` | Each `area:*` label → the board's Track option of the same name, from `field-list` (§ 5). Only when the board has a Track field. |
 | `agentReadyForbiddenPaths` | The infra, migration and workflow directories the deploy and protection probes found — the paths an unattended run must never touch. Record the migration directory and its apply command from the same read; § 5b writes those under the deploy-target doc § Infra and migrations. |
 | `priorityCaps` | Never probed. Written as the default `{"legal": "P1"}` with a `$comment_priorityCaps` saying what it does and that `{}` turns it off — so the rule triage applies is visible in the file rather than implied by its absence. |
+| `driOverrides` | Ask, as § 4 describes under Owner overrides; in upgrade, start from any such rule the file's `$comment_dri` states. |
 | `schemaVersion` | Always the **Current schema** from [`shared/config.md`](../../shared/config.md) § Layer 2 → Schema. Never probed, never omitted. |
 
 **Verify each probed command actually runs before writing it into the config.** A gate
@@ -153,9 +155,12 @@ you here.
          version — PLUS any other key the file lacks that § 2 knows how to probe.
 - [ ] 3. Probe each exactly as § 2 does. Show the proposed keys with their sources and
          ASK. A probe is a proposal, not a decision. `deployTargets` is the exception: § 5b
-         both probes it and writes its files, so hand that key to § 5b.
-- [ ] 4. Write ONLY the missing keys, each with a `$comment_<key>` as § 3 describes.
-         Set `schemaVersion` to the current schema.
+         both probes it and writes its files, so hand that key to § 5b. `driOverrides`
+         goes to § 4's Owner overrides, which reads `$comment_dri` for it.
+- [ ] 4. Once every proposal is accepted or declined, write ONLY the missing keys, each
+         with a `$comment_<key>` as § 3 describes, and set `schemaVersion` to the current
+         schema. Schema 5 ends triage's `$comment_dri` fallback: when a `driOverrides`
+         proposal is declined, say that the prose rule stops applying.
 - [ ] 5. Re-run any formatter the repo applies to the file — a `$comment` usually says
          which — then show the diff. In `workflow.json` it must touch nothing but the
          added keys; the deploy-target docs § 5b writes are separate files.
@@ -261,9 +266,11 @@ reads as "not configured yet" to every later run. The keys are in
 
 **Owner overrides.** Ask whether any label sends an issue to one person whatever its
 area — commonly `security`, `compliance` or `legal` — and record each in `driOverrides`,
-label → login. In upgrade mode, read the file's `$comment_dri` for such a rule and
-propose it as `driOverrides`; `$comment_dri` itself stays untouched, like every existing
-key.
+label → login, in the order that settles an issue carrying two. In upgrade mode, read
+the file's `$comment_dri` for such a rule, and for an area boundary its `areaLabels`
+meanings lack, and propose them. `$comment_dri` itself stays untouched, like every
+existing key; the report names each sentence the new key now holds, or that belongs in
+`areaLabels`, for a human to move or trim.
 
 ## 5. Board
 
@@ -475,7 +482,7 @@ Print three blocks, in this order:
 |---|---|---|
 | integrationBranch | `origin/dev` | `gh repo view` default branch |
 | validate | 3 commands | `.github/workflows/ci.yml` job `test` |
-| schemaVersion | 2 | current schema, `shared/config.md` § Layer 2 |
+| schemaVersion | 5 | current schema, `shared/config.md` § Layer 2 |
 | deployTargets | `gcp-cloud-run`, `gcp-terraform` | `.github/workflows/deploy.yml`, `terraform/` (provider `google`) |
 | repo.md | written | review bot from the scan; invariants and traps UNVERIFIED |
 

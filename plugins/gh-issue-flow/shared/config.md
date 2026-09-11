@@ -145,8 +145,8 @@ one `targetdoc=<file>` line per file found. Reconcile them: every name must have
 and every file a name. A mismatch is a finding to report in one line — a name with no
 file means the doc never shipped (commonly `.claude/` gitignored, § Layer 2 →
 Deploy-target docs); a file with no name means `setup upgrade` has not run since it was written. Then
-read only the files that are named. `targets=-` at schema 2 is a deliberate "this repo
-detected no deploy target" (`"deployTargets": []`); `targets=-` below schema 2 is covered by step 2.
+read only the files that are named. `targets=-` at schema 4 or later is a deliberate "this repo
+detected no deploy target" (`"deployTargets": []`); `targets=-` below schema 4 is covered by step 2.
 
 
 ---
@@ -157,7 +157,7 @@ The per-repo override. Read it from the repo root you are working in.
 
 ```json
 {
-  "schemaVersion": 2,
+  "schemaVersion": 5,
   "deployTargets": ["gcp-terraform"],
   "repos": ["acme/acme-api", "acme/acme-web"],
   "board": { "number": 11, "owner": "acme" },
@@ -222,7 +222,7 @@ example above and `setup`'s probe list to the same key set.
 | `dri` | 0 | § 4 | repo | **This repo's** `area:*` labels → GitHub login that owns each here |
 | `trackForArea` | 0 | § 5 | repo | **This repo's** `area:*` labels → board Track option |
 | `agentReadyForbiddenPaths` | 0 | § 2 | repo | Paths an unattended run must never touch |
-| `$comment*` | 0 | § 3 | file | Provenance for the human reader; no skill reads it, apart from triage's schema-4 fallback for `driOverrides` |
+| `$comment*` | 0 | § 3 | file | Provenance for the human reader. `setup upgrade` reads them for hints, and triage reads `$comment_dri` only as the fallback the `driOverrides` bullet describes |
 | `deployTargets` | 4 | § 5b | repo | The deploy-target doc names this repo carries, one per file in `.claude/workflow/deploy-targets/`; `[]` when the evidence names none. Schema 3 called this `stacks`; `upgrade` renames the key and the directory |
 | `priorityCaps` | 3 | § 2 | board | Label → highest priority that label may carry, applied by `triage` § 3c. Absent means `{"legal": "P1"}`; `{}` turns caps off |
 | `driOverrides` | 5 | § 4 | repo | Label → GitHub login that owns an issue carrying it in **this repo**, whatever its area; the issue keeps its area's Track |
@@ -296,7 +296,7 @@ Three rules for a reader:
   handoff — "add to `repo.md` § Traps" — and a human commits it.
 
 **No deploy-target docs at all** has two honest shapes, and § Resolving `workflow.json` tells them apart: a file
-below schema 2 gets the drift line naming `deployTargets` as missing; a file at schema 2 with
+below schema 4 gets the drift line naming `deployTargets` as missing; a file at schema 4 or later with
 `"deployTargets": []` chose none, and step 3 says so in one line. Every skill still works from
 the generic rules; what it loses is the stack-specific half of each lens.
 
@@ -317,13 +317,16 @@ These carry weight the others do not:
   triage's **0-unassigned** guarantee possible — without it the integrity pass has no
   routing table and can only report the gap. Keep it beside `areaLabels`; an area with no
   DRI is the same failure as no area label.
-- **`driOverrides`** maps a label to the login that owns any issue carrying it in this
+- **`driOverrides`** maps a label to the login that owns an issue carrying it in this
   repo, whatever its area — commonly `security`, `compliance` or `legal` going to one
-  person. Triage assigns from it before `dri`, and the issue keeps its area's Track.
-  Where an area ends and the next begins belongs in the `areaLabels` meanings, not here.
-  A file below schema 5 may still state such an override as prose in `$comment_dri`:
-  triage applies it from there for that file only and says so in its receipt, and
-  `setup upgrade` proposes the key.
+  person. Triage assigns from it before `dri` whenever it assigns: in triage § 2, and in
+  triage § 5 when its own deep pass adds such a label to an issue it has just assigned.
+  An issue a human already assigned keeps its owner. With more than one such label, the
+  first in the key's order wins; either way the issue keeps its area's Track. Where one
+  area ends and the next begins belongs in the `areaLabels` meanings, not here. A file
+  below schema 5 may still state an override, or an area boundary, as prose in
+  `$comment_dri`: triage applies it from there for that file only and says so in its
+  receipt, and `setup upgrade` proposes the key.
 - **`validate`** runs every time. **`validateWhenChanged`** maps a glob to a command run
   only when the diff touches it — keep slow or narrow gates here, not in `validate`.
 - **`ciOnly`** names a required check you must **not** attempt locally, *with the reason*.
