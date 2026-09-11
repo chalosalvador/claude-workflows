@@ -183,6 +183,7 @@ The per-repo override. Read it from the repo root you are working in.
   "workstreams": { "apps/admin": "Admin console", "packages/db": "Shared — database" },
   "areaLabels": { "area:backend": "what belongs here" },
   "dri": { "area:backend": "octocat" },
+  "driOverrides": { "security": "octocat" },
   "trackForArea": { "area:backend": "Backend" },
   "agentReadyForbiddenPaths": ["terraform/**", "migrations/**"],
   "priorityCaps": { "legal": "P1" }
@@ -193,7 +194,7 @@ Every key is optional. Absent keys fall through to Layer 3.
 
 ### Schema
 
-**Current schema: 4.** A file with no `schemaVersion` is schema **0** — the shape that
+**Current schema: 5.** A file with no `schemaVersion` is schema **0** — the shape that
 shipped through plugin 0.5.x. `setup` writes the current number on bootstrap and
 `setup upgrade` moves an older file forward by adding what it lacks. **Since** is the
 schema a key arrived in; that column is the migration list, and it is what the drift
@@ -221,9 +222,10 @@ example above and `setup`'s probe list to the same key set.
 | `dri` | 0 | § 4 | repo | **This repo's** `area:*` labels → GitHub login that owns each here |
 | `trackForArea` | 0 | § 5 | repo | **This repo's** `area:*` labels → board Track option |
 | `agentReadyForbiddenPaths` | 0 | § 2 | repo | Paths an unattended run must never touch |
-| `$comment*` | 0 | § 3 | file | Provenance for the human reader; never read by a skill |
+| `$comment*` | 0 | § 3 | file | Provenance for the human reader; no skill reads it, apart from triage's schema-4 fallback for `driOverrides` |
 | `deployTargets` | 4 | § 5b | repo | The deploy-target doc names this repo carries, one per file in `.claude/workflow/deploy-targets/`; `[]` when the evidence names none. Schema 3 called this `stacks`; `upgrade` renames the key and the directory |
 | `priorityCaps` | 3 | § 2 | board | Label → highest priority that label may carry, applied by `triage` § 3c. Absent means `{"legal": "P1"}`; `{}` turns caps off |
+| `driOverrides` | 5 | § 4 | repo | Label → GitHub login that owns an issue carrying it in **this repo**, whatever its area; the issue keeps its area's Track |
 
 **Scope is what `repos` cannot widen.** A `board` key describes the Projects v2 board
 every repo in `repos` feeds — `board` and `priorityCaps`, nothing else — and applies to
@@ -298,7 +300,7 @@ below schema 2 gets the drift line naming `deployTargets` as missing; a file at 
 `"deployTargets": []` chose none, and step 3 says so in one line. Every skill still works from
 the generic rules; what it loses is the stack-specific half of each lens.
 
-Six of them carry weight the others do not:
+These carry weight the others do not:
 
 - **`board`** names the Projects v2 board **this repo** feeds, and it **overrides**
   Layer 1. It is what lets one machine work several workspaces that target different
@@ -315,6 +317,13 @@ Six of them carry weight the others do not:
   triage's **0-unassigned** guarantee possible — without it the integrity pass has no
   routing table and can only report the gap. Keep it beside `areaLabels`; an area with no
   DRI is the same failure as no area label.
+- **`driOverrides`** maps a label to the login that owns any issue carrying it in this
+  repo, whatever its area — commonly `security`, `compliance` or `legal` going to one
+  person. Triage assigns from it before `dri`, and the issue keeps its area's Track.
+  Where an area ends and the next begins belongs in the `areaLabels` meanings, not here.
+  A file below schema 5 may still state such an override as prose in `$comment_dri`:
+  triage applies it from there for that file only and says so in its receipt, and
+  `setup upgrade` proposes the key.
 - **`validate`** runs every time. **`validateWhenChanged`** maps a glob to a command run
   only when the diff touches it — keep slow or narrow gates here, not in `validate`.
 - **`ciOnly`** names a required check you must **not** attempt locally, *with the reason*.
@@ -396,7 +405,7 @@ sweep:
 | You need the sibling's | Read it from |
 |---|---|
 | board, priority caps | **this** file; they describe the shared board |
-| area labels, DRI, Track — its area map | **the sibling's own** `.claude/workflow.json`: its checkout when one resolves, else the same file read from GitHub (below). Label, assign and set Track on a sibling's issue only from **its** map |
+| area labels, DRI, owner overrides, Track — its area map | **the sibling's own** `.claude/workflow.json`: its checkout when one resolves, else the same file read from GitHub (below). Label, assign and set Track on a sibling's issue only from **its** map |
 | integration branch, gate, forbidden paths, deploy-target docs, workstreams | **the sibling's own** `.claude/workflow.json` (its checkout, worktree then main, per the block in § Resolving `workflow.json` run from that checkout) |
 | branch, gate, forbidden paths, docs with no checkout | nothing — the sibling is **board-only** this run: sweep its issues for the integrity pass, never gate one `agent-ready`, never judge its merges, never pick it to implement, and say so once |
 

@@ -43,7 +43,7 @@ CONFIG = ROOT / "plugins/gh-issue-flow/shared/config.md"
 SETUP = ROOT / "plugins/gh-issue-flow/skills/setup/SKILL.md"
 
 # Independent of the table, deliberately. Adding a key means bumping this too.
-EXPECTED_KEYS = 22
+EXPECTED_KEYS = 23
 
 ROW = re.compile(r"^\|\s*`([^`]+)`\s*\|\s*(\d+)\s*\|", re.M)
 CURRENT = re.compile(r"\*\*Current schema:\s*(\d+)\.?\*\*")

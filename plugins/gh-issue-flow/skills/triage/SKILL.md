@@ -148,10 +148,10 @@ Per issue, ensure each — **fill blanks only; never overwrite a human's choice*
 |---|---|
 | **On the board** | `gh project item-add <board_number> --owner <board_owner> --url <url>` |
 | **Has an area label** | If missing, **determine and apply it** (§ 2a) from the `areaLabels` of **the repo the issue is in**. This is the root-cause fix — don't route around a missing label, add it. |
-| **Assigned to a DRI** | From the area label via **that repo's** `workflow.json` → `dri`. Never leave an open issue unassigned. |
+| **Assigned to a DRI** | From **that repo's** `workflow.json`: a label listed in `driOverrides` names the owner whatever the area; otherwise `dri` maps the area label. Below schema 5, see [`shared/config.md`](../../shared/config.md) § Layer 2, `driOverrides`. Never leave an open issue unassigned. |
 | **Has a Track** | Mirror the area label to the Track field, through that repo's `trackForArea`. |
 
-**The map is per repo.** For a sibling in `repos` the three maps come from the
+**The map is per repo.** For a sibling in `repos` the maps come from the
 sibling's own `workflow.json` — its checkout, else the GitHub read in
 [`shared/config.md`](../../shared/config.md) § Repo scope — and never from this file. A
 sibling whose file cannot be read gets the board add and the Status only; report its
@@ -188,8 +188,8 @@ should be near-empty; the goal is a real label, not a default dumping ground.**
 **The area label drives the assignee, so get boundaries between repos right.** A
 subject-matter word in a title does not override the repo: e.g. AI/classification work
 inside a backend service is a *backend* issue, not an *agents* one, however it reads.
-Each repo's own `workflow.json` carries its boundary rules beside `dri` (a
-`$comment_dri`); read them from the file of the repo the issue is in and follow them.
+Each repo's `areaLabels` meanings say where its areas meet; read them from the file of the
+repo the issue is in and follow them.
 The candidates for an issue are the `areaLabels` of **its** repo, never a sibling's.
 
 ## 3. Deep pass — categorize, size, prioritize (CAPPED at 25)

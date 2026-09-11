@@ -256,8 +256,14 @@ only" to fence off a sibling — the file's location already does that.
 
 **On a solo repo, `dri` is every area mapped to the one person** — write it out rather
 than leaving the key off. "There is only me" is a fact worth recording; an absent key
-reads as "not configured yet" to every later run. Both keys are in
+reads as "not configured yet" to every later run. The keys are in
 [`shared/config.md`](../../shared/config.md).
+
+**Owner overrides.** Ask whether any label sends an issue to one person whatever its
+area — commonly `security`, `compliance` or `legal` — and record each in `driOverrides`,
+label → login. In upgrade mode, read the file's `$comment_dri` for such a rule and
+propose it as `driOverrides`; `$comment_dri` itself stays untouched, like every existing
+key.
 
 ## 5. Board
 
