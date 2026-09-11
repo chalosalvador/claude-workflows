@@ -34,7 +34,7 @@ Resolve board, repos, branches and validate commands via
 Shared:
 - [ ] 1. Pick the issue (theme-aligned Todo card, or the issue the user names)
 - [ ] 2. Identify the repo + workstream
-- [ ] 3. Research + plan: delegate to the `issue-planner` subagent (effort: max)
+- [ ] 3. Research + plan: delegate to `gh-issue-flow:issue-planner` (effort: max)
 Mode A (Prompt):
 - [ ] 4A. Fill template.md — every section, repo-specific VALIDATE commands
 - [ ] 5A. Output the finished prompt in ONE code block
@@ -54,11 +54,8 @@ Otherwise pick from the **Todo column**. **Eligible = Todo AND (assigned to the
 current GitHub user OR unassigned).** Resolve the user dynamically —
 `gh api user --jq .login` — never hardcode a login.
 
-**The board is not simply your `userConfig` default — resolve it first.** This repo may
-name its own board in `workflow.json` → `board`, which **wins** over the machine default,
-and writing to the wrong board is silent. Run the two-step resolution in
-[`shared/board.md`](../../shared/board.md) § Resolution, use the numbers it yields, and
-**say which layer answered before any board write.**
+**Resolve the board before reading its Todo column**:
+[`shared/board.md`](../../shared/board.md) § Resolution, then use the numbers it yields.
 
 **`$BOARD_JSON` is the one board fetch this run gets** — see
 [`shared/board.md`](../../shared/board.md) § Board queries for it. This step and the
@@ -171,16 +168,23 @@ For a transferred issue that returns empty, take the body from `$BOARD_JSON`
 **Do not chase the linked PRs here.** The planner does that, bounded to the few the
 decision turns on. Fetching them in both places is the same read billed twice.
 
-Then delegate to the **`issue-planner`** subagent (read-only, `effort: max`), **pasting
-`$ISSUE_MD` into the prompt verbatim**. A subagent starts blank: anything you hold and do
-not pass, it pays to re-fetch. It returns the decision, what exists vs. what changes, the
-scope, the test/validate plan, a HANDOFF block for the reviewers, and which review lenses
-this diff needs.
+Then delegate to **`gh-issue-flow:issue-planner`** (read-only, `effort: max`), **pasting
+`$ISSUE_MD` into the prompt verbatim**. Spawn the namespaced name, as for every lens: a bare
+`issue-planner` resolves to any same-named file in `~/.claude/agents/`, which returns a
+plausible plan in whatever shape it was written for — not the HANDOFF the lenses read. A
+subagent starts blank: anything you hold and do not pass, it pays to re-fetch. It returns
+the decision, what exists vs. what changes, the scope, the test/validate plan, a HANDOFF
+block for the reviewers, and which review lenses this diff needs.
 
-**State the tier from the issue's effort label; name no sections.** Naming one
-re-establishes the whole vocabulary and the planner emits all of them. Pass
-the facts (branch, gate, spec flow, worktree, and the `Plugin:` directory from
+**Pass the issue's effort label as a fact; name no sections.** Naming one
+re-establishes the whole vocabulary and the planner emits all of them. Pass the facts
+(effort label, branch, gate, spec flow, the worktree — or, before one exists, the checkout
+— of this issue's repo, and the `Plugin:` directory from
 [`shared/execution.md`](../../shared/execution.md) § 3) and let it choose the shape.
+Pass the ops docs the same way, as `Ops-doc files:` — the `repodoc=` path and
+`<targetdir>/<targetdoc>` for each target doc, from the
+[`shared/config.md`](../../shared/config.md) § Resolving `workflow.json` block you already
+ran, or `none found` — so the planner reads them instead of hunting from a worktree.
 
 **The VERIFY-FIRST section must name real files/symbols, not guesses.**
 
@@ -194,13 +198,18 @@ cat "${CLAUDE_PLUGIN_ROOT}/skills/next-issue/template.md"
 ```
 
 Sections, in order: header line + URL → Repo →
-CONTEXT → DECIDE FIRST → SCOPE → VERIFY-FIRST → TESTS → VALIDATE → PROCESS →
-DEPLOY NOTE.
+CONTEXT → DECIDE FIRST → SCOPE → SPEC (spec-flow repos only) → VERIFY-FIRST → TESTS →
+VALIDATE → HANDOFF → PROCESS → DEPLOY NOTE.
 
 **Carry the plan's REVIEW LENSES into the PROCESS section.** The planner decided which
 lenses this diff can actually trip; the fresh session reading the prompt has no way to
 re-derive that. Name the specific lenses and why, and say which you skipped — **never
 emit the generic full lens list.**
+
+**Carry the plan's HANDOFF block too — verbatim, as its own section — and have PROCESS
+paste it into every lens.** The prompt is the only thing the fresh session's reviewers can
+inherit from the planner. Without the block each one re-reads what the planner already
+read, and what the planner could not verify is aimed at nobody.
 
 Emit VALIDATE commands **verbatim** from the resolved config. Do not paraphrase from
 memory: a remembered command drifts — a prefetch script renamed, a linter path list
@@ -229,8 +238,9 @@ Same research (steps 1–3), executed as actions, with a hard checkpoint:
          Adjudicate: fix every valid finding, explain any rejected. Commit BEFORE
          spawning them. Handoff + model tiering: shared/execution.md § 3.1.
 - [ ] 6b. If those fixes introduced NEW LOGIC — a new branch, gate, condition or code
-         path — spawn ONE more `gh-issue-flow:diff-reviewer` over just that delta, as
-         THE LENS THAT RAISED THE FINDING (correctness only if it was your own).
+         path — commit them, then spawn ONE more `gh-issue-flow:diff-reviewer` over
+         just that commit, as THE LENS THAT RAISED THE FINDING (correctness only if it
+         was your own), handed that finding verbatim and the HANDOFF block.
          Skip for test/comment/doc-only fixes — a changed message still gets a pass.
 - [ ] 6c. Archive the spec change as the LAST commit of this PR; assert the archive
          JSON matches the delta-vs-skip call, then re-validate the folded tree.

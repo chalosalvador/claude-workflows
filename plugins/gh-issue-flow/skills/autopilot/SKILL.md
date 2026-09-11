@@ -42,7 +42,7 @@ nobody to catch a write to the wrong board.
 - [ ] 3. Re-verify the gate yourself — do NOT trust the label alone
 - [ ] 4. Claim it: `agent-wip` + board In Progress
 - [ ] 5. Isolate + re-base onto the REMOTE integration branch (the base is stale by default)
-- [ ] 6. Plan it: delegate to `issue-planner`; post the plan on the issue
+- [ ] 6. Plan it: delegate to `gh-issue-flow:issue-planner`; post the plan on the issue
 - [ ] 7. Spec change from the plan's SPEC IMPACT, then implement the issue's scope
 - [ ] 8. Run the repo's full VALIDATE gate until green
 - [ ] 9. Review: parallel `gh-issue-flow:diff-reviewer` subagents, one per named lens
@@ -77,7 +77,8 @@ PRs together under one § 11 cap — which is the second reason to bother.
 Take that path only when the Workflow tool is in this session and § 2 actually selected
 two candidates; on one issue it buys nothing. Hand the script the plugin directory
 ([`shared/execution.md`](../../shared/execution.md) § 3) and the § 3.1 model tier per issue — its
-agents cannot find either on their own. Without it, work them in order exactly as below.
+agents cannot find either on their own — and each issue's ops-doc files, as § 6 passes
+them. Without the Workflow tool, work them in order exactly as below.
 That file also states plainly what the layer costs, which is not nothing.
 
 ## 1. Backpressure
@@ -108,11 +109,9 @@ jq -r --arg ready "<ready_label>" '.items[] | select(.status=="Todo")
    | "#\(.content.number)\t\(.content.repository|sub(".*/";""))\tP:\(.priority // "-")\t\(.content.title)"' "$BOARD_JSON"
 ```
 
-**The board is not simply your `userConfig` default — resolve it first.** This repo may
-name its own board in `workflow.json` → `board`, which **wins** over the machine default,
-and writing to the wrong board is silent. Run the two-step resolution in
-[`shared/board.md`](../../shared/board.md) § Resolution, use the numbers it yields, and
-**say which layer answered before any board write.**
+**The fetch above reads the resolved board**: run
+[`shared/board.md`](../../shared/board.md) § Resolution first and use the numbers it
+yields.
 
 `$BOARD_JSON` is this run's single board fetch — see
 [`shared/board.md`](../../shared/board.md) § Board queries. Every later step that needs
@@ -157,9 +156,12 @@ needs infrastructure or a migration, touches secrets/env/runtime config, changes
 store another store derives from (triage § 4 names the row), needs two repos, or contains
 an unanswered product question.
 
-Read the deploy-target doc § Infra and migrations for that verdict — from the **main checkout**
-(config.md § Resolving `workflow.json` step 1 prints where it found the files), since this routine is usually
-inside a worktree where `.claude/` is gitignored. It names the apply commands and the
+Read the deploy-target doc § Infra and migrations for that verdict — from wherever
+config.md § Resolving `workflow.json` step 1 found it, the worktree first and then the main
+checkout, since this routine is usually inside a worktree where `.claude/` is gitignored.
+Where `.claude/workflow/` is tracked, read the integration branch's copy instead
+(`git show <integrationBranch>:.claude/workflow/deploy-targets/<name>.md`): a parked main
+checkout can hold an older one, and the planner reads that copy too. It names the apply commands and the
 ordering; `workflow.json` → `agentReadyForbiddenPaths` names the paths.
 
 **Also bail if you cannot name the files you are about to change** — that means you do
@@ -243,30 +245,33 @@ Never squash with `git reset --soft "$INTEGRATION" && git add -A` — see
 [`../../reference/parallel-agents.md`](../../reference/parallel-agents.md) for how that
 silently reverts merged work with a clean `git status` and a green suite.
 
-## 6. Plan it — delegate to `issue-planner`
+## 6. Plan it — delegate to `gh-issue-flow:issue-planner`
 
 Do this in the worktree, *after* the re-base, so the plan reflects the base you will
 actually build on.
 
-Spawn `issue-planner` (read-only, `effort: max`) with the issue number, repo, worktree
-path, and **`$ISSUE_MD` from § 3 pasted verbatim — body and comments both**. A subagent
-starts blank: every fact you hold and do not pass is one it pays to fetch again.
+Spawn `gh-issue-flow:issue-planner` (read-only, `effort: max`) with the issue number,
+repo, worktree path, and **`$ISSUE_MD` from § 3 pasted verbatim — body and comments
+both**. Spawn the namespaced name, for § 9's reason: a shadowing `issue-planner` answers a
+bare spawn silently, and nobody is watching. A subagent starts blank: every fact you hold
+and do not pass is one it pays to fetch again.
 
-**State the tier, and name no sections.** Naming a section, even to skip it or to call it
-load-bearing, makes the planner emit every section including the ones its tier
-suppresses: it re-establishes the whole vocabulary, and the caller's prompt beats the
-agent's own rules.
+**Pass the effort label, and name no sections.** Naming a section, even to skip it or to
+call it load-bearing, makes the planner emit every section, including the ones its own
+rules would leave out: it re-establishes the whole vocabulary, and the caller's prompt
+beats the agent's own rules.
 
 Pass the facts, not the shape:
 
 ```
-Tier: S            # from the issue's effort label; the planner's own table defines the tiers
+Effort label: effort:easy    # verbatim from the issue — a fact, not a section budget
 Issue body + comments: <contents of $ISSUE_MD, verbatim — do not re-fetch these>
 Repo has no spec flow.
 Integration branch: <branch>. Merging it <deploys X / is inert>.
 Gate: <commands>
 Worktree (read-only): <path>
 Plugin: <dir>      # the plugin directory, shared/execution.md § 3
+Ops-doc files: <absolute repodoc= and targetdir/targetdoc paths from § 3's resolution, or "none found">
 ```
 
 Let the planner decide what to emit. If you need something specific back, ask for the
@@ -283,7 +288,9 @@ Three things depend on it, so it is **not optional**:
   schema change, secrets, or an unanswered product question that § 3 missed, that is a
   late gate failure → § Handing it back. A plan that cannot name the files is the same
   signal as § 3's bail — and so is one that cannot name a capability or justify
-  `skip_specs`.
+  `skip_specs`, or that names no review lens at all — the planner's floor is
+  `correctness`, so an empty list is a malformed plan, and an unattended PR ships
+  reviewed or not at all.
 
 Post the returned plan as a comment on the issue, folded into the § 4 claim comment if
 you have not commented yet. **Unattended or not, the assignee should be able to read
@@ -298,10 +305,8 @@ cases, and the difference matters more unattended than with a human watching —
 [`../../reference/openspec.md`](../../reference/openspec.md) for both, the Purpose
 trap, and what a green does not assert.
 
-**`skip_specs` disables validation for the change entirely.** The justification is a
-claim the *reviewer* has to check by eye — exactly the kind of claim an unattended run
-must not overstate. **If you cannot write a reason that survives being read by a
-skeptic, that is a handback, not a `skip_specs`.**
+**Take `skip_specs` only with the reason [`openspec.md`](../../reference/openspec.md)
+asks for; without one, hand the issue back.**
 
 ### Then the code
 
@@ -334,10 +339,11 @@ you already had open, that is more process than the fix. Only file when the revi
 reading your note, would have to open one anyway: real scope, real sequencing, a
 decision someone has to make.
 
-**Never commit secrets.** If the implementation appears to need a credential, that is a
-gate failure → § Handing it back. Credential and env changes are hand-work for a reason —
-the provisioning tools store empty values, trailing newlines and write-only types without
-erroring, and every failure surfaces far from the cause:
+**An implementation that appears to need a credential is a gate failure**
+([`../../shared/execution.md`](../../shared/execution.md) § 4) → § Handing it back.
+Credential and env changes are hand-work for a reason — the provisioning tools store empty
+values, trailing newlines and write-only types without erroring, and every failure
+surfaces far from the cause:
 [`../../reference/secrets-and-ci.md`](../../reference/secrets-and-ci.md) for the rules,
 the repo's deploy-target doc § Secrets and env for this platform's spelling.
 
@@ -350,7 +356,6 @@ hardcoding a test count that no longer holds.
 - **Any red is yours.** § 2.1 lists the two classes that are genuinely not your change.
   Anything else red → § Handing it back, rather than a judgment call about whether it
   matters.
-- **Never gate on a test COUNT.** Green-vs-red is the gate.
 - Add or extend tests, and **mutation-check them**. A PR from an agent with no test is
   one a reviewer must verify entirely by hand; a PR with a test that passes against
   broken code is worse.
@@ -365,9 +370,9 @@ logic — run as the lens that raised the finding.
 notice that a shadowing file in `~/.claude/agents/` answered instead, and it returns a
 plausible review either way.
 
-Paste the plan's `HANDOFF` block into every lens prompt, plus the § 8 gate result, the
-worktree path and the `Plugin:` line — [`shared/execution.md`](../../shared/execution.md)
-§ 3 and § 3.1.
+Paste the plan's `HANDOFF` block into every lens prompt, plus that lens's own REVIEW
+LENSES line, the § 8 gate result, the worktree path and the `Plugin:` line —
+[`shared/execution.md`](../../shared/execution.md) § 3 and § 3.1.
 
 **Never a `disable-model-invocation` built-in review skill** — the call errors, and an
 unattended PR then ships with **no adversarial review at all** while claiming one, with

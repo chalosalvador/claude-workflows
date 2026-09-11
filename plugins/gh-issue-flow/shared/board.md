@@ -16,7 +16,7 @@ Resolution order, every run:
 
 | Order | Source | Use when |
 |---|---|---|
-| 1 | `workflow.json` → `board` (§ Layer 2) | this repo names its own board — **always wins** |
+| 1 | `workflow.json` → `board` (config.md § Layer 2) | this repo names its own board — **always wins** |
 | 2 | `${user_config.board_number}` / `${user_config.board_owner}` | no repo-level board; the machine default |
 | 3 | neither is set | **no board** — label-only, see below |
 

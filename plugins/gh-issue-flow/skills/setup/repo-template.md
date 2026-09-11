@@ -7,12 +7,9 @@ codebase. Per-target facts (what a merge deploys, how a secret is set, what appl
 migrations) live in `.claude/workflow/deploy-targets/<name>.md`
 ([`deploy-target-template.md`](deploy-target-template.md)).
 
-**The section headers are the contract**: skills read them by name, so keep every `##`
-exactly as written even when a section holds only `UNVERIFIED`. Every line is either
-**PROBED**, with its source path, or **UNVERIFIED — fill in**; nothing is invented. A
-line carries no date, because `git blame` dates it. Comments and prose follow the repo's
-own policy, or [`../../reference/comments-and-docs.md`](../../reference/comments-and-docs.md)
-when it has none.
+It is filled by the rules in [`deploy-target-template.md`](deploy-target-template.md):
+headers kept exactly, every line PROBED or UNVERIFIED, no dates, and the repo's comment
+policy.
 
 ---
 

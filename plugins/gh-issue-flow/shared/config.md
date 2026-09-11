@@ -63,6 +63,7 @@ for D in "$WT" "$MAIN"; do
   [ -d "$D/.claude/workflow/deploy-targets" ] && { SD="$D/.claude/workflow/deploy-targets"; break; }
 done
 if [ -n "$SD" ]; then
+  echo "targetdir=$SD"                                  # absolute: callers hand <targetdir>/<targetdoc> on
   find "$SD" -maxdepth 1 -name '*.md' | sort | sed 's#.*/#targetdoc=#'
 else
   echo "NO deploy-targets dir in $WT or $MAIN"
@@ -140,8 +141,9 @@ Layer 3, so a behind file is never a failure. But say it every run. `claude plug
 refreshes the plugin's code and tells no repo that its config is now behind; this line
 is the only thing that does.
 
-**Step 3 — deploy-target docs.** Step 1 printed `targets=<names or ->` from `workflow.json` and
-one `targetdoc=<file>` line per file found. Reconcile them: every name must have a file
+**Step 3 — deploy-target docs.** Step 1 printed `targets=<names or ->` from `workflow.json` and,
+when the directory exists, `targetdir=<its absolute path>` and one `targetdoc=<file>` line
+per file in it. Reconcile them: every name must have a file
 and every file a name. A mismatch is a finding to report in one line — a name with no
 file means the doc never shipped (commonly `.claude/` gitignored, § Layer 2 →
 Deploy-target docs); a file with no name means `setup upgrade` has not run since it was written. Then
@@ -220,7 +222,7 @@ example above and `setup`'s probe list to the same key set.
 | `workstreams` | 0 | § 2 | repo | Monorepo path → human name |
 | `areaLabels` | 0 | § 4 | repo | **This repo's** `area:*` labels → one-line meaning; a sibling's live in its own file |
 | `dri` | 0 | § 4 | repo | **This repo's** `area:*` labels → GitHub login that owns each here |
-| `trackForArea` | 0 | § 5 | repo | **This repo's** `area:*` labels → board Track option |
+| `trackForArea` | 0 | § 2 | repo | **This repo's** `area:*` labels → board Track option |
 | `agentReadyForbiddenPaths` | 0 | § 2 | repo | Paths an unattended run must never touch |
 | `$comment*` | 0 | § 3 | file | Provenance for the human reader. `setup upgrade` reads them for hints, and triage reads `$comment_dri` only as the fallback the `driOverrides` bullet describes |
 | `deployTargets` | 4 | § 5b | repo | The deploy-target doc names this repo carries, one per file in `.claude/workflow/deploy-targets/`; `[]` when the evidence names none. Schema 3 called this `stacks`; `upgrade` renames the key and the directory |
@@ -283,7 +285,11 @@ file or a file with no name is a one-line finding, never a silent skip.
 **The planner reads the files once and carries the lines that apply into its HANDOFF
 `Ops docs:` field; the lenses read the HANDOFF, not the files.** That is
 [`execution.md`](execution.md) § 3.1 lever 1 applied, and it is also what keeps a lens
-spawned inside a worktree from missing a doc that sits in the main checkout.
+spawned inside a worktree from missing a doc that sits in the main checkout. The planner
+does not hunt for them either: its caller hands it the paths § Resolving `workflow.json`
+step 1 printed — `repodoc=`, and `<targetdir>/<targetdoc>` for each target — as
+`Ops-doc files:`, and where `.claude/workflow/` is tracked it reads the integration
+branch's copies of those files instead.
 
 Three rules for a reader:
 
@@ -458,6 +464,6 @@ single constant.
 ## Things to resolve, never assume
 
 - **The current user**: `gh api user --jq .login`. Never hardcode a login.
-- **A test count**: never gate on one. It grows most weeks. Green-vs-red is the gate.
+- **A test count**: never gate on one ([`execution.md`](execution.md) § 2.1).
 - **A field option id**: read it from `field-list` in the same run.
 - **Whether a merge deploys**: read the workflow.

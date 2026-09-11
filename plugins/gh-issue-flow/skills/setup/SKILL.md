@@ -108,7 +108,7 @@ directory first, or use `find`:
 | `integrationBranch` | `origin/` + the default branch — **after** the empty-repo check above. **Not always `main`** — if a `dev`/`develop` remote branch exists and is ahead of the default, the repo probably integrates there and releases from the default. **Ask; do not guess.** |
 | `validate` | **Read the CI workflow first** — `.github/workflows/*.yml`, the job that runs on PRs into the integration branch. Copy its step commands in order. Fall back to the toolchain only if there is no CI: `pyproject.toml`/`requirements.txt` → `ruff`/`pytest`; `package.json` → the lint/typecheck/test/build scripts that actually exist; `Cargo.toml` → `cargo clippy`/`cargo test`; `go.mod` → `go vet`/`go test ./...`. |
 | `preflight` | Anything the gate shells out to that no lockfile installs. |
-| `specFlow` | An `openspec/` directory at the repo root → `"openspec"`. |
+| `specFlow` | As [`shared/config.md`](../../shared/config.md) § Layer 3 probes it. |
 | `mergeMethod` | From the `*MergeAllowed` flags. |
 | `deployOnMerge` | Grep `.github/workflows/` for a workflow triggering on push to the integration branch that deploys. **Do not record "nothing happens" unless you looked.** Note that some hosts (Vercel, Netlify, Fly) deploy from the repo with no workflow at all — check for their config files too. |
 | `requiredChecks`, `protection` | `gh api repos/<owner>/<repo>/branches/<b>/protection` — this 404s if the branch is unprotected, which is itself the answer. |
@@ -427,9 +427,9 @@ sections themselves:
          byte-identical across targets become one; sections that differ are both kept,
          each line suffixed with the target it came from, and listed in § 7 Missing for
          a human to reconcile. Remove the moved sections from the target docs.
-- [ ] c. Read back: target docs have exactly the four skeleton headers, `repo.md` has the
-         three, and the resolution block prints `repo=` naming this checkout, `targets=`,
-         one `targetdoc=` per file and `repodoc=`.
+- [ ] c. Read back: each doc has exactly its skeleton's headers, and the resolution
+         block prints `repo=` naming this checkout, `targets=`, one `targetdoc=` per
+         file and `repodoc=`.
 ```
 
 ## 6. Confirm the agents
@@ -439,7 +439,7 @@ notices when they silently are not running.
 
 | Agent | Runs at | Used by | Returns |
 |---|---|---|---|
-| `issue-planner` | `effort: max`, read-only | `next-issue`, `autopilot` | The scoping plan — and **REVIEW LENSES**, which decides the next step |
+| `issue-planner` | `effort: max`, read-only | `next-issue`, `autopilot` | The scoping plan — its **HANDOFF**, which every reviewer starts from, and **REVIEW LENSES**, which decides the next step |
 | `diff-reviewer` | `effort: max`, read-only | `next-issue`, `autopilot` | Findings through one lens from [the set](../../agents/diff-reviewer.md#the-lenses) |
 
 **Check, do not warn.** A same-named agent in `~/.claude/agents/` or the project's

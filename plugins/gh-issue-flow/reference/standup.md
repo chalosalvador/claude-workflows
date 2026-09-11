@@ -8,11 +8,6 @@ below, and there is no second copy.
 
 ## Standup — the three-section shape
 
-Triggered by "standup", or by a scheduled daily-update task. Everything in
-`work-summary` §§ 1–5 still runs first: **the standup is a rendering of the commit pull,
-not a different investigation.** Read it with `--all` and check merge status per commit
-(`work-summary` § 3).
-
 **A standup is YOUR work, and only yours.** Keep the `--author` filter on, with every
 one of your identities (`work-summary` § 3). This is the one output shape where dropping it is always
 wrong: you are reporting to the team, so a teammate's work in your update is at best noise

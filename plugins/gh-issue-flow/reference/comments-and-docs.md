@@ -36,8 +36,11 @@ Write it in the present tense, and only if it stays true without anyone editing 
 - **Commented-out code is deleted.** Git keeps it. Markup left out of a render on purpose
   says why, in the present tense.
 - **Answer a reviewer in the thread, not in the code.** Make the code clearer, or reply.
-- **Don't write a test that pins prose.** A test may check a doc against its source; it
-  never pins wording, counts or hashes.
+- **Comments and docs are reviewed, not tested.** No test or CI step checks what a
+  comment or a doc says; the `comments` lens in
+  [`../agents/diff-reviewer.md`](../agents/diff-reviewer.md) does. A test reads a comment
+  or a doc only where a program reads it, such as a suppression format a scanner requires
+  or a header a skill looks up ([`guard-tests.md`](guard-tests.md) § 4).
 
 ## Exceptions
 
