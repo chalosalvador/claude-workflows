@@ -2,8 +2,7 @@
 
 A **guard test** asserts an invariant about the repo itself rather than about a
 unit of behaviour: "no workflow hardcodes an identity provider", "no module constructs
-this type with a caller-supplied `env`", "this runbook still says the dangerous
-thing is dangerous".
+this type with a caller-supplied `env`", "every relative link in the docs resolves".
 
 Guards are unusually easy to write and unusually easy to write *wrong*, because a
 broken guard and a satisfied guard look identical: both are green. Each item below
@@ -38,7 +37,7 @@ once, including mutations nobody has imagined yet.
 forces the review step every property check skips.
 
 **How to apply:** enumerate, normalize (collapse whitespace), pin as a dict, and
-add a comment recording *which* bypasses forced the pin. Keep cheap property
+add a comment naming the bypasses a property check here would miss. Keep cheap property
 assertions alongside for readable failure messages, but never let them be the
 guarantee.
 
@@ -191,9 +190,9 @@ own negation.
 
 ---
 
-## 4. Region, not line — and for a claim, not even region
+## 4. Region, not line
 
-**Scope a prose match to the REGION, never to the line.** Shell summaries are built
+**Scope a text match to the REGION, never to the line.** Shell summaries are built
 from many `echo` calls hard-wrapped at ~80 columns, so one sentence routinely spans
 two or three lines. A matcher requiring two tokens on the *same* line silently
 misses the wrapped form:
@@ -225,52 +224,32 @@ Anchor the region to the thing that gives the tokens their meaning — the lines
 mentioning the cited path — then take a window of ±N *lines* around it. Assert
 loudly when the region comes back empty.
 
-### For a CLAIM, drop the window entirely — pin whole clauses by COUNT
+### A claim in a doc is checked against its source, never pinned
 
-**The "±N lines around the citation" recipe is right for a CITATION and wrong
-for a CLAIM.** A citation is a token whose neighbourhood gives it meaning. A claim
-*is* the sentence — so the sentence is what to pin, and a window around it only
-adds ways to be satisfied by something else.
+A window is right for a citation, a token whose neighbourhood gives it meaning. A claim
+is different: the claim *is* the sentence, and a test that holds the sentence, by clause,
+count or hash, freezes its wording and nothing else. The doc can be wrong and stay green,
+and a correct rewording goes red, so the fix for every red is to paste the new wording
+into the test, and the review the pin was meant to force never happens.
 
-An anchor+window+keywords design guarding three prose claims lost **five** ways:
+Check the claim against what it describes instead:
 
-1. **Keywords float free of the claim.** The guarded string was one ~1,300-char
-   source line, so ±2 lines *was* the whole string: a trim deleting the substantive
-   branch but keeping the lead sentence stayed green.
-2. **Capitalisation is not a boundary.** A `THIS MODULE CREATES` needle was
-   disarmable by SHOUTING an unrelated nearby sentence.
-3. **Windows red on reformatting.** Rewriting as a heredoc moved the text out of
-   the window with the prose byte-identical.
-4. **Bounds were unpinned.** Setting a clause list to `()` leaves the inventory the
-   same length and checks nothing — `len(_SITES) == 3` cannot see it.
-5. **Pinning the correction is not pinning the claim.** With only a correction
-   paragraph pinned, reinstating the bad claim eight lines above stayed green — the
-   file then asserted and disowned the same thing.
+- **A value the doc repeats from config or code**: parse that source and compare.
+- **A live fact** (what is deployed, enabled or applied): take it out of the doc and give
+  the command that reads it, as [`comments-and-docs.md`](comments-and-docs.md) asks.
+- **A fact two docs must not both state**: look for sentences copied between them. That
+  compares the docs with each other and pins neither.
 
-**How to apply:** `(file, whole_clause, min_count)` tuples, matched
-case-insensitively over the file normalized to one line (strip leading `#`/`//`
-per line, collapse whitespace, drop `*` and backticks). No anchor, no window.
-**Counts, not presence** — a clause appearing twice in one file means deleting it
-from one site must red, which presence alone cannot see. Pin the total AND a
-`min_count >= 1` floor.
-
-> **A text pin freezes WORDING, not CORRECTNESS — say so in the file.** One
-> guarded runbook was wrong twice, in *opposite* directions, and both drafts would
-> have passed a green pin. The pin's job is to force the re-check into the same
-> commit, not to tell you the answer.
+A claim none of these can check is the reviewer's to check, not a test's.
 
 ---
 
 ## 5. Hash the exemption, not its current vocabulary
 
-When carving a file out of a lint or scan test, **pin the exemption to a content
+When carving a code file out of a lint or scan test, **pin the exemption to a content
 hash**, never to the set of bad strings it currently contains. A pinned set of bad
 strings permits every rewording; a hash forces the carve-out back through review
 the moment the file changes at all.
-
-Same for prose: when the guarded thing is a document, a vocabulary check loses to
-rewording. Pin the content hash and let derived token-exact tests carry only what
-is mechanisable.
 
 ---
 
@@ -379,6 +358,8 @@ Assert the no-false-fire direction explicitly: reformat, de-shout, re-wrap.
 Before trusting a new guard:
 
 - [ ] Is the guarantee an **inventory pin**, not a property check?
+- [ ] If it reads a doc, does it check the doc against its source or another doc, and
+      pin none of the doc's words?
 - [ ] Mutated along **what**, **where**, and **spelling**?
 - [ ] Is every mutation **a spelling a real author would write**?
 - [ ] Does the guard catch **its own revert**?

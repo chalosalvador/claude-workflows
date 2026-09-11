@@ -62,7 +62,8 @@ simply **not found**:
 command -v openspec && openspec --version
 ```
 
-Absent → stop, say so, give the install line. For an unattended run that is a handback.
+Absent is a failed preflight, handled as
+[`../shared/execution.md`](../shared/execution.md) § 2.0 says.
 
 ---
 

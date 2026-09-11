@@ -449,6 +449,6 @@ single constant.
 ## Things to resolve, never assume
 
 - **The current user**: `gh api user --jq .login`. Never hardcode a login.
-- **A test count**: never gate on one. It grows most weeks. Green-vs-red is the gate.
+- **A test count**: never gate on one ([`execution.md`](execution.md) § 2.1).
 - **A field option id**: read it from `field-list` in the same run.
 - **Whether a merge deploys**: read the workflow.

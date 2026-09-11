@@ -127,7 +127,8 @@ git -C <repo> log --all "${AUTHORS[@]}" \
 know merged still reads as un-merged, re-run step 1 before writing it up. It is almost
 always a second identity, not a quiet day.
 
-Drop `--author` entirely when summarizing the **team's** work rather than your own.
+Drop `--author` entirely when summarizing the **team's** work rather than your own, and
+never for a standup ([`reference/standup.md`](../../reference/standup.md)).
 Say which you did — "my commits" and "the team's commits" are different reports and the
 difference is invisible in the output.
 
@@ -227,15 +228,14 @@ These are what make the summary worth reading:
 - **A merged PR is not a deployed one** unless you have checked that merging deploys —
   see [`shared/execution.md`](../../shared/execution.md) § 7.
 - **Never infer a status from a label.** Labels lag.
-- **Report, don't accuse.** A zero or low lane for a person is usually **allocation**,
-  not underperformance. Ask the lead before inferring, and make any target conditional.
-- **Frame decisions, not retreats.** If an approach changed and the prior one was
-  never actually deployed, write it as the decision it is — not as "instead of X".
+- **Per-person lanes and changed approaches are reported as
+  [`reference/review-process.md`](../../reference/review-process.md) § Reporting findings
+  and decisions says.**
 - If you could not verify something, **say the summary is from commit subjects alone.**
 
 ---
 
-## Standup — the three-section shape
+## Standup
 
 Triggered by "standup", or by a scheduled daily-update task. Everything above still runs
 first: **the standup is a rendering of the commit pull, not a different investigation.**
@@ -245,17 +245,7 @@ Read it with `--all` and check merge status per commit (§ 3).
 full.** It owns the shape — Yesterday / Today / Blockers, always all three — the
 heading derivation, the keyword-led bullets, the selection test that keeps it to
 ~6 bullets, the status markers, and how Blockers is derived read-only rather than
-invented. It is the file that was tuned against real drafts; this skill only decides
-*when* a standup is the output.
-
-Three rules are load-bearing enough to repeat here:
-
-- **A standup is YOUR work, and only yours.** Keep the `--author` filter on with every
-  one of your identities (§ 3). Never a "Team:" bullet, never someone else's landing.
-- **Selection, not ordering.** Ask of every candidate "who else needs to know this, and
-  what would they do differently?" — nobody means it does not go in.
-- **`- None.` is the expected Blockers answer.** Never pad it; an invented blocker sends
-  someone chasing nothing.
+invented. This skill only decides *when* a standup is the output.
 
 ---
 
@@ -305,15 +295,8 @@ than the format does:
    that did not**. A card showing no progress reads as a stalled team rather than an
    unworked area.
 
-4. **Tell the user how to see it:**
-
-   ```sh
-   npx @slidev/cli slides/<name>.md --open
-   ```
-
-   The package is `@slidev/cli`, not `slidev`. Export to PDF with
-   `npx @slidev/cli export slides/<name>.md` (needs `npx playwright install chromium`
-   once).
+4. **Tell the user how to see it**, with the commands in
+   [`deck-template.md`](deck-template.md) § Preview and export.
 
 ### Rebranding
 

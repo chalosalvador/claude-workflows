@@ -109,11 +109,9 @@ jq -r --arg ready "<ready_label>" '.items[] | select(.status=="Todo")
    | "#\(.content.number)\t\(.content.repository|sub(".*/";""))\tP:\(.priority // "-")\t\(.content.title)"' "$BOARD_JSON"
 ```
 
-**The board is not simply your `userConfig` default — resolve it first.** This repo may
-name its own board in `workflow.json` → `board`, which **wins** over the machine default,
-and writing to the wrong board is silent. Run the two-step resolution in
-[`shared/board.md`](../../shared/board.md) § Resolution, use the numbers it yields, and
-**say which layer answered before any board write.**
+**The fetch above reads the resolved board**: run
+[`shared/board.md`](../../shared/board.md) § Resolution first and use the numbers it
+yields.
 
 `$BOARD_JSON` is this run's single board fetch — see
 [`shared/board.md`](../../shared/board.md) § Board queries. Every later step that needs
@@ -307,10 +305,9 @@ cases, and the difference matters more unattended than with a human watching —
 [`../../reference/openspec.md`](../../reference/openspec.md) for both, the Purpose
 trap, and what a green does not assert.
 
-**`skip_specs` disables validation for the change entirely.** The justification is a
-claim the *reviewer* has to check by eye — exactly the kind of claim an unattended run
-must not overstate. **If you cannot write a reason that survives being read by a
-skeptic, that is a handback, not a `skip_specs`.**
+**`skip_specs` disables validation for the change entirely**, and its reason is a claim
+the *reviewer* checks by eye. Take it only with the reason
+[`openspec.md`](../../reference/openspec.md) asks for; without one, hand the issue back.
 
 ### Then the code
 
@@ -343,10 +340,11 @@ you already had open, that is more process than the fix. Only file when the revi
 reading your note, would have to open one anyway: real scope, real sequencing, a
 decision someone has to make.
 
-**Never commit secrets.** If the implementation appears to need a credential, that is a
-gate failure → § Handing it back. Credential and env changes are hand-work for a reason —
-the provisioning tools store empty values, trailing newlines and write-only types without
-erroring, and every failure surfaces far from the cause:
+**An implementation that appears to need a credential is a gate failure**
+([`../../shared/execution.md`](../../shared/execution.md) § 4) → § Handing it back.
+Credential and env changes are hand-work for a reason — the provisioning tools store empty
+values, trailing newlines and write-only types without erroring, and every failure
+surfaces far from the cause:
 [`../../reference/secrets-and-ci.md`](../../reference/secrets-and-ci.md) for the rules,
 the repo's deploy-target doc § Secrets and env for this platform's spelling.
 
@@ -359,7 +357,6 @@ hardcoding a test count that no longer holds.
 - **Any red is yours.** § 2.1 lists the two classes that are genuinely not your change.
   Anything else red → § Handing it back, rather than a judgment call about whether it
   matters.
-- **Never gate on a test COUNT.** Green-vs-red is the gate.
 - Add or extend tests, and **mutation-check them**. A PR from an agent with no test is
   one a reviewer must verify entirely by hand; a PR with a test that passes against
   broken code is worse.

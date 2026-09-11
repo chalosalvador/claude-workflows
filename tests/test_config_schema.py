@@ -8,8 +8,9 @@ WHY THIS EXISTS
 which adds the keys the schema gained since the file was written. That only
 works if three things never drift:
 
-  1. every key the Layer-2 example in shared/config.md shows has a row in the
-     schema table, with the schema version it arrived in ("Since");
+  1. the keys the Layer-2 example in shared/config.md shows and the rows of the
+     schema table are one set, each row with the schema version its key arrived in
+     ("Since");
   2. no row claims a version newer than **Current schema**;
   3. setup knows how to probe every key in the table — a key it has never
      heard of is a key `upgrade` can never add.
@@ -20,10 +21,11 @@ to. This guard is the cost that makes the three move together.
 
 DESIGN — see plugins/gh-issue-flow/reference/guard-tests.md
 ----------------------------------------------------------
-Inventory pins, not property checks: the row COUNT is asserted against an
-independent constant so a silently emptied table cannot pass by having nothing
-to disagree about. Matching is on normalized text, so reformatting a row or
-reordering the table stays green.
+The table is checked against its sources, the example and setup, in both
+directions, so a row dropped from the table reds on the example key it leaves
+behind, and no count of keys has to be kept. An emptied table reds on its own.
+Matching is on normalized text, so reformatting a row or reordering the table
+stays green.
 
 Mutation-proven; the cases a re-proof covers are in CONTRIBUTING.md § Conventions.
 
@@ -41,9 +43,6 @@ from pathlib import Path
 ROOT = Path(os.environ.get("SCHEMA_GUARD_ROOT") or Path(__file__).resolve().parent.parent)
 CONFIG = ROOT / "plugins/gh-issue-flow/shared/config.md"
 SETUP = ROOT / "plugins/gh-issue-flow/skills/setup/SKILL.md"
-
-# Independent of the table, deliberately. Adding a key means bumping this too.
-EXPECTED_KEYS = 22
 
 ROW = re.compile(r"^\|\s*`([^`]+)`\s*\|\s*(\d+)\s*\|", re.M)
 CURRENT = re.compile(r"\*\*Current schema:\s*(\d+)\.?\*\*")
@@ -85,11 +84,6 @@ def main() -> int:
         rows[key] = int(since)
     if not rows:
         return fail("schema table has no rows — did a rewrite drop it?")
-    if len(rows) != EXPECTED_KEYS:
-        problems.append(
-            f"schema table has {len(rows)} keys, expected {EXPECTED_KEYS}. "
-            "Update EXPECTED_KEYS in the same commit, deliberately."
-        )
     if "schemaVersion" not in rows:
         problems.append("schema table has no `schemaVersion` row")
 
@@ -97,8 +91,12 @@ def main() -> int:
         if since > current:
             problems.append(f"`{key}` claims Since {since} but Current schema is {current}")
 
-    for key in sorted(example_keys(config) - rows.keys()):
+    shown = example_keys(config)
+    for key in sorted(shown - rows.keys()):
         problems.append(f"Layer-2 example shows `{key}` but the schema table has no row for it")
+    # `$comment*` is a pattern for any number of keys, not a key the example has to show.
+    for key in sorted(rows.keys() - shown - {"$comment*"}):
+        problems.append(f"schema table has a row for `{key}` but the Layer-2 example never shows it")
 
     for key in sorted(rows):
         if key == "$comment*":

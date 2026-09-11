@@ -211,8 +211,8 @@ secondary limit that `rate_limit` does not report
 ([`../shared/board.md`](../shared/board.md) § Board queries): back off and retry rather
 than waiting for the hourly reset.
 
-> There is no REST fallback for Projects v2. When GraphQL is exhausted, board writes
-> simply wait.
+> When GraphQL is exhausted, board writes wait
+> ([`../shared/board.md`](../shared/board.md) § Board queries).
 
 ---
 
@@ -241,8 +241,8 @@ counts — a `-` in either column means binary.
   requires linear history rejects a merge commit. Read the state back afterwards (`gh pr view <n> --json
   state,mergedAt,mergeCommit`) — see `verification.md` §1, `gh pr merge` exits 0 on
   merges that did not happen *and* exits 1 on merges that did.
-- **Branch off the remote ref explicitly**: `git checkout -b feat/x <integrationBranch>`,
-  resolved per `shared/config.md` — never `main` by assumption. Fetching is not pulling.
+- **Branch off the remote ref, never a local branch or `main` by assumption**:
+  [`../shared/execution.md`](../shared/execution.md) § 1.
 - Piping a `gh` command into `tail`/`head` makes the pipeline's exit status that of
   `tail`, so an `||` fallback never fires and a failure looks like success.
 

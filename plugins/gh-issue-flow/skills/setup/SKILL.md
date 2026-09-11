@@ -107,7 +107,7 @@ directory first, or use `find`:
 | `integrationBranch` | `origin/` + the default branch — **after** the empty-repo check above. **Not always `main`** — if a `dev`/`develop` remote branch exists and is ahead of the default, the repo probably integrates there and releases from the default. **Ask; do not guess.** |
 | `validate` | **Read the CI workflow first** — `.github/workflows/*.yml`, the job that runs on PRs into the integration branch. Copy its step commands in order. Fall back to the toolchain only if there is no CI: `pyproject.toml`/`requirements.txt` → `ruff`/`pytest`; `package.json` → the lint/typecheck/test/build scripts that actually exist; `Cargo.toml` → `cargo clippy`/`cargo test`; `go.mod` → `go vet`/`go test ./...`. |
 | `preflight` | Anything the gate shells out to that no lockfile installs. |
-| `specFlow` | An `openspec/` directory at the repo root → `"openspec"`. |
+| `specFlow` | As [`shared/config.md`](../../shared/config.md) § Layer 3 probes it. |
 | `mergeMethod` | From the `*MergeAllowed` flags. |
 | `deployOnMerge` | Grep `.github/workflows/` for a workflow triggering on push to the integration branch that deploys. **Do not record "nothing happens" unless you looked.** Note that some hosts (Vercel, Netlify, Fly) deploy from the repo with no workflow at all — check for their config files too. |
 | `requiredChecks`, `protection` | `gh api repos/<owner>/<repo>/branches/<b>/protection` — this 404s if the branch is unprotected, which is itself the answer. |

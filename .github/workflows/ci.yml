@@ -23,8 +23,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Full history: the comment-policy step diffs against origin/main and the PR's
-      # base. `pull_request` checks out the merge of head with base, so a duplicate that
-      # landed on main after this branch forked still reds the single-owner guard.
+      # base. `pull_request` checks out the merge of head with base, so a sentence that
+      # landed on main after this branch forked still reds when this branch copies it.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -33,8 +33,9 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Single-owner facts
-        run: python3 tests/test_single_owner_facts.py
+      # A sentence copied from one doc into another is a second home for one fact.
+      - name: No copied sentences
+        run: python3 tests/test_no_copied_sentences.py
 
       - name: No stray tracked files
         run: python3 tests/test_no_stray_files.py

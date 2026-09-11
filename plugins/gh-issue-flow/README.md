@@ -4,8 +4,6 @@ An issue-to-merged-PR workflow for Claude Code: triage a board, pick the next is
 it, build it in a worktree, review it adversarially, ship it — with the operational
 reference docs that keep each step honest.
 
-Works in a new repo or an existing one, on any language.
-
 ## Start here
 
 ```
@@ -46,10 +44,9 @@ regardless of the session's own setting. They appear as `gh-issue-flow:<name>`.
 | [`issue-planner`](agents/issue-planner.md) | `next-issue` step 3, `autopilot` § 6 | **HANDOFF** — what every reviewer starts from — then DECIDE FIRST, SCOPE (+FOLD IN), VALIDATE and **REVIEW LENSES**; VERIFY-FIRST, TESTS, SPEC IMPACT and RISKS only when their trigger fires |
 | [`diff-reviewer`](agents/diff-reviewer.md) | `next-issue` step 6, `autopilot` § 9 | Findings through **one** assigned lens from [the set](agents/diff-reviewer.md#the-lenses) |
 
-**A subagent cannot fan out** — it has no Agent tool and spawns do not nest. Spawn
-`gh-issue-flow:diff-reviewer` **N times from the parent, in one message**, one per lens.
-Gate the lens list on what the planner named; the full set of max-effort reviewers on a
-styling change is waste.
+Spawn `gh-issue-flow:diff-reviewer` **N times from the parent, in one message**, one per
+lens the planner named. Why the parent fans out and not an agent:
+[`reference/parallel-agents.md`](reference/parallel-agents.md).
 
 **Spawn the namespaced name.** A bare `diff-reviewer` or `issue-planner` resolves to
 whichever same-named agent file wins, and a stale one in `~/.claude/agents/` shadows this
@@ -86,8 +83,8 @@ Docs of operational knowledge, and the default comment policy — see
 [their index](reference/README.md).
 Skills link into them at the moment each becomes relevant.
 
-The one idea underneath all of them: **silence, an empty result, and exit 0 are
-indistinguishable from success.** Prove the positive case first.
+Start with
+[the one idea underneath all of them](reference/README.md#the-one-idea-underneath-all-of-them).
 
 ## How the skills fit together
 
@@ -134,9 +131,6 @@ That is why [`reference/verification.md`](reference/verification.md) exists, why
 skills re-read after every mutation, why `triage`'s receipt is treated as a claim rather
 than a summary, and why `setup` reports what it *could not* do as prominently as what it
 did.
-
-> Silence, an empty result, and exit 0 are indistinguishable from success. **Prove the
-> positive case first.**
 
 ## Config
 

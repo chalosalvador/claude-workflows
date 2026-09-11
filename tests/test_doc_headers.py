@@ -19,8 +19,9 @@ matching by name finds nothing, and nothing distinguishes "section missing" from
 
 DESIGN — see plugins/gh-issue-flow/reference/guard-tests.md
 ----------------------------------------------------------
-Inventory pin: the header COUNT is asserted against an independent constant.
-Reference check is a prefix rule: a "§ X" whose X is a strict word-prefix of a
+The skeletons and the table are compared as sets in both directions, so a
+dropped or demoted header reds on the table row it leaves behind, and no count of
+headers has to be kept. Reference check is a prefix rule: a "§ X" whose X is a strict word-prefix of a
 header (e.g. "Infra" for "Infra and migrations") is a reference to that header
 spelled short, and reds; a "§ X" that matches no header at all ("§ Layer 1",
 "§ 5b", "§ Board queries") is some other section and is ignored.
@@ -44,8 +45,6 @@ TEMPLATES = {"target": ROOT / "plugins/gh-issue-flow/skills/setup/deploy-target-
 CONFIG = ROOT / "plugins/gh-issue-flow/shared/config.md"
 SCAN = "plugins/gh-issue-flow/"
 
-EXPECTED_HEADERS = {"target": 4, "repo": 3}
-
 HEADER = re.compile(r"^## (.+?)\s*$", re.M)
 TABLE_ROW = re.compile(r"^\| ([A-Z][^|]*?) \|", re.M)
 # A wrapped reference ("§ Review\n  bot") is still one phrase: allow one line break between words.
@@ -63,8 +62,6 @@ def main() -> int:
         hs = HEADER.findall(path.read_text(encoding="utf-8"))
         if not hs:
             return fail(f"no ## headers found in the {kind} skeleton — did a rewrite drop them?")
-        if len(hs) != EXPECTED_HEADERS[kind]:
-            return fail(f"{kind} skeleton has {len(hs)} headers, expected {EXPECTED_HEADERS[kind]}; update the constant deliberately")
         headers += hs
     if len(set(headers)) != len(headers):
         return fail("a header appears in both skeletons; a section has one home")

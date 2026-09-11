@@ -11,8 +11,8 @@ file interprets, are [`config.md`](config.md) § Resolving `workflow.json`.
 
 **Layer 1 — the plugin's `userConfig`, one value per machine (config.md § Layer 1) — is
 only the DEFAULT board, never the answer.** A workspace that
-targets a different board sets it in that repo's `workflow.json` → `board`, which wins.
-Resolution order, every run:
+targets a different board sets it in that repo's `workflow.json` → `board`, which wins,
+and a write to the wrong board raises no error. Resolution order, every run:
 
 | Order | Source | Use when |
 |---|---|---|
@@ -20,12 +20,12 @@ Resolution order, every run:
 | 2 | `${user_config.board_number}` / `${user_config.board_owner}` | no repo-level board; the machine default |
 | 3 | neither is set | **no board** — label-only, see below |
 
-**Resolve it once at the top of a run, then substitute the resulting NUMBERS into every
-later command.** **Do not try to carry it in a shell variable.** Each command runs in
-a fresh shell, so `$BOARD` set in one block is empty in the next — and an empty board
-number reads downstream exactly like "this repo has no board", which is how a boarded
-repo gets silently triaged label-only. `triage` § 1 shows the shape: literal
-`<board_number>` / `<board_owner>` placeholders you fill in.
+**Resolve it once at the top of a run, say which layer answered before the first board
+write, then substitute the resulting NUMBERS into every later command.** **Do not try to
+carry it in a shell variable.** Each command runs in a fresh shell, so `$BOARD` set in one
+block is empty in the next — and an empty board number reads downstream exactly like "this
+repo has no board", which is how a boarded repo gets silently triaged label-only. `triage`
+§ 1 shows the shape: literal `<board_number>` / `<board_owner>` placeholders you fill in.
 
 **Never write `${BOARD:-${user_config.board_number}}` or any other parameter expansion
 around a `${user_config.*}` placeholder.** An **unset** option is substituted

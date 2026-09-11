@@ -234,7 +234,7 @@ Full schema and every key's meaning:
 
 | Skill | Does |
 |---|---|
-| `setup` | Probes the repo, writes `.claude/workflow.json`, creates the labels and board fields the rest depend on, reports every gap it cannot close. `check` mode changes nothing. |
+| `setup` | Probes the repo, writes `.claude/workflow.json`, creates the labels and board fields the rest depend on, reports every gap it cannot close. |
 | `triage` | Uncapped integrity pass (0 off-board, 0 unassigned) + capped deep pass: category, effort, priority, duplicates, and the `agent-ready` gate. |
 | `next-issue` | Picks the theme-aligned Todo card, then either emits a paste-ready start prompt or runs the issue in-session with a pause for your OK — and, once the PR is open, ends with a plain-words summary of what to review and test. |
 | `autopilot` | Works the `agent-ready` queue unattended in a worktree, opens reviewable PRs, never merges. |
@@ -268,7 +268,8 @@ claude --plugin-dir ./plugins/gh-issue-flow
 claude plugin validate ./plugins/gh-issue-flow --strict
 ```
 
-`/reload-plugins` picks up skill edits without a restart; an agent edit needs a restart.
+Testing a skill or agent change, and when a restart is needed:
+[`CONTRIBUTING.md`](CONTRIBUTING.md#testing-a-change-to-a-skill).
 
 ## Recommended: pair this with OpenSpec
 

@@ -6,7 +6,7 @@ Everything here is markdown and JSON. There is no build, no install, no dependen
 ## The gate
 
 ```bash
-python3 tests/test_single_owner_facts.py
+python3 tests/test_no_copied_sentences.py
 python3 tests/test_no_stray_files.py
 python3 tests/test_version_agreement.py
 python3 tests/test_config_schema.py
@@ -20,9 +20,8 @@ claude plugin validate . --strict
 CI runs all of them as the `guards` job. Run them before pushing — `main` is protected, so a
 red gate means the PR cannot merge.
 
-`test_single_owner_facts.py`, `test_no_stray_files.py`, `test_links.py` and
-`test_doc_headers.py` list files with `git ls-files`, i.e. the index, so a new file is
-invisible to them until it is staged.
+`test_no_stray_files.py`, `test_links.py` and `test_doc_headers.py` list files with
+`git ls-files`, i.e. the index, so a new file is invisible to them until it is staged.
 `git add` the paths you changed before trusting a local green, never `git add -A`: a
 sweeping add is how a stray file reaches a commit.
 
@@ -103,11 +102,9 @@ immediately, and `/reload-plugins` picks up further edits without a restart.
 
 Two traps, and both return a plausible result from the wrong file.
 
-**Agent types resolve at session start.** Editing an agent file, or installing the plugin,
-changes nothing for the session already running: the spawn fails with
-`Agent type '<name>' not found`, listing the agents as they were at launch.
-`/reload-plugins` refreshes skills, not agents. So an agent edit cannot be tested in the
-session that made it; restart first.
+**An agent edit cannot be tested in the session that made it**; restart first. Why, and
+the error a spawn gives otherwise:
+[`setup` § 6](plugins/gh-issue-flow/skills/setup/SKILL.md#6-confirm-the-agents).
 
 **A same-named agent elsewhere silently wins.** If `~/.claude/agents/` or the project's
 `.claude/agents/` holds `issue-planner.md` or `diff-reviewer.md`, that file runs and the
@@ -190,10 +187,11 @@ Nothing can tell you that you forgot to bump at all, so read the three back your
 ### And bump the config schema when a PR adds a `workflow.json` key
 
 A plugin update reaches the code, not the repos already configured. So a new key needs
-three things in the same PR: a row in the schema table in `shared/config.md` § Layer 2
-with its **Since** set to a bumped **Current schema**, a probe for it in `setup` § 2, and
-`EXPECTED_KEYS` in `tests/test_config_schema.py` moved up by one. That guard reds on any
-of the three missing. `setup upgrade` is then what carries the key into an existing repo.
+three things in the same PR: the key in the Layer-2 example in `shared/config.md`, a row
+for it in the schema table below the example with its **Since** set to a bumped **Current
+schema**, and a probe for it in `setup` § 2. `tests/test_config_schema.py` reds when any
+of the three is missing; nothing checks that **Current schema** moved, so read it back.
+`setup upgrade` is then what carries the key into an existing repo.
 
 ## Build your own testbed
 
@@ -227,32 +225,39 @@ History
 the doc states the current fact. Comments and docs follow
 [`comments-and-docs.md`](plugins/gh-issue-flow/reference/comments-and-docs.md).
 
-**The single-owner guard will block you, and that is the point.**
-`tests/test_single_owner_facts.py` pins each clause in `OWNED` to exactly one owning file.
-Rewrite a section so a pinned clause stops existing, and it fails with *"0 means the owner
-lost it — did a rewrite drop the fact?"* Update `OWNED` in the same commit; do not route
-around it by deleting the entry.
+**A sentence copied from one doc into another fails the gate.**
+`tests/test_no_copied_sentences.py` compares the docs with each other and holds none of
+their wording, so rewording never reds it. Keep the sentence where the fact belongs and
+link to it from the other place. A bare link may repeat anywhere; a sentence around it
+that says what to do is written for its own step, since the same sentence in two docs is
+a copy even when all it does is point.
 
 **A guard is mutation-proven, and a change to it is re-proven.** A re-proof covers both
 halves: the mutants that must red, and the edits that must stay green, which is what stops
 a guard reddening on ordinary reformatting. The cases each guard's re-proof includes:
 
-- `test_single_owner_facts.py`: a softened or inverted owner and an exact copy elsewhere
-  red; a hard-wrap, moved emphasis, a move within the owner and a paraphrase elsewhere stay
-  green. Match a pinned clause as the owner wraps it.
-- `test_config_schema.py`: a dropped row, an example key with no row, a Since above
-  Current, a key setup never mentions, a missing Current line, a duplicate row and an
-  emptied table red; reversed rows, padded cells, a reworded Meaning and a legitimate
-  schema bump stay green.
+- `test_no_copied_sentences.py`: a sentence copied into another doc reds, including
+  re-wrapped, re-cased, with other emphasis or link targets, and moved into a list item,
+  a blockquote, a heading, a table cell, a skill's `description` or an untracked doc; so
+  do a three-word copy, a sentence repeated in its own file, a copied table row, a copy
+  between a template and another doc, and a fence left open or closed by the other fence
+  character. A paraphrase, a two-word repeat, a bare link in two docs, the same command
+  in two fences, a sentence both templates share, one value down a table's column, a
+  setting two agents' frontmatter share, a re-wrap in place and a move within one file
+  stay green.
+- `test_config_schema.py`: a dropped row, an example key with no row, a row with no
+  example key, a Since above Current, a key setup never mentions, a missing Current line,
+  a duplicate row and an emptied table red; reversed rows, padded cells, a reworded
+  Meaning and a legitimate schema bump stay green.
 - `test_links.py`: a typo'd path, a link to an untracked file, a link escaping the repo, a
   link climbing out of the plugin directory to a marketplace-only path, and a parser that
   matches nothing red; an anchor link and a mix of `./`, directory, `https:` and `#` links
   stay green. It strips fences and code spans first, because a link quoted in a code span
   is an example, and it checks the plugin boundary as well as the repo's.
 - `test_doc_headers.py`: a renamed skeleton header, a renamed table row, a "§ Infra" short
-  reference, demoted headers, an added header the table lacks, and a header present in
-  both skeletons red; a reordered table and a mix of other § references with full header
-  names stay green. References are compared word by word, because a greedy match lets a
+  reference, demoted headers, an added header the table lacks, an emptied skeleton and a
+  header present in both skeletons red; a reordered table and a mix of other § references
+  with full header names stay green. References are compared word by word, because a greedy match lets a
   short form through.
 - `test_version_agreement.py`: any disagreement among the three numbers reds, including a
   stale top-level `version` that `claude plugin validate` passes; three equal numbers,
@@ -260,4 +265,4 @@ a guard reddening on ordinary reformatting. The cases each guard's re-proof incl
 
 **Facts live in one place.** `shared/execution.md` owns mechanics; skills own policy and
 link to it. If you find yourself pasting the same rule into two skills, it belongs in
-`shared/` — that is exactly the drift the guard exists to catch.
+`shared/`; a paste that stays word for word is what `test_no_copied_sentences.py` finds.
