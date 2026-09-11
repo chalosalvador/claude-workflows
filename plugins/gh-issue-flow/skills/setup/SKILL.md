@@ -423,7 +423,7 @@ notices when they silently are not running.
 
 | Agent | Runs at | Used by | Returns |
 |---|---|---|---|
-| `issue-planner` | `effort: max`, read-only | `next-issue`, `autopilot` | The scoping plan — and **REVIEW LENSES**, which decides the next step |
+| `issue-planner` | `effort: max`, read-only | `next-issue`, `autopilot` | The scoping plan — its **HANDOFF**, which every reviewer starts from, and **REVIEW LENSES**, which decides the next step |
 | `diff-reviewer` | `effort: max`, read-only | `next-issue`, `autopilot` | Findings through one lens from [the set](../../agents/diff-reviewer.md#the-lenses) |
 
 **Check, do not warn.** A same-named agent in `~/.claude/agents/` or the project's

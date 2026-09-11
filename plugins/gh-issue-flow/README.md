@@ -43,7 +43,7 @@ regardless of the session's own setting. They appear as `gh-issue-flow:<name>`.
 
 | Agent | Used by | Returns |
 |---|---|---|
-| [`issue-planner`](agents/issue-planner.md) | `next-issue` step 3, `autopilot` § 6 | DECIDE-FIRST, VERIFY-FIRST, SCOPE (+FOLD IN), SPEC IMPACT, TESTS, RISKS, and **REVIEW LENSES** |
+| [`issue-planner`](agents/issue-planner.md) | `next-issue` step 3, `autopilot` § 6 | **HANDOFF** — what every reviewer starts from — then DECIDE FIRST, SCOPE (+FOLD IN), VALIDATE and **REVIEW LENSES**; VERIFY-FIRST, TESTS, SPEC IMPACT and RISKS only when their trigger fires |
 | [`diff-reviewer`](agents/diff-reviewer.md) | `next-issue` step 6, `autopilot` § 9 | Findings through **one** assigned lens from [the set](agents/diff-reviewer.md#the-lenses) |
 
 **A subagent cannot fan out** — it has no Agent tool and spawns do not nest. Spawn
@@ -51,9 +51,9 @@ regardless of the session's own setting. They appear as `gh-issue-flow:<name>`.
 Gate the lens list on what the planner named; the full set of max-effort reviewers on a
 styling change is waste.
 
-**Spawn the namespaced name.** A bare `diff-reviewer` resolves to whichever same-named
-agent file wins, and a stale one in `~/.claude/agents/` shadows this one with no warning
-at all — see `skills/setup/SKILL.md` § 6, Confirm the agents.
+**Spawn the namespaced name.** A bare `diff-reviewer` or `issue-planner` resolves to
+whichever same-named agent file wins, and a stale one in `~/.claude/agents/` shadows this
+one with no warning at all — see `skills/setup/SKILL.md` § 6, Confirm the agents.
 
 `issue-planner` describes the spec change; it never creates it. Its callers run it at
 different points in the branch lifecycle, one of them before the branch exists.
