@@ -44,8 +44,7 @@ regardless of the session's own setting. They appear as `gh-issue-flow:<name>`.
 | [`issue-planner`](agents/issue-planner.md) | `next-issue` step 3, `autopilot` § 6 | **HANDOFF** — what every reviewer starts from — then DECIDE FIRST, SCOPE (+FOLD IN), VALIDATE and **REVIEW LENSES**; VERIFY-FIRST, TESTS, SPEC IMPACT and RISKS only when their trigger fires |
 | [`diff-reviewer`](agents/diff-reviewer.md) | `next-issue` step 6, `autopilot` § 9 | Findings through **one** assigned lens from [the set](agents/diff-reviewer.md#the-lenses) |
 
-Spawn `gh-issue-flow:diff-reviewer` **N times from the parent, in one message**, one per
-lens the planner named. Why the parent fans out and not an agent:
+How a session spawns the reviewer once per lens:
 [`reference/parallel-agents.md`](reference/parallel-agents.md).
 
 **Spawn the namespaced name.** A bare `diff-reviewer` or `issue-planner` resolves to

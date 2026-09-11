@@ -189,8 +189,9 @@ Nothing can tell you that you forgot to bump at all, so read the three back your
 A plugin update reaches the code, not the repos already configured. So a new key needs
 three things in the same PR: the key in the Layer-2 example in `shared/config.md`, a row
 for it in the schema table below the example with its **Since** set to a bumped **Current
-schema**, and a probe for it in `setup` § 2. `tests/test_config_schema.py` reds when any
-of the three is missing; nothing checks that **Current schema** moved, so read it back.
+schema**, and a mention of it in the `setup` section that row's Setup column names.
+`tests/test_config_schema.py` reds when any of the three is missing; whether that mention
+is a working probe, and whether **Current schema** moved, are yours to read back.
 `setup upgrade` is then what carries the key into an existing repo.
 
 ## Build your own testbed
@@ -225,10 +226,9 @@ History
 the doc states the current fact. Comments and docs follow
 [`comments-and-docs.md`](plugins/gh-issue-flow/reference/comments-and-docs.md).
 
-**A sentence copied from one doc into another fails the gate.**
-`tests/test_no_copied_sentences.py` compares the docs with each other and holds none of
-their wording, so rewording never reds it. Keep the sentence where the fact belongs and
-link to it from the other place. A bare link may repeat anywhere; a sentence around it
+**A sentence copied from one doc into another fails the gate**
+(`tests/test_no_copied_sentences.py`). Keep the sentence where the fact belongs and link
+to it from the other place. A bare link may repeat anywhere; a sentence around it
 that says what to do is written for its own step, since the same sentence in two docs is
 a copy even when all it does is point.
 
@@ -239,15 +239,17 @@ a guard reddening on ordinary reformatting. The cases each guard's re-proof incl
 - `test_no_copied_sentences.py`: a sentence copied into another doc reds, including
   re-wrapped, re-cased, with other emphasis or link targets, and moved into a list item,
   a blockquote, a heading, a table cell, a skill's `description` or an untracked doc; so
-  do a three-word copy, a sentence repeated in its own file, a copied table row, a copy
-  between a template and another doc, and a fence left open or closed by the other fence
-  character. A paraphrase, a two-word repeat, a bare link in two docs, the same command
-  in two fences, a sentence both templates share, one value down a table's column, a
-  setting two agents' frontmatter share, a re-wrap in place and a move within one file
-  stay green.
+  do a three-word copy, a copy in a quoted `description`, a sentence repeated in its own
+  file, a copied table row, one long cell in two tables of one file, a sentence the two
+  setup templates share, and a fence left open or closed by the other fence character. A
+  paraphrase, a two-word repeat, a bare link in two docs, the same command in two fences,
+  one value down a table's column, a header row or a placeholder row reused by another
+  table, two sentences that share words up to a "vs.", a setting two agents' frontmatter
+  share, a re-wrap in place and a move within one file stay green.
 - `test_config_schema.py`: a dropped row, an example key with no row, a row with no
-  example key, a Since above Current, a key setup never mentions, a missing Current line,
-  a duplicate row and an emptied table red; reversed rows, padded cells, a reworded
+  example key, a key setup § 2 probes that the table lacks, a key missing from the setup
+  section its row names, a Since above Current, a key setup never mentions, a missing
+  Current line, a duplicate row and an emptied table red; reversed rows, padded cells, a reworded
   Meaning and a legitimate schema bump stay green.
 - `test_links.py`: a typo'd path, a link to an untracked file, a link escaping the repo, a
   link climbing out of the plugin directory to a marketplace-only path, and a parser that
@@ -255,8 +257,9 @@ a guard reddening on ordinary reformatting. The cases each guard's re-proof incl
   stay green. It strips fences and code spans first, because a link quoted in a code span
   is an example, and it checks the plugin boundary as well as the repo's.
 - `test_doc_headers.py`: a renamed skeleton header, a renamed table row, a "§ Infra" short
-  reference, demoted headers, an added header the table lacks, an emptied skeleton and a
-  header present in both skeletons red; a reordered table and a mix of other § references
+  reference, demoted headers, an added header the table lacks, a header moved to the other
+  skeleton, a header removed with its row while a `repo.md § …` reference still names it,
+  an emptied skeleton and a header present in both skeletons red; a reordered table and a mix of other § references
   with full header names stay green. References are compared word by word, because a greedy match lets a
   short form through.
 - `test_version_agreement.py`: any disagreement among the three numbers reds, including a
@@ -265,4 +268,5 @@ a guard reddening on ordinary reformatting. The cases each guard's re-proof incl
 
 **Facts live in one place.** `shared/execution.md` owns mechanics; skills own policy and
 link to it. If you find yourself pasting the same rule into two skills, it belongs in
-`shared/`; a paste that stays word for word is what `test_no_copied_sentences.py` finds.
+`shared/`. `test_no_copied_sentences.py` finds a whole sentence pasted unchanged; a
+clause pasted into a new sentence is left to review.

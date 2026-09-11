@@ -228,9 +228,9 @@ These are what make the summary worth reading:
 - **A merged PR is not a deployed one** unless you have checked that merging deploys —
   see [`shared/execution.md`](../../shared/execution.md) § 7.
 - **Never infer a status from a label.** Labels lag.
-- **Per-person lanes and changed approaches are reported as
+- **Before writing about one person's lane or an approach that changed**, read
   [`reference/review-process.md`](../../reference/review-process.md) § Reporting findings
-  and decisions says.**
+  and decisions.
 - If you could not verify something, **say the summary is from commit subjects alone.**
 
 ---

@@ -398,6 +398,6 @@ dupes`, plus any load warnings and anything you deliberately left alone.
 receipt is the integrity line, the out-of-sweep line and one sentence, nothing else. A
 clean board should read clean.
 
-**A per-person view in the receipt is reported as
+Before a per-person view goes in the receipt, read
 [`../../reference/review-process.md`](../../reference/review-process.md) § Reporting
-findings and decisions says.**
+findings and decisions.

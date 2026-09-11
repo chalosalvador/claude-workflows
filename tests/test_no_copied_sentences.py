@@ -7,8 +7,8 @@ none of their wording, so rewording never reds it; only a copy does.
 
 It reads sentences, list items, headings and table cells, with emphasis, code ticks
 and whole links removed so one pointer in two docs is not a copy, and whole table
-rows. Fenced code repeats commands on purpose and is not read. The re-proof cases
-are in CONTRIBUTING.md § Conventions.
+rows. Fenced code repeats commands on purpose and is not read. A clause pasted into
+a longer sentence is not seen. The re-proof cases are in CONTRIBUTING.md § Conventions.
 
 Run:  python3 tests/test_no_copied_sentences.py
 Set COPY_GUARD_ROOT to point it at a copy (the mutation harness does).
@@ -24,16 +24,13 @@ from pathlib import Path
 
 ROOT = Path(os.environ.get("COPY_GUARD_ROOT") or Path(__file__).resolve().parent.parent)
 SCAN_ROOTS = ("README.md", "CLAUDE.md", "CONTRIBUTING.md", "plugins/")
-# Each is copied alone into a consumer repo, where a link to the other resolves nowhere,
-# so a sentence they share only with each other is not a copy.
-STANDALONE = frozenset({
-    "plugins/gh-issue-flow/skills/setup/deploy-target-template.md",
-    "plugins/gh-issue-flow/skills/setup/repo-template.md",
-})
 # One- and two-word repeats are headings and table labels, not facts.
 MIN_WORDS = 3
-# A row this wide is read whole as well, so a copied table reds even when its cells are short.
+# A body row this wide is read whole as well, so a copied table reds even when its cells
+# are short. Header rows are labels and are not read.
 MIN_ROW_CELLS = 3
+# A period after these does not end a sentence.
+ABBREVIATIONS = ("vs.", "e.g.", "i.e.", "cf.")
 
 FENCE = re.compile(r"^(`{3,}|~{3,})(.*)$")
 LINK = re.compile(r"!?\[(?:[^\[\]]|\[[^\]]*\])*\]\([^)]*\)")
@@ -51,22 +48,37 @@ def normalize(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip().lower()
 
 
+def sentences(text: str) -> list[str]:
+    out: list[str] = []
+    for part in SENTENCE_END.split(text):
+        if out and out[-1].endswith(ABBREVIATIONS):
+            out[-1] += " " + part
+        else:
+            out.append(part)
+    return out
+
+
 def words(unit: str) -> int:
     return sum(1 for tok in unit.split(" ") if WORD.search(tok))
 
 
-def units(text: str, rel: str) -> list[tuple[str, int, bool]]:
-    """Every (unit, line, is_cell) in one markdown file."""
-    out: list[tuple[str, int, bool]] = []
+Cell = tuple[int, int] | None
+
+
+def units(text: str, rel: str) -> list[tuple[str, int, Cell]]:
+    """Every (unit, line, cell) in one markdown file; cell is (table, column) for a table cell."""
+    out: list[tuple[str, int, Cell]] = []
     para: list[str] = []
     para_line = 0
     fence: tuple[str, int] | None = None
     fence_line = 0
+    table = 0
+    in_table = False
 
-    def flush(cell: bool = False) -> None:
+    def flush(cell: Cell = None) -> None:
         nonlocal para
         if para:
-            for s in SENTENCE_END.split(normalize(" ".join(para))):
+            for s in sentences(normalize(" ".join(para))):
                 if words(s) >= MIN_WORDS:
                     out.append((s, para_line, cell))
             para = []
@@ -83,15 +95,24 @@ def units(text: str, rel: str) -> list[tuple[str, int, bool]]:
         for i in range(1, len(lines)):
             if lines[i].strip() == "---":
                 # Only `description` is prose; the other keys are settings two files may share.
-                prose = False
+                desc: list[str] = []
+                desc_line = 0
                 for j in range(1, i):
                     key = re.match(r"([\w-]+):\s*(?:[>|][-+]?\s*)?", lines[j])
                     if key:
-                        flush()
-                        prose = key.group(1) == "description"
-                    if prose:
-                        add(lines[j][key.end():] if key else lines[j], j + 1)
-                flush()
+                        if key.group(1) != "description":
+                            if desc:
+                                break
+                            continue
+                        desc_line = j + 1
+                    if desc_line:
+                        desc.append(lines[j][key.end():] if key else lines[j])
+                value = " ".join(d.strip() for d in desc)
+                if len(value) > 1 and value[0] in "'\"" and value[-1] == value[0]:
+                    value = value[1:-1]
+                if value:
+                    add(value, desc_line)
+                    flush()
                 start = i + 1
                 break
 
@@ -114,15 +135,21 @@ def units(text: str, rel: str) -> list[tuple[str, int, bool]]:
             continue
         if stripped.startswith("|"):
             flush()
-            if SEPARATOR_ROW.match(stripped):
+            if not in_table:
+                table += 1
+                in_table = True
+            nxt = re.sub(r"^\s*(?:>\s?)*", "", lines[i + 1]).strip() if i + 1 < len(lines) else ""
+            if SEPARATOR_ROW.match(stripped) or (nxt.startswith("|") and SEPARATOR_ROW.match(nxt)):
                 continue
             cells = [c.strip() for c in stripped.strip("|").split("|")]
-            if len(cells) >= MIN_ROW_CELLS:
-                out.append((normalize(" | ".join(cells)), n, False))
-            for c in cells:
+            row = normalize(" | ".join(cells))
+            if len(cells) >= MIN_ROW_CELLS and words(row) >= MIN_WORDS:
+                out.append((row, n, None))
+            for col, c in enumerate(cells):
                 add(c, n)
-                flush(cell=True)
+                flush(cell=(table, col))
             continue
+        in_table = False
         if stripped.startswith("#"):
             flush()
             add(stripped.lstrip("#"), n)
@@ -154,7 +181,7 @@ def main() -> int:
     if not files:
         sys.exit(f"HARNESS BUG: no markdown found under {SCAN_ROOTS}")
 
-    seen: dict[str, list[tuple[str, int, bool]]] = collections.defaultdict(list)
+    seen: dict[str, list[tuple[str, int, Cell]]] = collections.defaultdict(list)
     problems: list[str] = []
     read = 0
     for rel in files:
@@ -169,11 +196,11 @@ def main() -> int:
     if not read:
         sys.exit("HARNESS BUG: no sentences read — did the parser break?")
 
-    for unit, sites in sorted(seen.items(), key=lambda kv: kv[1]):
-        if len(sites) < 2 or all(rel in STANDALONE for rel, _, _ in sites):
+    for unit, sites in sorted(seen.items(), key=lambda kv: [(r, l) for r, l, _ in kv[1]]):
+        if len(sites) < 2:
             continue
-        # A column holds the same value on many rows; the same cell in another file is a copy.
-        if all(cell for _, _, cell in sites) and len({rel for rel, _, _ in sites}) == 1:
+        # A column holds the same value on many rows; the same cell anywhere else is a copy.
+        if all(cell for _, _, cell in sites) and len({(rel, cell) for rel, _, cell in sites}) == 1:
             continue
         where = ", ".join(f"{rel}:{line}" for rel, line, _ in sites)
         problems.append(f"{where}\n    {unit[:160]}")
@@ -182,7 +209,7 @@ def main() -> int:
         print(f"FAIL: {len(problems)} copied sentence(s)\n", file=sys.stderr)
         for p in problems:
             print(f"  - {p}\n", file=sys.stderr)
-        print("Keep the sentence where the fact belongs and link to it from the other place.", file=sys.stderr)
+        print("How to fix one: CONTRIBUTING.md § Conventions.", file=sys.stderr)
         return 1
 
     print(f"OK: {read} sentences across {len(files)} docs, none copied")

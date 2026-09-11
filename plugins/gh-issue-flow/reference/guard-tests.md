@@ -12,9 +12,10 @@ is a guard shape that passes its whole suite and still loses to a reviewer or a 
 
 ## 1. Pin the inventory; don't check a property
 
-When a guard must guarantee "nothing unsafe was added", **pin the complete
-reviewed set** (address → exact normalized expression) rather than asserting a
-property of each item. Property checks lose to adversarial review reliably, and in
+When a guard over code or config must guarantee "nothing unsafe was added", **pin the
+complete reviewed set** (address → exact normalized expression) rather than asserting a
+property of each item. A guard over a doc pins none of its words; § 4 says what it checks
+instead. Property checks lose to adversarial review reliably, and in
 sequence.
 
 One real case defeated **three successive** property guards on the same code, each
@@ -94,9 +95,9 @@ one place, and a second path to the same place goes unexamined.
    column reintroduced the exact bug. Fixed by pinning an ALLOWLIST of the
    identifiers a `WHERE` clause may mention, so an unreviewed column fails by
    being *absent* rather than by being enumerated.
-2. **Section-wide check satisfied by a sibling's copy.** A pin anchored on a whole
+2. **Section-wide check satisfied by a sibling's copy.** A check anchored on a whole
    section passed when an entire step was deleted, because a neighbouring step
-   carried the same string. Fix: pin per step.
+   carried the same string. Fix: check per step.
 3. **Fence-style blindness.** A ``^``` `` anchor missed indented, blockquoted and
    `~~~` fences, and inline code spans. The document's dominant idiom was
    blockquote callouts, so the blind spot was one edit wide.
@@ -192,22 +193,22 @@ own negation.
 
 ## 4. Region, not line
 
-**Scope a text match to the REGION, never to the line.** Shell summaries are built
-from many `echo` calls hard-wrapped at ~80 columns, so one sentence routinely spans
-two or three lines. A matcher requiring two tokens on the *same* line silently
-misses the wrapped form:
+**Scope a text match to the region, never to the line.** Shell is hard-wrapped with
+`\` continuations, so one command routinely spans two or three lines. A matcher
+requiring two tokens on the *same* line silently misses the wrapped form:
 
 ```
-echo "# merging a change here triggers the gated"
-echo "# deploy job, which rolls the corresponding service."
+gcloud run deploy "$SERVICE" \
+  --allow-unauthenticated
 ```
 
-First line has one token, second has the other, neither has both → **the guard
-could not detect its own revert.** It also failed the opposite way: re-wrapping a
-*correct* claim across two echoes made it red.
+A guard forbidding `deploy` and `--allow-unauthenticated` on one line passes this: the
+first line has one token, the second has the other → **the guard cannot detect its own
+revert.** It fails the opposite way too: a guard requiring `--region` on the `deploy`
+line reds when a correct command is re-wrapped.
 
-Pick one token that carries the meaning and assert its presence/absence over a
-whole region. Region-scoped on one token is robust to wrapping in both directions;
+Join continuation lines, pick one token that carries the meaning, and assert its
+presence or absence over the whole command. Region-scoped on one token is robust to wrapping in both directions;
 line-scoped on two is robust to neither.
 
 ### The opposite error: whole-file scope fails in both directions
@@ -357,9 +358,9 @@ Assert the no-false-fire direction explicitly: reformat, de-shout, re-wrap.
 
 Before trusting a new guard:
 
-- [ ] Is the guarantee an **inventory pin**, not a property check?
-- [ ] If it reads a doc, does it check the doc against its source or another doc, and
-      pin none of the doc's words?
+- [ ] Over code or config: is the guarantee an **inventory pin**, not a property check?
+- [ ] Over a doc: does it check the doc against its source or another doc, and pin none
+      of the doc's words?
 - [ ] Mutated along **what**, **where**, and **spelling**?
 - [ ] Is every mutation **a spelling a real author would write**?
 - [ ] Does the guard catch **its own revert**?

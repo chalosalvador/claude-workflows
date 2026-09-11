@@ -9,7 +9,8 @@ A deploy-target doc (`.claude/workflow/deploy-targets/<name>.md`, generated into
 therefore have to agree, and prose cannot hold them:
 
   1. the `##` headers in the two skeletons, with no header in both;
-  2. the Section column of the "Read by" table in shared/config.md § Deploy-target docs;
+  2. the Section and File columns of the "Read by" table in shared/config.md
+     § Deploy-target docs;
   3. every "§ <Section>" reference to a stack-doc section under plugins/.
 
 A reader citing "§ Infra" while the header is "## Infra and migrations", or two
@@ -19,12 +20,13 @@ matching by name finds nothing, and nothing distinguishes "section missing" from
 
 DESIGN — see plugins/gh-issue-flow/reference/guard-tests.md
 ----------------------------------------------------------
-The skeletons and the table are compared as sets in both directions, so a
-dropped or demoted header reds on the table row it leaves behind, and no count of
-headers has to be kept. Reference check is a prefix rule: a "§ X" whose X is a strict word-prefix of a
-header (e.g. "Infra" for "Infra and migrations") is a reference to that header
-spelled short, and reds; a "§ X" that matches no header at all ("§ Layer 1",
-"§ 5b", "§ Board queries") is some other section and is ignored.
+The table's (Section, File) pairs and the skeletons' (header, skeleton) pairs are
+compared as sets, so a dropped, demoted or moved header reds on the row it leaves
+behind. A "§ X" whose X is a strict word-prefix of a header ("Infra" for "Infra and
+migrations") is that header spelled short, and reds. A "§ X" right after `repo.md` or
+"deploy-target doc" must name a header, so a section removed with its row still reds
+on every reference to it; any other "§ X" that matches no header ("§ Layer 1", "§ 5b")
+is some other section and is ignored.
 
 Mutation-proven; the cases a re-proof covers are in CONTRIBUTING.md § Conventions.
 
@@ -46,9 +48,12 @@ CONFIG = ROOT / "plugins/gh-issue-flow/shared/config.md"
 SCAN = "plugins/gh-issue-flow/"
 
 HEADER = re.compile(r"^## (.+?)\s*$", re.M)
-TABLE_ROW = re.compile(r"^\| ([A-Z][^|]*?) \|", re.M)
+TABLE_ROW = re.compile(r"^\| ([A-Z][^|]*?) \| ([^|]*?) \|", re.M)
+TABLE_FILE = {"target": "target", "repo.md": "repo"}
 # A wrapped reference ("§ Review\n  bot") is still one phrase: allow one line break between words.
 REF = re.compile(r"§ ([A-Z][A-Za-z]+(?:[ \n][ \t]*[a-z]+)*)")
+# A reference into a stack doc by name: it has to land on a header.
+DOC_REF = re.compile(r"(?:`?repo\.md`?|deploy-target docs?)[ \n][ \t]*§ ([A-Z][A-Za-z]+(?:[ \n][ \t]*[a-z]+)*)")
 
 
 def fail(msg: str) -> int:
@@ -58,11 +63,13 @@ def fail(msg: str) -> int:
 
 def main() -> int:
     headers: list[str] = []
+    pairs: set[tuple[str, str]] = set()
     for kind, path in TEMPLATES.items():
         hs = HEADER.findall(path.read_text(encoding="utf-8"))
         if not hs:
             return fail(f"no ## headers found in the {kind} skeleton — did a rewrite drop them?")
         headers += hs
+        pairs |= {(h, kind) for h in hs}
     if len(set(headers)) != len(headers):
         return fail("a header appears in both skeletons; a section has one home")
     hset = set(headers)
@@ -73,9 +80,9 @@ def main() -> int:
     if len(block) < 2:
         return fail("config.md has no '| Section | File | Read by | For |' table")
     table = block[1].split("\n\n", 1)[0]
-    rows = set(TABLE_ROW.findall(table)) - {"Section"}
-    if rows != hset:
-        problems.append(f"config.md Read-by table {sorted(rows)} != skeleton headers {sorted(headers)}")
+    rows = {(sec, TABLE_FILE.get(f.strip("`"), f)) for sec, f in TABLE_ROW.findall(table) if sec != "Section"}
+    if rows != pairs:
+        problems.append(f"config.md Read-by table {sorted(rows)} != skeleton headers {sorted(pairs)}")
 
     tracked = subprocess.run(["git", "-C", str(ROOT), "ls-files", "-z", SCAN],
                              capture_output=True, text=True, check=True).stdout.split("\0")
@@ -84,6 +91,11 @@ def main() -> int:
         sys.exit("HARNESS BUG: no tracked markdown under " + SCAN)
     for rel in md:
         text = (ROOT / rel).read_text(encoding="utf-8")
+        for m in DOC_REF.finditer(text):
+            words = re.sub(r"\s+", " ", m.group(1)).split(" ")
+            if not any(words[:len(h.split(" "))] == h.split(" ") for h in hset):
+                line = text.count("\n", 0, m.start()) + 1
+                problems.append(f"{rel}:{line}: '§ {words[0]}' after a stack-doc name matches no skeleton header")
         for m in REF.finditer(text):
             words = re.sub(r"\s+", " ", m.group(1)).split(" ")
             # Word by word against each header: a phrase that matches the first k words of a

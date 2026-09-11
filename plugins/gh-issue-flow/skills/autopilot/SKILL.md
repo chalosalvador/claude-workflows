@@ -305,9 +305,8 @@ cases, and the difference matters more unattended than with a human watching —
 [`../../reference/openspec.md`](../../reference/openspec.md) for both, the Purpose
 trap, and what a green does not assert.
 
-**`skip_specs` disables validation for the change entirely**, and its reason is a claim
-the *reviewer* checks by eye. Take it only with the reason
-[`openspec.md`](../../reference/openspec.md) asks for; without one, hand the issue back.
+**Take `skip_specs` only with the reason [`openspec.md`](../../reference/openspec.md)
+asks for; without one, hand the issue back.**
 
 ### Then the code
 

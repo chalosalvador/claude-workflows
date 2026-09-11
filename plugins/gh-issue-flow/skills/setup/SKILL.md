@@ -411,9 +411,9 @@ sections themselves:
          byte-identical across targets become one; sections that differ are both kept,
          each line suffixed with the target it came from, and listed in § 7 Missing for
          a human to reconcile. Remove the moved sections from the target docs.
-- [ ] c. Read back: target docs have exactly the four skeleton headers, `repo.md` has the
-         three, and the resolution block prints `repo=` naming this checkout, `targets=`,
-         one `targetdoc=` per file and `repodoc=`.
+- [ ] c. Read back: each doc has exactly its skeleton's headers, and the resolution
+         block prints `repo=` naming this checkout, `targets=`, one `targetdoc=` per
+         file and `repodoc=`.
 ```
 
 ## 6. Confirm the agents
