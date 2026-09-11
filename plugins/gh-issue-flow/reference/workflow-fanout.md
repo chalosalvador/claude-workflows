@@ -334,7 +334,7 @@ for one delta path. If both plans name more lenses than that allows, run one iss
 through the workflow and leave the other for the next run; do not silently drop lenses to
 fit a budget.
 
-**`args` carries two things the script cannot discover.** `args.plugin` is the plugin
+**`args` carries three things the script cannot discover.** `args.plugin` is the plugin
 directory as [`../shared/execution.md`](../shared/execution.md) § 3 defines it, e.g.
 `~/.claude/plugins/cache/<marketplace>/gh-issue-flow/<version>` — and every prompt cites
 the skill files by that absolute path. Named by bare name, the files resolve from the
@@ -344,14 +344,32 @@ all. The planner and every lens get it as a `Plugin:` line, which is where they 
 lens set and the default comment policy
 ([`../shared/execution.md`](../shared/execution.md) § 3). And
 `issue.model` is the § 3.1 tier for that issue's size label (`sonnet` for `effort:easy`);
-the script forwards it to the planner and the lenses, and omits `model` entirely when it
-is unset. Without it every agent inherits the session model, on `effort:easy` issues
-too.
+the script forwards it to the planner and every lens, the delta lens included, and omits
+`model` entirely when it is unset. Without it every agent inherits the session model, on
+`effort:easy` issues too. And `issue.opsDocs` is what
+[`../shared/config.md`](../shared/config.md) § Resolving `workflow.json` printed in that
+issue's checkout — the `repodoc=` path and `<targetdir>/<targetdoc>` for each target,
+absolute, or `none found` — so the planner reads the files the session already found
+instead of hunting for them from a worktree.
 
 **The planner gets no `schema`.** Its output shape is an allowlist it enforces itself, and
-forcing a structured return would fight it. Its text is passed downstream verbatim — the
-handoff [`../shared/execution.md`](../shared/execution.md) § 3.1 asks for — and the
-builder is the one component that reads it, so § 6's late gate is judged once.
+forcing a structured return would fight it. Its text goes downstream verbatim, to every
+agent after it: the builder, which judges § 6's late gate once; every lens, the delta lens
+included, which starts from its `HANDOFF` block and reads its own REVIEW LENSES line — the
+handoff [`../shared/execution.md`](../shared/execution.md) § 3.1 asks for; and the
+shipper, which writes the PR body from it. The builder's `handoff` field carries only what
+the build adds to the plan, never a rewrite of it — a rewrite is where the plan's
+`Ops docs:` and `Still unverified` lines would go missing.
+
+**The builder commits before any lens runs, and returns the SHA.** A lens starts from
+`git diff <base>...HEAD` and mutates a `git clone` of the worktree, and both see commits,
+never a working tree: over an uncommitted build the three-dot diff is empty and the clone
+holds the old code without the new tests. The same commit is the base of
+the delta review, `<implCommit>...HEAD`, which is why the shipper commits its fixes on top
+of it rather than amending. A build that reports success with no commit is a handback,
+never a review of nothing — and so is a plan that names no review lens: the planner's
+floor is `correctness`, so an empty list is a malformed plan, and an unattended PR ships
+reviewed or not at all.
 
 One incidental gain: a workflow `agent()` call takes `effort` per call, so the
 implementation step's effort is settable here — the serial path cannot pin it, which
@@ -360,9 +378,11 @@ to paper over an issue that turned out bigger than `easy`, which is a handback.
 
 **New logic gets a draft PR, not a ready one.** § 9 requires a delta re-review when
 adjudication introduced a branch, gate or code path, run as the lens that raised the
-finding. The shipper cannot spawn that lens, so it opens the PR **as a draft**, says which
-lens raised it, and the script runs the lens and a short finalize pass that flips the PR
-to ready. A ready-for-review PR therefore never contains logic no lens has seen.
+finding — `correctness` when the shipper raised it itself. The shipper cannot spawn that
+lens, so it opens the PR **as a draft**, says which lens raised it, and the script runs the
+lens and a short finalize pass that flips the PR to ready. A delta lens that returns
+nothing is a handback with the PR still a draft, never a clean review. A ready-for-review
+PR therefore never contains logic no lens has seen.
 
 ### The script
 
@@ -386,7 +406,8 @@ const OUTCOME = {          // every stage answers this, so a handback is data, n
 
 const BUILD = { type: 'object', required: ['outcome'], properties: { ...OUTCOME,
   lenses:       { type: 'array', items: { type: 'string' } },   // from the plan's REVIEW LENSES
-  handoff:      { type: 'string' },
+  handoff:      { type: 'string' },                             // what the build ADDS to the plan
+  implCommit:   { type: ['string', 'null'] },                   // the commit every lens reviews
   filesTouched: { type: 'array', items: { type: 'string' } },
   gateResult:   { type: 'string' },
   specChange:   { type: ['string', 'null'] },
@@ -423,12 +444,13 @@ const dead = (stage, what) => ({ outcome: 'handback', stage, reason: `${what} re
 const build = async (issue) => {
   const plan = await agent(
     `Plan issue #${issue.number} in ${issue.repo}.
-     Tier: ${issue.tier}
+     Effort label: ${issue.effort}
      Issue body + comments: ${issue.issueMd}
      Repo spec flow: ${issue.specFlow}
      Integration branch: ${issue.base}. Merging it ${issue.deployNote}.
      Gate: ${issue.gate}
      Worktree (READ-ONLY, do not edit): ${issue.worktree}
+     Ops-doc files: ${issue.opsDocs}
      Plugin: ${args.plugin}`,
     { agentType: 'gh-issue-flow:issue-planner', label: `plan:#${issue.number}`, phase: 'Plan',
       ...(issue.model ? { model: issue.model } : {}) }   // shared/execution.md § 3.1 tier
@@ -446,17 +468,24 @@ const build = async (issue) => {
 
      FIRST, judge the plan as section 6's late gate. If it names infrastructure, a
      migration, a schema change, secrets, or an unanswered product question — or cannot
-     name the files, the capability, or a defensible skip_specs reason — return
-     outcome handback with that reason and build nothing.
+     name the files, the capability, a defensible skip_specs reason, or a single review
+     lens — return outcome handback with that reason and build nothing.
 
      Then implement. Stay inside the issue's scope; section 7's fold-in threshold decides
      anything else you notice. Any red in the gate that is not section 2.1's two known
      classes is a handback, not a judgment call. Add or extend tests and mutation-check
-     them. Do NOT commit, push, or open a PR — a later stage does that.
+     them.
+
+     Once the gate is green, COMMIT the implementation — message
+     "<type>: <what> (Fixes #${issue.number})" — and return its SHA in implCommit, read
+     back with git rev-parse HEAD. The reviewers read commits, never a working tree. Do
+     NOT push or open a PR — a later stage does that.
 
      Return the plan's REVIEW LENSES in lenses, adding scoping if your diff adds a guard and
      comments if it adds or changes a comment or doc line (${args.plugin}/shared/execution.md
-     § 3), and a handoff a fresh reviewer can use.`,
+     § 3). The plan reaches every reviewer verbatim, so handoff carries only what the build
+     adds to it: where you departed from the plan, what you checked, and the mutation
+     results.`,
     { label: `build:#${issue.number}`, phase: 'Build', schema: BUILD }
   )
   return built ? { issue, plan, ...built } : { issue, plan, ...dead('Build', 'the builder') }
@@ -465,10 +494,21 @@ const build = async (issue) => {
 // ---- stage 2: review, adjudicate, ship ----------------------------------------
 const ship = async (built, issue) => {
   if (built.outcome !== 'ok') return built
+  // A success with no commit would send every lens to an empty three-dot diff.
+  if (!built.implCommit) return { ...built, outcome: 'handback', stage: 'Build',
+    reason: 'the builder reported success without an implementation commit' }
+  // No lens means no review, and an unattended PR ships reviewed or not at all.
+  if (!built.lenses?.length) return { ...built, outcome: 'handback', stage: 'Review',
+    reason: 'the plan named no review lens, so nothing would review this diff' }
 
-  const lensPrompt = lens => `Review the working diff in ${issue.worktree} through the
-    ${lens} lens ONLY, for issue #${issue.number}. Read-only: report, never fix.
-    Handoff from the implementer: ${built.handoff}
+  // The planner's text, verbatim, to every agent from here on (execution.md § 3.1).
+  const planFor = use => `THE PLAN, verbatim (${use}):\n${built.plan}`
+
+  const lensPrompt = lens => `Review the diff in ${issue.worktree} through the ${lens}
+    lens ONLY, for issue #${issue.number}. Read-only: report, never fix. It is committed:
+    HEAD is ${built.implCommit}.
+    ${planFor('start from its HANDOFF block; its REVIEW LENSES line for your lens says why you were spawned')}
+    What the build adds to the plan: ${built.handoff}
     Files touched: ${built.filesTouched.join(', ')}
     Gate result: ${built.gateResult}
     Plugin: ${args.plugin}`
@@ -479,43 +519,76 @@ const ship = async (built, issue) => {
       phase: 'Review', schema: FINDINGS, ...(issue.model ? { model: issue.model } : {}),
     })))).filter(Boolean).flatMap(r => r.findings)
 
+  // built.deploys is deliberately not passed on: the deploy note is re-derived from the
+  // FINAL diff (execution.md § 7), and a stale "does not deploy" is the claim that has
+  // actually gone wrong.
   const shipPrompt = (extra = '') => `Finish issue #${issue.number} per
     ${args.plugin}/skills/autopilot/SKILL.md sections 9 and 10, with
     ${args.plugin}/shared/execution.md § 3 and § 4. ${rules(issue.worktree)}
 
+    ${planFor('the section 10 body is written from it, and leads with any place it contradicts the issue')}
+    What the build reported: implementation commit ${built.implCommit}; files touched
+    ${built.filesTouched.join(', ')}; spec change ${built.specChange || 'none'}; gate
+    before review: ${built.gateResult}. Its notes: ${built.handoff}
+
     Findings to adjudicate: ${JSON.stringify(findings)}${extra}
 
-    Fix every valid finding. For any you reject, put the claim and your reason in
-    rejected — they go in the PR body's History, never dropped silently.
+    Fix every valid finding. For any you reject, put its claim — copied verbatim — and your
+    reason in rejected; they go in the PR body's History, never dropped silently. Re-run
+    the full gate after your fixes; the body reports that run, not the one before review.
 
-    Set newLogic true if your fixes added a branch, gate, condition or code path, and
-    name the lens that raised it in raisingLens. When newLogic is true, open the PR as a
-    DRAFT; a delta review runs before it is marked ready.
+    Commit the fixes as their own commit ON TOP of ${built.implCommit} — never amend or
+    squash it; the delta review diffs against it. Set newLogic true if your fixes added a
+    branch, gate, condition or code path, and name the lens that raised it in
+    raisingLens. When newLogic is true, open the PR as a DRAFT; a delta review runs
+    before it is marked ready.
 
-    Then archive the spec change, commit with the plan's message, push, and open the PR
-    with the section 10 body in the order that section gives. Request review from
+    Then archive the spec change as the last commit, push, and open the PR with the
+    section 10 body in the order that section gives. Request review from
     ${issue.reviewer}. READ THE REQUEST BACK — gh exits 0 when GitHub refuses it — and
     return who was actually requested, or null plus an at-mention comment instead.
-    State plainly whether merging deploys; when unsure, say it deploys.`
+    State plainly whether merging deploys, derived from the final diff; when unsure, say
+    it deploys.`
 
   const shipped = await agent(shipPrompt(), { label: `ship:#${issue.number}`, phase: 'Ship', schema: SHIP })
   if (!shipped) return { ...built, ...dead('Ship', 'the shipper') }
   if (shipped.outcome !== 'ok' || !shipped.newLogic) return { ...built, ...shipped }
 
-  // Delta re-review, as the lens that RAISED the finding — not always correctness.
+  // Delta re-review, as the lens that RAISED the finding — not always correctness, but
+  // correctness when the shipper raised it itself (execution.md § 3). A finding the
+  // shipper rejected got no code, so it is not what the delta answers. Claims match
+  // loosely — a changed dash or a dropped backtick is the same claim — and a rejected
+  // claim that matches no finding is announced, never silently left under "answered".
+  const deltaLens = shipped.raisingLens || 'correctness'
+  const rejected = shipped.rejected || []
+  const claimKey = c => String(c || '').toLowerCase().replace(/[`*_"'‘’“”]/g, '')
+    .replace(/[—–-]+/g, '-').replace(/\s+/g, ' ').trim()
+  const sameClaim = (a, b) => claimKey(a) === claimKey(b)
+  const answered = findings.filter(f => !rejected.some(r => sameClaim(r.claim, f.claim)))
+  const unmatched = rejected.filter(r => !findings.some(f => sameClaim(f.claim, r.claim)))
+  if (unmatched.length) log(`#${issue.number}: ${unmatched.length} rejected claim(s) matched no finding — left to the delta lens to reconcile`)
   const delta = await agent(
-    `Review ONLY the delta the adjudicator added to ${issue.worktree} for issue
-     #${issue.number}, through the ${shipped.raisingLens} lens. That delta exists to
-     establish that lens's property, so that is the question to ask of it.
-     git diff on the commits after the implementation commit is the scope.
+    `Review ONLY the delta the adjudicator added for issue #${issue.number}:
+     git -C ${issue.worktree} diff ${built.implCommit}...HEAD. A spec archive commit in that
+     range is bookkeeping, not the delta. Your lens is ${deltaLens}. The delta was written
+     to answer the ${deltaLens} findings below — or, with none, one the adjudicator raised
+     itself — so ask whether it establishes what was asked, and whether it dropped
+     something the old code did.
+     Findings the adjudicator answered: ${JSON.stringify(answered)}
+     Findings it rejected, with its reasons — no code was written for these, so they are
+     not the delta's to establish; a finding above that says the same thing in other words
+     was rejected too: ${JSON.stringify(rejected)}
+     ${planFor('start from its HANDOFF block')}
      Plugin: ${args.plugin}`,
-    { agentType: 'gh-issue-flow:diff-reviewer', label: `delta:${shipped.raisingLens}#${issue.number}`,
-      phase: 'Review', schema: FINDINGS })
+    { agentType: 'gh-issue-flow:diff-reviewer', label: `delta:${deltaLens}#${issue.number}`,
+      phase: 'Review', schema: FINDINGS, ...(issue.model ? { model: issue.model } : {}) })
+  // A dead delta lens is not a clean one: the PR stays a draft, and the run says so.
+  if (!delta) return { ...built, ...shipped, ...dead('Delta', 'the delta lens') }
 
   const finalized = await agent(
     `PR #${shipped.prNumber} for issue #${issue.number} is a DRAFT pending this delta
      review. ${rules(issue.worktree)}
-     Delta findings: ${JSON.stringify(delta ? delta.findings : [])}
+     Delta findings: ${JSON.stringify(delta.findings)}
      Fix every valid one per ${args.plugin}/shared/execution.md § 3, where a finding is
      never closed by adding prose; record any you reject in the PR body's History, push,
      and mark the PR ready for review. Read the PR state back and return it. If a finding changes the shape of
@@ -524,7 +597,7 @@ const ship = async (built, issue) => {
 
   // deltaReviewed survives the merge: the finalizer's own newLogic/raisingLens would
   // otherwise overwrite the fact that a delta review happened at all, and § 13 reports it.
-  const delta_ran = { deltaReviewed: shipped.raisingLens }
+  const delta_ran = { deltaReviewed: deltaLens }
   return finalized ? { ...built, ...shipped, ...finalized, ...delta_ran }
                    : { ...built, ...shipped, ...dead('Finalize', 'the finalizer'), ...delta_ran }
 }
@@ -571,10 +644,10 @@ Stated plainly, because the serial path does not pay these:
   so the assignee's window to object is § 4's claim comment alone. That comment already
   has to carry the scope understanding; here it is the only thing that does.
 - **One extra context payment per issue.** Today the session implements *and* adjudicates,
-  carrying everything it gathered across both. Here the shipper starts fresh on the
-  builder's handoff. The handoff narrows the gap; it does not close it. This is the cost
-  [`../shared/execution.md`](../shared/execution.md) § 3.1 exists to police, accepted
-  knowingly rather than overlooked.
+  carrying everything it gathered across both. Here the shipper starts fresh on the plan
+  and the builder's report, both passed to it verbatim. They narrow the gap; they do not
+  close it. This is the cost [`../shared/execution.md`](../shared/execution.md) § 3.1
+  exists to police, accepted knowingly rather than overlooked.
 - **Handbacks become a schema.** Every bail is a returned outcome the script branches on,
   instead of a session deciding in prose. That is more rigid than § Handing it back reads,
   and a bail the schema has no field for will be forced into `reason` as text.
@@ -605,6 +678,9 @@ stale read is indistinguishable from a good one.
 - B on more than two lenses per plan, on a plan that triggers the delta path, or on a repo
   whose CI takes longer than its build; a single run's wall-clock gap is a sample, not a
   rate.
+- B's handoff through real agents: the committed build, the plan reaching every lens and
+  the shipper, and the delta lens's range and findings are exercised only by a stubbed
+  harness.
 - B's cost against a serial run at the same model tier with the main session's own spend
   counted; a comparison that mixes tiers and accounting does not settle it.
 

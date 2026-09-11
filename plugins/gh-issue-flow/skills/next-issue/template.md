@@ -68,6 +68,11 @@ VALIDATE (verbatim, from the repo's gate):
   That last one exits 0 on an empty root, never reads the archive, and is
   switched off entirely by skip_specs — do not report a bare green from it.
 
+HANDOFF (the planner's block, verbatim — PROCESS step 2 pastes it into every
+reviewer):
+  <the plan's HANDOFF block, as the planner returned it — every field, in its order,
+  nothing summarized, any absolute path made repo-relative>
+
 PROCESS:
 Plugin docs: `ls -d ~/.claude/plugins/cache/claude-workflows/gh-issue-flow/*/ | sort -V |
 tail -1`. Pass that directory as `Plugin: <dir>` to every planner and reviewer you spawn.
@@ -82,11 +87,14 @@ tail -1`. Pass that directory as `Plugin: <dir>` to every planner and reviewer y
    deploy, so it IS in the CD path); `comments` (the migration and the parity test
    add comments). Skip `scoping` — this adds no guard, and every caller of the
    writer is in the diff. Skip `safety` — no new account-scoped query and no
-   credential moves. Commit before spawning them. Fix every valid finding; explain
-   any rejected in the PR body's History.
-2b. If those fixes added NEW LOGIC — a branch, gate, condition, or code path — one
-   more gh-issue-flow:diff-reviewer over just that delta, run as the lens that raised
-   the finding. Once, not a loop. Skip for test/comment/doc-only fixes.
+   credential moves. Every lens prompt carries the HANDOFF block above verbatim, that
+   lens's reason from this list, the gate result, the worktree path and the plugin
+   directory. Commit before spawning them. Fix every valid finding; explain any
+   rejected in the PR body's History.
+2b. If those fixes added NEW LOGIC — a branch, gate, condition, or code path — commit
+   them, then one more gh-issue-flow:diff-reviewer over just that commit, run as the
+   lens that raised the finding, with the finding itself verbatim and the HANDOFF
+   block. Once, not a loop. Skip for test/comment/doc-only fixes.
 2c. `openspec archive N-order-note-reporting -y --json` as the LAST commit of
    this PR — never post-merge. Assert specsUpdated: true, then re-validate the
    folded tree.
@@ -148,10 +156,19 @@ ask before running it.
   memory. Include the
   preflight, and carry the caveats on what a spec validate does **not** assert so the
   fresh session does not read a green as proof.
+- **HANDOFF** — the plan's HANDOFF block, **verbatim**: its lines only, without a code
+  fence of its own, since the whole prompt is one code block. Never summarize it, and
+  never retype its fields from memory — they belong to
+  [`../../agents/issue-planner.md`](../../agents/issue-planner.md). The planner names
+  files by repo-relative path, which is what keeps the block inside this template's
+  portability rule; the one edit verbatim allows is rewriting an absolute path it let
+  through to that repo-relative form. The fresh session's reviewers start from it;
+  without it they start from zero.
 - **PROCESS** — the plugin-docs line, then the numbered steps as in the example: scoping comment → branch → spec
   change before code → **named** review lenses from the plan, never the generic list
-  ([the set](../../agents/diff-reviewer.md#the-lenses)) → conditional delta re-review →
-  archive as the last commit → commit → PR with the body
+  ([the set](../../agents/diff-reviewer.md#the-lenses)), each carrying the HANDOFF block →
+  conditional delta re-review, carrying the finding it answers → archive as the last
+  commit → commit → PR with the body
   [`git-and-github.md` § Writing a PR body](../../reference/git-and-github.md#writing-a-pr-body)
   gives → babysit threads *and* checks → board tracking.
 - **DEPLOY NOTE** — schema/infra/deploy caveats. State plainly whether merging the

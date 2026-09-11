@@ -168,7 +168,9 @@ execute unaided.
 LENSES**; gate on that rather than always firing the full set. A max-effort lens on a
 diff it cannot touch buys nothing — but **any diff that adds a guard, validation or
 invariant gets `scoping`**, whatever else it gets. That is the lens that asks what the
-diff does not touch, and it is the hole every other lens is built to miss.
+diff does not touch, and it is the hole every other lens is built to miss. And never an
+empty set: the planner's floor is `correctness`, so a plan naming no lens is malformed —
+re-plan rather than ship a diff nobody reviewed.
 
 **Any diff that adds or changes a comment or doc line gets `comments`**, whatever the
 plan named. The plan is written before the code exists, so decide it from the final diff.
@@ -184,9 +186,11 @@ Roughly a third of the spend, buying nothing.
 
 Four levers, in order of saving:
 
-1. **Pass the planner's `HANDOFF` block to every lens**, verbatim, plus the gate result,
-   the worktree path and the `Plugin:` line. This is the one that removes the duplication
-   above.
+1. **Pass the planner's `HANDOFF` block to every lens**, verbatim, plus that lens's own
+   line from REVIEW LENSES, the gate result, the worktree path and the `Plugin:` line.
+   This is the one that removes the duplication above. The REVIEW LENSES line says why the
+   lens was spawned, and for `scoping` it names the callers the planner already found, a
+   list no HANDOFF field carries.
 2. **Gate the lens list** on the plan's REVIEW LENSES. The full set where two apply
    costs several times the review.
 3. **Tier the `model` per spawn**, by the issue's size label:
@@ -200,7 +204,7 @@ Four levers, in order of saving:
    **`model` is a per-spawn argument; `effort` is frontmatter-only and cannot be
    overridden.** That asymmetry is why tiering goes through the model.
 
-4. **Let the planner scale its own output** (its own frontmatter carries the budget).
+4. **Let the planner scale its own output** — its own section rules carry the budget.
    Every word is paid for twice — once written, once read by each lens.
 
 **None of this is a reason to skip the review.** Scale it to the change; never cut it
@@ -227,6 +231,12 @@ exists to establish that lens's property, so that is the question to ask of it �
 code most likely to be wrong. Where the fixes answer several lenses, pick the one whose
 fix added the most new logic; where the finding was your own rather than a lens's, use
 `correctness`. Still one agent.
+
+**Hand it what it is judging.** Its prompt carries the finding it answers, verbatim — a
+lens name alone does not say what property was asked for — plus the plan's `HANDOFF`
+block like every lens, and the delta as a **commit range**: from the commit the lenses
+reviewed to `HEAD`, never a description. So commit the fixes before spawning it, the same
+rule as for every lens below.
 
 Skip it when the fixes were only tests, comments, or docs — **not** when a message
 changed, since an error string can be something's parsed contract. **Once — a
