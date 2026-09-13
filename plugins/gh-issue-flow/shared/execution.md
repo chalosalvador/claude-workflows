@@ -175,6 +175,11 @@ re-plan rather than ship a diff nobody reviewed.
 **Any diff that adds or changes a comment or doc line gets `comments`**, whatever the
 plan named. The plan is written before the code exists, so decide it from the final diff.
 
+**Any diff that changes more than comments and docs gets `simplicity`**, whatever the plan
+named. It is the one lens that argues for less code, and the plan that sized the change
+does not decide whether that size gets checked. On a small diff, tier its model down
+(§ 3.1) rather than dropping it.
+
 ### 3.1 Cost discipline
 
 **This subsection is the single source for spend rules. Skills link here; they do not
@@ -213,6 +218,10 @@ handoff tells a reviewer where to look, never what to conclude.
 
 Adjudicate the merged findings yourself: fix every valid one, and for any you reject
 **say so with the reason in the PR body's History, never silently.**
+
+**Removing the code that raised a finding is a fix**, and the better one when the issue
+did not ask for that code: a lens reporting an unhandled case is answered as well by
+removing what has the case as by adding a branch for it.
 
 **A finding is never closed by adding prose.** Fix the code, add a test, or answer it:
 in the review thread, or, for a pre-PR lens, in the PR body's History. A comment or doc

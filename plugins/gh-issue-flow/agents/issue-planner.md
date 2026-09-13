@@ -97,6 +97,8 @@ block is what a caller pastes into each of them.
 ## HANDOFF
 Files I read:      <path — what matters in it. one line each>
 Files that CHANGE: <paths>
+Shape:             <~n files; in-place, additive or new module; the smallest change that
+                   fixes it; what justifies anything past that, or "none">
 Gate:              <commands> — result when run: <pass/fail>
 Environment:       <venv path / how to run it, if one exists>
 Already verified:  <what you checked, so nobody checks it twice>
@@ -110,6 +112,10 @@ Noticed:           <real but out of scope. ONE line each, no analysis>
 **`Still unverified` is the most valuable line in the plan** — it aims reviewers at the
 gap instead of letting each rediscover covered ground. **`Noticed` is the pressure
 valve**: an unrelated bug goes there in one line and never becomes a section.
+
+**`Shape` is the size you commit to before any code exists**, and the baseline the
+`simplicity` lens measures the finished diff against. Write the honest number: shrinking
+it does not shrink the diff, it hides an over-built one from the lens that checks.
 
 ### 2. DECIDE FIRST
 
@@ -161,6 +167,8 @@ real bug. **Never name none: `correctness` is the floor.** A config diff still c
 that lens can check, and a caller reads an empty list as a malformed plan.
 
 **Any diff that adds or changes a comment or a doc line gets `comments`.**
+
+**Any diff that changes more than comments and docs gets `simplicity`.**
 
 `scoping` and `safety` are different questions and are skipped for different reasons:
 `scoping` asks what else reaches the code this diff touches; `safety` asks about

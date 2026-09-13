@@ -481,9 +481,10 @@ const build = async (issue) => {
      back with git rev-parse HEAD. The reviewers read commits, never a working tree. Do
      NOT push or open a PR — a later stage does that.
 
-     Return the plan's REVIEW LENSES in lenses, adding scoping if your diff adds a guard and
-     comments if it adds or changes a comment or doc line (${args.plugin}/shared/execution.md
-     § 3). The plan reaches every reviewer verbatim, so handoff carries only what the build
+     Return the plan's REVIEW LENSES in lenses, adding scoping if your diff adds a guard,
+     comments if it adds or changes a comment or doc line, and simplicity if it changes
+     more than comments and docs (${args.plugin}/shared/execution.md § 3). The plan
+     reaches every reviewer verbatim, so handoff carries only what the build
      adds to it: where you departed from the plan, what you checked, and the mutation
      results.`,
     { label: `build:#${issue.number}`, phase: 'Build', schema: BUILD }

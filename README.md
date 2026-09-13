@@ -138,7 +138,8 @@ Two `effort:easy` issues, end to end and unattended, with the planner and lenses
 `sonnet` as the tier table below prescribes for easy issues: triage takes 3 minutes;
 autopilot **28 minutes** from selection to report, 14 of them from first push to green,
 and **262k subagent tokens** across two planners and four lenses; a diff that also gets the
-`comments` lens adds one more. The Workflow layer does the same two
+`comments` lens adds one more, and so does `simplicity` on any diff that changes code.
+The Workflow layer does the same two
 issues in 22 minutes for 485k tokens at a stronger tier — faster, not cheaper. With the
 planner and two lenses pinned at `effort: max`, a one-line docs fix costs ~110k tokens in
 ~12 minutes; the tier table exists because of that difference. A substantial change
@@ -149,8 +150,9 @@ That is the justification for three rules you might otherwise be tempted to rela
 - **`autopilot` stops at 3 open `agent-authored` PRs.** The bottleneck is human review,
   not authoring.
 - **`autopilot` takes at most 2 issues per run**, and caps babysitting at 45 minutes.
-- **The planner names which lenses apply, and you fire only those.** Five max-effort
-  reviewers on a docs change is most of that bill for nothing.
+- **The planner names which lenses apply, and you fire only those**, plus the few the
+  final diff forces ([`shared/execution.md`](plugins/gh-issue-flow/shared/execution.md)
+  § 3). Five max-effort reviewers on a docs change is most of that bill for nothing.
 
 The corollary: the `agent-ready` gate is not conservative for its own sake. Each wrong
 call spends real money to put a wrong PR on a teammate's queue.
