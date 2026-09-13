@@ -85,8 +85,8 @@ tail -1`. Pass that directory as `Plugin: <dir>` to every planner and reviewer y
    reader — a shape change is two coordinated PRs); `tests` (parity across two
    stores); `deploy` (additive nullable column; the migration runs in the staging
    deploy, so it IS in the CD path); `comments` (the migration and the parity test
-   add comments); `simplicity` (the diff changes code; the HANDOFF's Shape line is
-   its baseline). Skip `scoping` — this adds no guard, and every caller of the
+   add comments); `simplicity` (the diff changes code). Skip `scoping` — this adds
+   no guard, and every caller of the
    writer is in the diff. Skip `safety` — no new account-scoped query and no
    credential moves. Every lens prompt carries the HANDOFF block above verbatim, that
    lens's reason from this list, the gate result, the worktree path and the plugin
