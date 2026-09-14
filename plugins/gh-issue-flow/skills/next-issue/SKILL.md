@@ -230,6 +230,8 @@ Same research (steps 1–3), executed as actions, with a hard checkpoint:
          change directory from the plan's SPEC IMPACT and get its validate to exit 0.
          Cheap to fix a requirement now, expensive once the code exists.
          See reference/openspec.md for what that green does NOT assert.
+- [ ] 4c. Implement what the issue asks for, within the HANDOFF's Shape — no
+         opportunistic refactors.
 - [ ] 5. Run the repo's full VALIDATE gate — shared/execution.md § 2, verbatim.
 - [ ] 6. Review: spawn `gh-issue-flow:diff-reviewer` subagents IN PARALLEL (effort:
          max, fresh context), one per lens the plan named — plus `scoping` whenever the

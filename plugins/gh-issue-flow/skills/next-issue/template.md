@@ -78,7 +78,8 @@ Plugin docs: `ls -d ~/.claude/plugins/cache/claude-workflows/gh-issue-flow/*/ | 
 tail -1`. Pass that directory as `Plugin: <dir>` to every planner and reviewer you spawn.
 1. Post the scoping plan as a comment on #N first; set the board card to In
    Progress. Then branch, then create the SPEC block's change directory and get its
-   validate to exit 0 BEFORE writing code.
+   validate to exit 0 BEFORE writing code. Then implement what the issue asks for,
+   within the HANDOFF's Shape.
 2. Review with parallel gh-issue-flow:diff-reviewer subagents (effort: max, fresh
    context — spawn the NAMESPACED name), one per lens: `correctness` (the note can
    be absent, null, or huge); `contract` (the envelope is consumed by the reporting
@@ -166,7 +167,8 @@ ask before running it.
   through to that repo-relative form. The fresh session's reviewers start from it;
   without it they start from zero.
 - **PROCESS** — the plugin-docs line, then the numbered steps as in the example: scoping comment → branch → spec
-  change before code → **named** review lenses from the plan, never the generic list
+  change before code → implement within the HANDOFF's Shape → **named** review lenses
+  from the plan, never the generic list
   ([the set](../../agents/diff-reviewer.md#the-lenses)), each carrying the HANDOFF block →
   conditional delta re-review, carrying the finding it answers → archive as the last
   commit → commit → PR with the body

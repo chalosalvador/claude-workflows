@@ -471,10 +471,10 @@ const build = async (issue) => {
      name the files, the capability, a defensible skip_specs reason, or a single review
      lens — return outcome handback with that reason and build nothing.
 
-     Then implement. Stay inside the issue's scope; section 7's fold-in threshold decides
-     anything else you notice. Any red in the gate that is not section 2.1's two known
-     classes is a handback, not a judgment call. Add or extend tests and mutation-check
-     them.
+     Then implement. Stay inside the issue's scope, within the HANDOFF's Shape; section 7's
+     fold-in threshold decides anything else you notice. Any red in the gate that is not
+     section 2.1's two known classes is a handback, not a judgment call. Add or extend
+     tests and mutation-check them.
 
      Once the gate is green, COMMIT the implementation — message
      "<type>: <what> (Fixes #${issue.number})" — and return its SHA in implCommit, read

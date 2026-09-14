@@ -310,10 +310,10 @@ asks for; without one, hand the issue back.**
 
 ### Then the code
 
-Stay inside what the issue asks for. **An unattended run is the worst possible place for
-opportunistic refactors:** the reviewer cannot tell your improvement from your mistake,
-and every extra hunk is a reason to reject the whole PR. Follow the conventions already
-in the file; match its idiom. Comments and docs follow
+Stay inside what the issue asks for, within the HANDOFF's `Shape`. **An unattended run is
+the worst possible place for opportunistic refactors:** the reviewer cannot tell your
+improvement from your mistake, and every extra hunk is a reason to reject the whole PR.
+Follow the conventions already in the file; match its idiom. Comments and docs follow
 [`shared/execution.md`](../../shared/execution.md) § 4.
 
 ### The fold-in threshold — when to just fix it here
