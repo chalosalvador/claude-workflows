@@ -193,6 +193,10 @@ Four levers, in order of saving:
 
 1. **Pass the planner's `HANDOFF` block to every lens**, verbatim, plus that lens's own
    line from REVIEW LENSES, the gate result, the worktree path and the `Plugin:` line.
+   **Paste the block; do not summarize it.** Writing a prompt mid-run, the temptation is
+   to compress the planner's findings into a sentence of your own — which keeps the
+   framing and drops `Still unverified` and `Ops docs:`, the two fields a lens cannot
+   rebuild for itself. It goes in under its own `HANDOFF` heading, unedited.
    This is the one that removes the duplication above. The REVIEW LENSES line says why the
    lens was spawned, and for `scoping` it names the callers the planner already found, a
    list no HANDOFF field carries.
