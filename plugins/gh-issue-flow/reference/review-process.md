@@ -21,6 +21,10 @@ changes still ship regressions.
 **Spawn `gh-issue-flow:diff-reviewer`, never the bare name** — a shadowing file in
 `~/.claude/agents/` wins silently and returns a plausible review of the wrong thing.
 
+**Every lens prompt carries the planner's `HANDOFF` block, pasted whole** — never your
+own account of what the planner found. What each prompt carries, and why a summary is
+not a substitute: [`../shared/execution.md`](../shared/execution.md) § 3.1.
+
 Parallelism must live in the **parent**; a subagent cannot fan out. See
 `parallel-agents.md` for what those agents share and can clobber.
 
