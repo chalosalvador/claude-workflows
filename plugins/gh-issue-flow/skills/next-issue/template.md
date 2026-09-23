@@ -74,8 +74,9 @@ reviewer):
   nothing summarized, any absolute path made repo-relative>
 
 PROCESS:
-Plugin docs: `ls -d ~/.claude/plugins/cache/claude-workflows/gh-issue-flow/*/ | sort -V |
-tail -1`. Pass that directory as `Plugin: <dir>` to every planner and reviewer you spawn.
+Plugin docs: run this from the repo root and pass the directory it prints as
+`Plugin: <dir>` to every planner and reviewer you spawn; they stop without it.
+  claude -p "Reply with OK." --model haiku --max-turns 1 --output-format stream-json --verbose < /dev/null | head -n 1 | jq -r '.plugins[] | select(.name == "gh-issue-flow") | .path'
 1. Post the scoping plan as a comment on #N first; set the board card to In
    Progress. Then branch, then create the SPEC block's change directory and get its
    validate to exit 0 BEFORE writing code. Then implement what the issue asks for,

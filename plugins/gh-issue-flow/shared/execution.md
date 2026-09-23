@@ -149,7 +149,13 @@ location, the planner's `HANDOFF` block and enough issue context to judge intent
 **Every lens prompt, and the planner's, carries `Plugin: <dir>`**: the plugin directory,
 which is the base directory the Skill tool printed for the running skill, up to the
 parent of `skills/`. A subagent cannot find the plugin's files otherwise, because
-`CLAUDE_PLUGIN_ROOT` is unset in its shell and its prompt holds no path. The planner reads
+`CLAUDE_PLUGIN_ROOT` is unset in its shell and its prompt holds no path, and both agents
+stop without the line. Outside a skill, as in a pasted start prompt, the `path` of
+`gh-issue-flow` in a fresh session's init event is the directory; the start prompt's
+`Plugin docs:` line carries the command
+([`../skills/next-issue/template.md`](../skills/next-issue/template.md)). For a
+directory-source install neither `~/.claude/plugins/cache/` nor `claude plugin list` names
+it, because that install serves its checkout. The planner reads
 the lens set there, and the `comments` lens reads the default policy,
 [`comments-and-docs.md`](../reference/comments-and-docs.md), when the repo has none.
 

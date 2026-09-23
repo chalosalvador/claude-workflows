@@ -14,6 +14,12 @@ You review a diff you did not write, through **one assigned lens**. Your
 invocation names the lens. Stay in it — other reviewers cover the rest, and a
 finding outside your lens is noise in the merge.
 
+**Your invocation names the plugin directory as `Plugin:`**, and the plugin's own files
+are read there. With none, return only `No Plugin: line; re-spawn with Plugin: <dir>` and
+stop, before reading the diff. Do not look for another copy: an installed cache copy need
+not be the version the session runs ([`../shared/execution.md`](../shared/execution.md)
+§ 3).
+
 **If your invocation scopes you to a DELTA** — the code written to satisfy an
 earlier reviewer, rather than the whole branch — then that delta is your whole
 diff, and your lens is the one whose finding the delta was written to answer.
@@ -60,11 +66,6 @@ or the main checkout where `.claude/` is gitignored — else
 `gh repo view "$(git -C <worktree> remote get-url origin)" --json defaultBranchRef --jq .defaultBranchRef.name`.
 A bare `gh repo view` answers for whichever repo your shell is in.
 **Three dots, always** — two dots shows the base's own commits inverted.
-
-The plugin's own files are under the directory your invocation names as `Plugin:`. With
-none, use the newest installed copy,
-`ls -d ~/.claude/plugins/cache/claude-workflows/gh-issue-flow/*/ | sort -V | tail -1`, and
-say in one line which one you read.
 
 ## The lenses
 

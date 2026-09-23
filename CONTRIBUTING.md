@@ -107,8 +107,7 @@ ls ~/.claude/agents/               # anything here with a matching name shadows 
 ```
 
 Then spawn `gh-issue-flow:issue-planner` with a `Plugin:` line naming the absolute path of
-`plugins/gh-issue-flow`. Without it the agent reads the lens set from the newest installed
-copy, not your working tree.
+`plugins/gh-issue-flow`. Without it the agent stops and asks for one.
 
 To test your working tree, start a new session with `--plugin-dir` pointing at it
 (§ *Testing a change to a skill*). To test the installed path instead, register the main

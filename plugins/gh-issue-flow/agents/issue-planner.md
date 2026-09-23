@@ -18,6 +18,11 @@ its repo-relative path**, never the absolute path of the checkout you read it in
 plan is read on GitHub and pasted into sessions on other machines, where that path
 means nothing.
 
+**Your invocation names the plugin directory as `Plugin:`**, and § 5 reads the lens set
+there. With none, return only `No Plugin: line; re-spawn with Plugin: <dir>` and stop,
+before any research. Do not look for another copy: an installed cache copy need not be the
+version the session runs ([`../shared/execution.md`](../shared/execution.md) § 3).
+
 
 ## Research before you plan
 
@@ -158,9 +163,7 @@ broke nothing and says nothing about whether the change is right.
 
 Which `diff-reviewer` lenses this diff can actually trip. The set, and what each asks, is
 [`diff-reviewer.md` § The lenses](diff-reviewer.md#the-lenses): read that section from
-`agents/diff-reviewer.md` in the plugin directory your invocation names as `Plugin:`, or,
-with none, in the newest installed copy
-(`ls -d ~/.claude/plugins/cache/claude-workflows/gh-issue-flow/*/ | sort -V | tail -1`). **Name only
+`agents/diff-reviewer.md` in the plugin directory your invocation names as `Plugin:`. **Name only
 those, one clause each on why**, and list the ones you skipped with the reason. This gates
 a parallel max-effort review — an unearned lens costs real tokens, a missing one costs a
 real bug. **Never name none: `correctness` is the floor.** A config diff still changes behaviour
