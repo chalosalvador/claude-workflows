@@ -150,8 +150,9 @@ location, the planner's `HANDOFF` block and enough issue context to judge intent
 which is the base directory the Skill tool printed for the running skill, up to the
 parent of `skills/`. A subagent cannot find the plugin's files otherwise, because
 `CLAUDE_PLUGIN_ROOT` is unset in its shell and its prompt holds no path, and both agents
-stop without the line. Outside a skill, as in a pasted start prompt, the `path` of
-`gh-issue-flow` in a fresh session's init event is the directory; the start prompt's
+stop without the line. Outside a skill, as in a pasted start prompt, it is the
+`--plugin-dir` the session was started with, or else the `path` of `gh-issue-flow` in a
+fresh session's init event, which does not see that flag; the start prompt's
 `Plugin docs:` line carries the command
 ([`../skills/next-issue/template.md`](../skills/next-issue/template.md)). For a
 directory-source install neither `~/.claude/plugins/cache/` nor `claude plugin list` names
