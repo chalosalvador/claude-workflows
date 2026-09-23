@@ -3,9 +3,7 @@
 
 WHY THIS EXISTS
 ---------------
-A behaviour change that does not bump `version` reaches no running session: the
-installed plugin is served from a version-keyed cache that nothing invalidates
-while that string is unchanged.
+A behaviour change bumps `version`; why, in CONTRIBUTING.md § Bump `version`.
 
 So CONTRIBUTING.md tells you to bump THREE numbers, and
 `claude plugin validate . --strict` enforces only two of them:

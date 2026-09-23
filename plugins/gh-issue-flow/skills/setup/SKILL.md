@@ -143,8 +143,7 @@ run knows whether this file has kept up with the plugin.
 
 ### Upgrade mode — an existing file, a newer plugin
 
-`claude plugin update` refreshes the plugin's code and tells no repo that its
-`workflow.json` is behind. This mode closes that gap, and the drift line every skill
+A newer plugin tells no repo that its `workflow.json` is behind. This mode closes that gap, and the drift line every skill
 prints ([`shared/config.md`](../../shared/config.md) § Resolving `workflow.json`, step 2) is what sends
 you here.
 

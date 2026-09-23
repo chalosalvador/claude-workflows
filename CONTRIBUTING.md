@@ -62,8 +62,7 @@ claude -p "Reply with OK." --model sonnet --max-turns 1 --output-format stream-j
 read there.
 
 `claude plugin update` compares version strings: with `version` unchanged it prints
-`✔ … is already at the latest version (…)` and does nothing, which is one reason every
-behaviour change bumps it (§ *Bump `version`* below).
+`✔ … is already at the latest version (…)` and does nothing.
 
 **A GitHub source** reaches a change only once it lands on the branch the marketplace
 tracks. Unverified there: that `claude plugin marketplace update <name>` then
