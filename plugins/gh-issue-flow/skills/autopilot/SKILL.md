@@ -371,11 +371,9 @@ notice that a shadowing file in `~/.claude/agents/` answered instead, and it ret
 plausible review either way.
 
 Paste the plan's `HANDOFF` block into every lens prompt **unedited, under its own
-heading**, plus that lens's own REVIEW LENSES line, the § 8 gate result, the worktree
-path and the `Plugin:` line — [`shared/execution.md`](../../shared/execution.md) § 3
-and § 3.1. A sentence of your own saying what the planner decided is not a handoff: it
-drops `Still unverified`, which is the first place an unattended run needs its reviewers
-to look.
+heading**, never your own summary of it, plus that lens's own REVIEW LENSES line, the
+§ 8 gate result, the worktree path and the `Plugin:` line —
+[`shared/execution.md`](../../shared/execution.md) § 3 and § 3.1.
 
 **Never a `disable-model-invocation` built-in review skill** — the call errors, and an
 unattended PR then ships with **no adversarial review at all** while claiming one, with

@@ -144,7 +144,7 @@ Read it before the first review of a session.
 Before committing, spawn `gh-issue-flow:diff-reviewer` subagents (read-only,
 `effort: max`, fresh context) **in parallel — one message, several tool calls** — one
 per lens from [the set](../agents/diff-reviewer.md#the-lenses). Give each the diff
-location and enough issue context to judge intent.
+location, the planner's `HANDOFF` block and enough issue context to judge intent.
 
 **Every lens prompt, and the planner's, carries `Plugin: <dir>`**: the plugin directory,
 which is the base directory the Skill tool printed for the running skill, up to the
@@ -193,13 +193,16 @@ Four levers, in order of saving:
 
 1. **Pass the planner's `HANDOFF` block to every lens**, verbatim, plus that lens's own
    line from REVIEW LENSES, the gate result, the worktree path and the `Plugin:` line.
-   **Paste the block; do not summarize it.** Writing a prompt mid-run, the temptation is
-   to compress the planner's findings into a sentence of your own — which keeps the
-   framing and drops `Still unverified` and `Ops docs:`, the two fields a lens cannot
-   rebuild for itself. It goes in under its own `HANDOFF` heading, unedited.
    This is the one that removes the duplication above. The REVIEW LENSES line says why the
    lens was spawned, and for `scoping` it names the callers the planner already found, a
    list no HANDOFF field carries.
+
+   **Paste the block; do not summarize it.** Writing a prompt mid-run, the temptation is
+   to compress the planner's findings into a sentence of your own. That keeps the
+   conclusions and loses the fields under them — `Still unverified`, `Ops docs:`,
+   `Shape:` — which are where the lenses are told to start, and which a lens can reach
+   again only by redoing the planner's work, or not at all. It goes in under its own
+   `HANDOFF` heading, unedited.
 2. **Gate the lens list** on the plan's REVIEW LENSES. The full set where two apply
    costs several times the review.
 3. **Tier the `model` per spawn**, by the issue's size label:

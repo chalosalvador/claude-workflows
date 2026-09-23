@@ -33,11 +33,10 @@ already exists, spends your caller's budget re-deriving a known answer.
 - **`Still unverified` is your first stop.** That is where a finding actually lives.
 - **Re-run a check already done only when your lens gives you a reason to doubt
   it** — and say what the reason was.
-- **No handoff?** Say so in one line and do your own research. Do not stall. A prompt
-  that describes what the planner found in the caller's own words is not a handoff —
-  name the fields you did not get, `Still unverified` and `Ops docs:` among them, so the
-  caller can see what its summary left out. A summary carries what someone concluded;
-  the block is the only thing that carries what is still unchecked.
+- **No handoff?** Say so in one line and do your own research. Do not stall. If the
+  prompt instead describes what a planner found, in the caller's own words, name the
+  fields you did not get — `Still unverified` and `Ops docs:` among them — so the caller
+  can see what its summary left out.
 
 This is not permission to trust a claim you are reviewing. The handoff tells you where
 to look, never what to conclude. If your lens is *about* something in the handoff — a

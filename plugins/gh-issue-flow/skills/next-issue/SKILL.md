@@ -240,8 +240,8 @@ Same research (steps 1–3), executed as actions, with a hard checkpoint:
          the NAMESPACED name; a bare one can be shadowed silently.
          Adjudicate: fix every valid finding, explain any rejected. Commit BEFORE
          spawning them. PASTE the plan's HANDOFF block into every lens prompt under
-         its own heading, unedited — your own summary of it is not a handoff.
-         Model tiering: shared/execution.md § 3.1.
+         its own heading, unedited — never your own summary of it. What else each
+         prompt carries, and model tiering: shared/execution.md § 3.1.
 - [ ] 6b. If those fixes introduced NEW LOGIC — a new branch, gate, condition or code
          path — commit them, then spawn ONE more `gh-issue-flow:diff-reviewer` over
          just that commit, as THE LENS THAT RAISED THE FINDING (correctness only if it

@@ -22,10 +22,8 @@ changes still ship regressions.
 `~/.claude/agents/` wins silently and returns a plausible review of the wrong thing.
 
 **Every lens prompt carries the planner's `HANDOFF` block, pasted whole** — never your
-own account of what the planner found. Compressing it keeps the conclusions and loses
-`Still unverified`, the one field that says where a finding is likely to be; the lens
-then re-reads what was already read and aims at nothing in particular. What else each
-prompt carries: [`../shared/execution.md`](../shared/execution.md) § 3.1.
+own account of what the planner found. What each prompt carries, and why a summary is
+not a substitute: [`../shared/execution.md`](../shared/execution.md) § 3.1.
 
 Parallelism must live in the **parent**; a subagent cannot fan out. See
 `parallel-agents.md` for what those agents share and can clobber.
