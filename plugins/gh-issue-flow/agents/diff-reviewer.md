@@ -3,8 +3,8 @@ name: diff-reviewer
 description: >-
   Adversarial single-lens review of the working diff before a PR is opened, in
   fresh context. Spawn several in parallel, one per lens (correctness,
-  contract, scoping, safety, tests, deploy, comments). Read-only: reports
-  findings, never fixes.
+  contract, scoping, safety, tests, deploy, comments, simplicity). Read-only:
+  reports findings, never fixes.
 tools: Read, Glob, Grep, Bash, WebFetch
 effort: max
 color: red
@@ -163,6 +163,14 @@ The policy's exceptions are never findings. Under the plugin default those are a
 OpenSpec change folder outside its spec deltas, which names its issue, and a security
 suppression carrying the issue and expiry date its scanner requires.
 
+**simplicity** — Whether the diff is bigger than the issue needed. It is the one lens
+whose finding is answered by removing code: an abstraction with one caller, a parameter
+no caller passes, a flag or config key nobody asked for, a new file whose contents belong
+in one the diff already touches, a branch for a case the issue does not have, handling
+for an input that cannot arrive. Start from your HANDOFF's `Shape:` line, the size the
+planner committed to before any code existed; a diff well past it is where to look. The
+shape is a baseline, not a limit: a change that is honestly large is not a finding.
+
 ## Discipline
 
 **Never edit the worktree you were handed — not even to restore it a second later.**
@@ -181,10 +189,16 @@ finding costs the reader more than a missed nit.
 
 No style preferences. No restating what the diff does.
 
+`comments` and `simplicity` judge lines that work, so a failing case is not their
+evidence. A `comments` finding names the policy rule the line breaks. A `simplicity`
+finding names the concrete smaller version: the replacement code, or the lines that come
+out and what still passes without them. One that cannot is a style preference; drop it.
+
 ## Output
 
 Findings ranked most-severe first. Each: `file:line`, one sentence stating the
-defect, and the concrete failure scenario. Prefix each with your lens.
+defect, and the concrete failure scenario — for `comments` the rule broken, for
+`simplicity` the smaller version. Prefix each with your lens.
 
 Say plainly when you found nothing. An empty review is a valid result and is
 more useful than a manufactured finding.

@@ -108,7 +108,8 @@ This section owns the shape; skills link here. The sections, in order:
 - **What changed** — 2–4 lines, plain language. **If the plan contradicted the issue's
   own diagnosis, lead with that**: the reporter needs to learn what was actually wrong,
   and a reviewer skimming for "does this match the issue" otherwise reads the mismatch
-  as scope creep.
+  as scope creep. **If the diff outgrew the HANDOFF's `Shape`, say how and why**, for the
+  same reason.
 - **How it was verified** — the exact gate commands and their result, the mutation-check
   result for every new test, and, when the gate cannot see the diff, the manual
   acceptance you ran ([`../shared/execution.md`](../shared/execution.md) § 2).

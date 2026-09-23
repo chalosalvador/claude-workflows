@@ -471,19 +471,20 @@ const build = async (issue) => {
      name the files, the capability, a defensible skip_specs reason, or a single review
      lens — return outcome handback with that reason and build nothing.
 
-     Then implement. Stay inside the issue's scope; section 7's fold-in threshold decides
-     anything else you notice. Any red in the gate that is not section 2.1's two known
-     classes is a handback, not a judgment call. Add or extend tests and mutation-check
-     them.
+     Then implement. Stay inside the issue's scope, within the HANDOFF's Shape; section 7's
+     fold-in threshold decides anything else you notice. Any red in the gate that is not
+     section 2.1's two known classes is a handback, not a judgment call. Add or extend
+     tests and mutation-check them.
 
      Once the gate is green, COMMIT the implementation — message
      "<type>: <what> (Fixes #${issue.number})" — and return its SHA in implCommit, read
      back with git rev-parse HEAD. The reviewers read commits, never a working tree. Do
      NOT push or open a PR — a later stage does that.
 
-     Return the plan's REVIEW LENSES in lenses, adding scoping if your diff adds a guard and
-     comments if it adds or changes a comment or doc line (${args.plugin}/shared/execution.md
-     § 3). The plan reaches every reviewer verbatim, so handoff carries only what the build
+     Return the plan's REVIEW LENSES in lenses, adding scoping if your diff adds a guard,
+     comments if it adds or changes a comment or doc line, and simplicity if it changes
+     more than comments and docs (${args.plugin}/shared/execution.md § 3). The plan
+     reaches every reviewer verbatim, so handoff carries only what the build
      adds to it: where you departed from the plan, what you checked, and the mutation
      results.`,
     { label: `build:#${issue.number}`, phase: 'Build', schema: BUILD }
