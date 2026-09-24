@@ -74,8 +74,11 @@ reviewer):
   nothing summarized, any absolute path made repo-relative>
 
 PROCESS:
-Plugin docs: `ls -d ~/.claude/plugins/cache/claude-workflows/gh-issue-flow/*/ | sort -V |
-tail -1`. Pass that directory as `Plugin: <dir>` to every planner and reviewer you spawn.
+Plugin docs: run this from the repo root, and pass the directory it prints as
+`Plugin: <dir>` to every planner and reviewer you spawn; they stop without it. It prints
+this session's `--plugin-dir` if it has one, else the plugin a fresh session loads. If it
+prints nothing, stop and ask for the directory.
+  d=$(ps -o command= -p "$CLAUDE_PID" 2>/dev/null | grep -o -e '--plugin-dir[= ][^ ]*' | head -n 1 | sed -E 's/^--plugin-dir[= ]//'); if [ -n "$d" ]; then (cd "$d" && pwd); else claude -p "Reply with OK." --model haiku --max-turns 1 --output-format stream-json --verbose < /dev/null | jq -r 'select(.type == "system" and .subtype == "init") | .plugins[]? | select(.name == "gh-issue-flow") | .path'; fi
 1. Post the scoping plan as a comment on #N first; set the board card to In
    Progress. Then branch, then create the SPEC block's change directory and get its
    validate to exit 0 BEFORE writing code. Then implement what the issue asks for,

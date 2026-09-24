@@ -335,12 +335,10 @@ through the workflow and leave the other for the next run; do not silently drop 
 fit a budget.
 
 **`args` carries three things the script cannot discover.** `args.plugin` is the plugin
-directory as [`../shared/execution.md`](../shared/execution.md) § 3 defines it, e.g.
-`~/.claude/plugins/cache/<marketplace>/gh-issue-flow/<version>` — and every prompt cites
-the skill files by that absolute path. Named by bare name, the files resolve from the
-workflow's **cwd**: in the plugin's source checkout that is unmerged source rather than
-the installed version the session runs, and in a consumer repo there is no such file at
-all. The planner and every lens get it as a `Plugin:` line, which is where they read the
+directory as [`../shared/execution.md`](../shared/execution.md) § 3 defines it, and
+every prompt cites the skill files by that absolute path. Named by bare name, the files
+resolve from the workflow's **cwd**, which need not hold the version the session runs,
+and in a consumer repo holds no such file at all. The planner and every lens get it as a `Plugin:` line, which is where they read the
 lens set and the default comment policy
 ([`../shared/execution.md`](../shared/execution.md) § 3). And
 `issue.model` is the § 3.1 tier for that issue's size label (`sonnet` for `effort:easy`);
