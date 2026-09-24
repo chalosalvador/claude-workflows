@@ -34,49 +34,40 @@ green `guards`, not for the absence of red.
 conversation resolution and no force-pushes. That applies to the maintainer too: a direct
 push is rejected with `GH006: Protected branch update failed`. Branch, PR, merge.
 
-## The installed plugin is a cached copy
+## What the installed plugin serves
 
-`claude plugin install` copies the plugin into a version-keyed cache and serves it from
-there, even when the marketplace is registered as a directory source:
+`claude plugin marketplace list` shows each marketplace's source, `Directory (<path>)` or
+GitHub, and the two serve from different places.
 
-```
-~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/
-```
+**A directory source serves its checkout.** Every session, headless or interactive, loads
+the plugin from `<path>/plugins/gh-issue-flow` and reports the `version` in that checkout's
+`plugin.json`. What the checkout has on disk is what runs, in every session on the
+machine, including sessions working in other repos, so put it back on `main` when a test
+is done.
 
-`claude plugin marketplace list` shows which source each marketplace uses —
-`Directory (<your checkout>)` or GitHub. Either way the copy is not a live view of the
-checkout: its files are not symlinks, and a
-`git checkout` here does not change what it serves. `<version>` is `plugin.json` →
-`version`, and nothing invalidates the cache while that string is unchanged, so every
-change merged since the install is invisible to every session until the version moves,
-and nothing says so.
+`claude plugin install` and `claude plugin update` still write a copy to
+`~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/`, and
+`~/.claude/plugins/installed_plugins.json` → `installPath` names that copy, but no session
+reads it: a skill added only to the copy does not load, and the plugin still loads with the
+cache directory removed. `claude plugin update` moves `installPath` to whatever version the
+checkout carries, lower as well as higher, and changes nothing a session loads. Neither
+file says what a session serves. The session's init event does:
 
-When the version did not change, both refresh commands report success and change nothing:
-
-| Command | Says | Does |
-|---|---|---|
-| `claude plugin marketplace update <name>` | `✔ Successfully updated marketplace` | refreshes the marketplace manifest only, not the cached plugin |
-| `claude plugin update <plugin>` | `✔ already at the latest version (…)` | nothing: it compares versions, and yours did not change |
-
-Once `version` changes, `claude plugin marketplace update` then `claude plugin update` is
-the right sequence. It creates the new cache directory and keeps your plugin config:
-
-```
-✔ Plugin "gh-issue-flow" updated from 0.3.0 to 0.3.1 for scope user.
-cache dirs: 0.3.0  0.3.1        # new dir created
-pluginConfigs: PRESERVED         # board number and owner survive
+```bash
+claude -p "Reply with OK." --model sonnet --max-turns 1 --output-format stream-json --verbose \
+  | head -n 1 | jq '.plugins'
 ```
 
-Keep uninstall and reinstall for a cache that is stale because the version did not
-change, and read § *The reinstall wipes your plugin config* below first.
+`path` is the directory the session loaded the plugin from, and `version` is the one it
+read there.
 
-**Restart after any update.** The Skill tool resolves the plugin directory once per
-session: after `claude plugin update`, a skill invoked in the same session still loads
-from the directory it resolved before, and neither `plugin update` nor `/reload-plugins`
-repoints it. A check made through the Skill tool without a restart reads the old text.
+`claude plugin update` compares version strings: with `version` unchanged it prints
+`✔ … is already at the latest version (…)` and does nothing.
 
-Unverified: whether a GitHub-source marketplace caches the same way. On a GitHub source,
-local edits reach nothing until they land on `main` regardless.
+**A GitHub source** reaches a change only once it lands on the branch the marketplace
+tracks. Unverified there: that `claude plugin marketplace update <name>` then
+`claude plugin update <plugin>` brings it, whether a session serves the cache copy, and so
+whether a running session needs a restart to see an update.
 
 ## Testing a change to a skill
 
@@ -88,6 +79,10 @@ claude --plugin-dir ./plugins/gh-issue-flow
 
 Skills are read at invocation, so under `--plugin-dir` a local edit takes effect
 immediately, and `/reload-plugins` picks up further edits without a restart.
+
+`--plugin-dir` replaces the installed plugin for that session: the init event (§ *What the
+installed plugin serves*) lists one `gh-issue-flow`, with `source` `gh-issue-flow@inline`
+and `path` the directory you passed. It serves the agents too.
 
 ## Testing a change to an agent
 
@@ -115,17 +110,19 @@ Then spawn `gh-issue-flow:issue-planner` with a `Plugin:` line naming the absolu
 `plugins/gh-issue-flow`. Without it the agent reads the lens set from the newest installed
 copy, not your working tree.
 
-To test the installed path against your working tree rather than the published version,
-add the checkout as a directory source, then reinstall on every change you want to see,
-because the install is a copy:
+To test your working tree, start a new session with `--plugin-dir` pointing at it
+(§ *Testing a change to a skill*). To test the installed path instead, register the main
+checkout as a directory source once, then put that checkout on the branch under test
+before the session starts and leave it there until the run ends:
 
 ```bash
-claude plugin marketplace add ./
-claude plugin uninstall gh-issue-flow
-claude plugin install gh-issue-flow@claude-workflows
+claude plugin marketplace add ./                     # once, from the main checkout
+claude plugin install gh-issue-flow@claude-workflows # once
+git checkout --detach <branch>                       # git refuses a branch another worktree has
 ```
 
-Restart to apply it. That recipe wipes your plugin config; read the next section first.
+Then start a new session and read its init event: `path` must be the checkout's
+`plugins/gh-issue-flow` and `version` the branch's. No reinstall is needed between changes.
 
 ### The reinstall wipes your plugin config, and nothing says so
 
@@ -139,10 +136,11 @@ back. It lives in `~/.claude/settings.json` → `pluginConfigs`, keyed by plugin
 | `claude plugin install …` | `{}` — not restored |
 
 `claude plugin marketplace remove <name>` wipes `pluginConfigs` too, for every plugin that
-marketplace provided, and dropping the `./` source is how the recipe above is undone.
-`claude plugin update` is the one command that keeps it, which is the reason to bump the
-version rather than reinstall. Write the values down before you run the recipe. To
-recover them, re-supply them; `--config` is repeatable and works on an installed plugin:
+marketplace provided, and dropping the `./` source is how the directory-source setup above
+is undone. `claude plugin update` is the one command that keeps it, which is the reason to
+bump the version rather than reinstall. Write the values down before you uninstall or
+remove a marketplace. To recover them, re-supply them; `--config` is repeatable and works
+on an installed plugin:
 
 ```bash
 claude plugin install gh-issue-flow@claude-workflows \
@@ -166,8 +164,7 @@ the one key, not the file.
 
 `plugin.json` → `version`, and both `version` fields in
 `.claude-plugin/marketplace.json`. The bump is the only thing that gives
-`claude plugin update` anything to do; without it a merged change reaches no running
-session.
+`claude plugin update` anything to do (§ *What the installed plugin serves*).
 
 `tests/test_version_agreement.py` reds when the three disagree. `claude plugin validate`
 alone does not: `plugin.json` disagreeing with `marketplace.json` → `plugins[0].version`

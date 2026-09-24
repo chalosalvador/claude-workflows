@@ -137,9 +137,8 @@ print exactly one line and carry on:
 > add them.`
 
 Carry on **with defaults** — every key is optional and an absent one falls through to
-Layer 3, so a behind file is never a failure. But say it every run. `claude plugin update`
-refreshes the plugin's code and tells no repo that its config is now behind; this line
-is the only thing that does.
+Layer 3, so a behind file is never a failure. But say it every run. A newer plugin tells no
+repo that its config is now behind; this line is the only thing that does.
 
 **Step 3 — deploy-target docs.** Step 1 printed `targets=<names or ->` from `workflow.json` and,
 when the directory exists, `targetdir=<its absolute path>` and one `targetdoc=<file>` line

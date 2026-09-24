@@ -22,11 +22,12 @@ caused wasted work.
 
 ## Testing what you changed
 
-- **The installed plugin is a cached copy.** A `git checkout` changes nothing it serves;
-  it picks up a change only through a version bump and `claude plugin update`, or a
-  reinstall from a directory source. Test skills with
-  `claude --plugin-dir ./plugins/gh-issue-flow`, and restart after any update:
-  [§ The installed plugin is a cached copy](CONTRIBUTING.md#the-installed-plugin-is-a-cached-copy).
+- **A directory-source install serves its checkout, not the cache.** Every session on the
+  machine runs whatever that checkout has on disk, and `claude plugin update` changes
+  nothing it loads. Test with `claude --plugin-dir ./plugins/gh-issue-flow`, or put the
+  checkout on the branch under test for the whole run and put it back on `main` after;
+  the session's init event names the path and version it loaded:
+  [§ What the installed plugin serves](CONTRIBUTING.md#what-the-installed-plugin-serves).
 - **Agents resolve at session start, and a same-named agent shadows the plugin's.** An
   agent edit cannot be tested in the session that made it; check `ls ~/.claude/agents/`
   and always spawn the namespaced `gh-issue-flow:<agent>`:

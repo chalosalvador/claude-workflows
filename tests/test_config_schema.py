@@ -3,8 +3,7 @@
 
 WHY THIS EXISTS
 ---------------
-`claude plugin update` refreshes the plugin's code and tells no repo that its
-`.claude/workflow.json` is now behind. The migration path is `setup upgrade`,
+A newer plugin tells no repo that its `.claude/workflow.json` is now behind. The migration path is `setup upgrade`,
 which adds the keys the schema gained since the file was written. That only
 works if three things never drift:
 
