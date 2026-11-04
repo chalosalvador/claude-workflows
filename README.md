@@ -168,7 +168,7 @@ So the skills pass a **research handoff** forward (what was read, what the gate 
 and pointedly what is *still unverified*), gate the lens list on the plan, tier the model
 by the issue's size label, and let the planner scale its own output. Rules and the
 numbers: [`shared/execution.md`](plugins/gh-issue-flow/shared/execution.md)
-§ 3.1 — one place, so they cannot drift.
+§ 3.1.
 
 **None of it cuts scrutiny.** It removes duplicated research and unearned lenses. If
 you find yourself skipping the review to save budget, the honest move is to not run the
