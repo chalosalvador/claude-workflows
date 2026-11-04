@@ -22,6 +22,8 @@ triage ──▶ next-issue ──▶ plan ──▶ branch ──▶ [spec] ─
   ending with a plain-words summary of what to review and test.
 - **`autopilot`** works the `agent-ready` queue unattended and opens reviewable PRs. It
   never merges.
+- **`review-pr`** runs the same review lenses on any open PR, from a terminal or a GitHub
+  Action, and leaves a comment-only review.
 - **`work-summary`** turns a date window into a plain-language rollup.
 
 Underneath, every step is backed by a reference doc — why an empty grep is not proof, how

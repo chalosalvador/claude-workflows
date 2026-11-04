@@ -32,6 +32,7 @@ testbed run found four real bugs in this plugin that reading the code had not.
 | [`triage`](skills/triage/SKILL.md) | `/gh-issue-flow:triage` | Uncapped integrity pass (0 off-board, 0 unassigned) + capped deep pass: category, effort, priority, duplicates, `agent-ready` gate. |
 | [`next-issue`](skills/next-issue/SKILL.md) | `/gh-issue-flow:next-issue` | Picks the theme-aligned card; emits a paste-ready prompt **or** runs it here with a pause for your OK, ending with a plain-words review/test summary. |
 | [`autopilot`](skills/autopilot/SKILL.md) | `/gh-issue-flow:autopilot` | Works the `agent-ready` queue unattended in a worktree. Opens reviewable PRs; **never merges**. |
+| [`review-pr`](skills/review-pr/SKILL.md) | `/gh-issue-flow:review-pr <PR>` | Runs the `diff-reviewer` lenses on an open PR, with no planner or board; prints the findings, and with `post` leaves one `COMMENT` review. Never approves. |
 | [`work-summary`](skills/work-summary/SKILL.md) | `/gh-issue-flow:work-summary` | A date window as plain language — daily, standup, weekly, or a rendered Slidev deck. |
 
 ### Agents
@@ -42,7 +43,7 @@ regardless of the session's own setting. They appear as `gh-issue-flow:<name>`.
 | Agent | Used by | Returns |
 |---|---|---|
 | [`issue-planner`](agents/issue-planner.md) | `next-issue` step 3, `autopilot` § 6 | **HANDOFF** — what every reviewer starts from — then DECIDE FIRST, SCOPE (+FOLD IN), VALIDATE and **REVIEW LENSES**; VERIFY-FIRST, TESTS, SPEC IMPACT and RISKS only when their trigger fires |
-| [`diff-reviewer`](agents/diff-reviewer.md) | `next-issue` step 6, `autopilot` § 9 | Findings through **one** assigned lens from [the set](agents/diff-reviewer.md#the-lenses) |
+| [`diff-reviewer`](agents/diff-reviewer.md) | `next-issue` step 6, `autopilot` § 9, `review-pr` § 4 | Findings through **one** assigned lens from [the set](agents/diff-reviewer.md#the-lenses) |
 
 How a session spawns the reviewer once per lens:
 [`reference/parallel-agents.md`](reference/parallel-agents.md).
@@ -92,7 +93,9 @@ setup ──▶ triage ──▶ next-issue ──▶ issue-planner ──▶ bu
    │          │                                                                        │
    │          └──▶ agent-ready ──▶ autopilot ──────────────────────────────────────────┘
    │
-   └──▶ work-summary  (independent — reads git, not the board)
+   ├──▶ work-summary  (independent — reads git, not the board)
+   │
+   └──▶ review-pr ──▶ diff-reviewer ×N ──▶ review on an open PR  (independent — no planner, no board)
 ```
 
 `triage` produces the `agent-ready` label that `autopilot` consumes. That label is the

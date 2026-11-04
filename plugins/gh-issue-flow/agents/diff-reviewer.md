@@ -1,8 +1,8 @@
 ---
 name: diff-reviewer
 description: >-
-  Adversarial single-lens review of the working diff before a PR is opened, in
-  fresh context. Spawn several in parallel, one per lens (correctness,
+  Adversarial single-lens review of a diff, in fresh context: the working branch
+  before a PR is opened, or an open PR. Spawn several in parallel, one per lens (correctness,
   contract, scoping, safety, tests, deploy, comments, simplicity). Read-only:
   reports findings, never fixes.
 tools: Read, Glob, Grep, Bash, WebFetch
@@ -60,7 +60,9 @@ git -C <worktree> diff <integration-branch>...HEAD
 directory between commands, so a bare `git` reads whichever checkout the session started
 in, and reviews the wrong tree without an error.
 
-Resolve the integration branch from the repo, don't assume `main`: read
+**If your invocation carries a `Base: <ref>` line, that ref is the integration branch**
+wherever this file says so: a PR review names the PR's own base, which need not be the
+repo's. Without one, resolve it from the repo, don't assume `main`: read
 `.claude/workflow.json` -> `integrationBranch` if the repo defines one — in the worktree,
 or the main checkout where `.claude/` is gitignored — else
 `gh repo view "$(git -C <worktree> remote get-url origin)" --json defaultBranchRef --jq .defaultBranchRef.name`.
@@ -172,7 +174,8 @@ whose finding is answered by removing code: an abstraction with one caller, a pa
 no caller passes, a flag or config key nobody asked for, a new file whose contents belong
 in one the diff already touches, a branch for a case the issue does not have, handling
 for an input that cannot arrive. Start from your HANDOFF's `Shape:` line, the size the
-planner committed to before any code existed; a diff well past it is where to look. The
+planner committed to before any code existed; a diff well past it is where to look. With
+no `Shape:` line, size the diff against what the PR or issue it answers asks for. The
 shape is a baseline, not a limit: a change that is honestly large is not a finding.
 
 ## Discipline
