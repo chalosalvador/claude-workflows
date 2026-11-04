@@ -190,7 +190,8 @@ does not decide whether that size gets checked. On a small diff, tier its model 
 ### 3.1 Cost discipline
 
 **This subsection is the single source for spend rules. Skills link here; they do not
-restate it.**
+restate it.** A review with no planner has no lens list or size label for levers 2 and 3
+to read; [`review-pr`](../skills/review-pr/SKILL.md) § 3 and § 4 own that case.
 
 On a one-line docs fix, the dominant waste is not review depth — the planner and each lens
 clone the repo, build their own environment and read the same files.

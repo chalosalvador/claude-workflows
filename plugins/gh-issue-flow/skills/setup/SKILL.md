@@ -144,7 +144,7 @@ run knows whether this file has kept up with the plugin.
 ### Upgrade mode — an existing file, a newer plugin
 
 A newer plugin tells no repo that its `workflow.json` is behind. This mode closes that gap, and the drift line every skill
-prints ([`shared/config.md`](../../shared/config.md) § Resolving `workflow.json`, step 2) is what sends
+that reads `workflow.json` prints ([`shared/config.md`](../../shared/config.md) § Resolving `workflow.json`, step 2) is what sends
 you here.
 
 ```
@@ -438,8 +438,8 @@ notices when they silently are not running.
 
 | Agent | Runs at | Used by | Returns |
 |---|---|---|---|
-| `issue-planner` | `effort: max`, read-only | `next-issue`, `autopilot` | The scoping plan — its **HANDOFF**, which every reviewer starts from, and **REVIEW LENSES**, which decides the next step |
-| `diff-reviewer` | `effort: max`, read-only | `next-issue`, `autopilot` | Findings through one lens from [the set](../../agents/diff-reviewer.md#the-lenses) |
+| `issue-planner` | `effort: max`, read-only | `next-issue`, `autopilot` | The scoping plan — its **HANDOFF**, which every issue-flow reviewer starts from, and **REVIEW LENSES**, which decides the next step |
+| `diff-reviewer` | `effort: max`, read-only | `next-issue`, `autopilot`, `review-pr` | Findings through one lens from [the set](../../agents/diff-reviewer.md#the-lenses) |
 
 **Check, do not warn.** A same-named agent in `~/.claude/agents/` or the project's
 `.claude/agents/` wins over the plugin's copy, with no error and a plausible result.

@@ -139,9 +139,10 @@ Ordering between migration, backfill, and image roll. Start from your HANDOFF's
 `Ops docs:` line — the deploy-target doc § Deploy and § Infra and migrations lines the
 planner carried: what a merge runs, the ordering rules, what is not in the CD path — then
 verify against the live workflow; the doc is a snapshot and the workflow wins. Check
-whether merging the integration branch auto-deploys and runs migrations — read
-`.claude/workflow.json` -> `deployOnMerge`, or the repo's CD workflow, rather
-than assuming a merge is inert.
+whether merging into the diff's base auto-deploys and runs migrations, rather than
+assuming a merge is inert: `.claude/workflow.json` -> `deployOnMerge` answers for the
+repo's `integrationBranch` only, so for a `Base:` that is any other branch, read the CD
+workflow that branch triggers.
 
 **comments** — Each comment and doc line the diff adds or changes
 (`git diff -U0 <integration-branch>...HEAD`), against the repo's own comment policy: a
@@ -185,7 +186,8 @@ Other lenses are reading the same tree at the same time: a mutant written in pla
 the lens beside you a red gate and an uncommitted mutant body, and it spends its budget
 proving the diff is not at fault. When your lens needs to run a mutant or a command
 against modified code, `git clone` the worktree into a directory of your own under the
-caller's scratch area and mutate the clone. The shared tree is read-only for you in
+caller's scratch area and mutate the clone, and name the clone's path in your output so the
+caller can remove it. The shared tree is read-only for you in
 practice, whatever your tool list says.
 
 For every finding, construct the concrete failing case: inputs and state in,

@@ -42,7 +42,7 @@ regardless of the session's own setting. They appear as `gh-issue-flow:<name>`.
 
 | Agent | Used by | Returns |
 |---|---|---|
-| [`issue-planner`](agents/issue-planner.md) | `next-issue` step 3, `autopilot` § 6 | **HANDOFF** — what every reviewer starts from — then DECIDE FIRST, SCOPE (+FOLD IN), VALIDATE and **REVIEW LENSES**; VERIFY-FIRST, TESTS, SPEC IMPACT and RISKS only when their trigger fires |
+| [`issue-planner`](agents/issue-planner.md) | `next-issue` step 3, `autopilot` § 6 | **HANDOFF** — what every issue-flow reviewer starts from — then DECIDE FIRST, SCOPE (+FOLD IN), VALIDATE and **REVIEW LENSES**; VERIFY-FIRST, TESTS, SPEC IMPACT and RISKS only when their trigger fires |
 | [`diff-reviewer`](agents/diff-reviewer.md) | `next-issue` step 6, `autopilot` § 9, `review-pr` § 4 | Findings through **one** assigned lens from [the set](agents/diff-reviewer.md#the-lenses) |
 
 How a session spawns the reviewer once per lens:

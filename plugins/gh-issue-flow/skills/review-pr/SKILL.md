@@ -6,7 +6,7 @@ description: >-
   worktree, diffs it against the PR's own base, spawns one read-only reviewer per
   lens, merges their findings and prints them with each lens's raw output; with
   `post`, posts them as one COMMENT review with inline comments. Never approves,
-  requests changes, edits or pushes. Use for "review PR 123", "run the diff
+  requests changes, edits or pushes. Use for "review PR #N", "run the diff
   reviewer on this PR", or as the step a GitHub Action runs on every PR.
 ---
 
@@ -15,13 +15,13 @@ description: >-
 Runs the same reviewer `next-issue` and `autopilot` run before a PR exists, on a PR that
 already does. The lenses, their rules and their output format belong to
 [`agents/diff-reviewer.md`](../../agents/diff-reviewer.md); this skill only supplies what
-a planner supplies in the issue flow: the diff location, the base, the lens list, and the
-merge of the results.
+the planner and the session supply in the issue flow: the diff location, the base, the lens
+list, and the merge of the results.
 
 **Arguments:** a PR number or URL (required), then optionally:
 
-- `post` — post the result to the PR as a review (§ 6). Without it, nothing is written
-  anywhere.
+- `post` — post the result to the PR as a review (§ 6). Without it, nothing is posted to
+  GitHub.
 - `lenses=<a,b,…>` — run exactly these lenses instead of the default (§ 3).
 
 ```
@@ -34,8 +34,10 @@ merge of the results.
 - [ ] 7. Remove the worktree
 ```
 
-**This skill reads and comments; it changes nothing else.** No edit to the PR branch, no
-push, no approval or change request, no resolved thread, no label.
+**On GitHub this skill only comments.** No edit to the PR branch, no push, no approval or
+change request, no resolved thread, no label. Locally it fetches the base into
+`refs/remotes/origin/<base>`, which moves that ref under every worktree of the clone, and
+adds a worktree and a ref that § 7 removes.
 
 ## 1. Read the PR
 
@@ -81,13 +83,15 @@ it again.
 
 ## 3. Pick the lenses
 
-No planner runs, so nobody names the lenses from the issue. The default is the whole
-[set](../../agents/diff-reviewer.md#the-lenses), with one exception:
+No planner runs, so nobody names the lenses from the issue, and the gating in
+[`shared/execution.md`](../../shared/execution.md) § 3.1 has nothing to gate on. The
+default is the whole [set](../../agents/diff-reviewer.md#the-lenses), so that every PR in a
+run gets the same reviewers and two runs can be compared, with one exception:
 
 - **Every changed file is documentation** (`git -C "$wt" diff --name-only
   origin/<baseRefName>...HEAD` lists only `.md`, `.mdx`, `.rst` or `.txt` files): run
   `comments` and `correctness`.
-- **Otherwise:** all eight.
+- **Otherwise:** the whole set.
 
 `lenses=` replaces the rule. Print the list you ran and why, so two runs on the same PR
 can be compared.
@@ -97,8 +101,8 @@ can be compared.
 **One message, one `gh-issue-flow:diff-reviewer` call per lens**, so they run at once
 ([`parallel-agents.md`](../../reference/parallel-agents.md)). Spawn the namespaced name,
 never the bare one ([`shared/execution.md`](../../shared/execution.md) § 3). Leave
-`model` unset: every lens inherits the session's model, so the model is chosen once, when
-the session starts.
+`model` unset: § 3.1's model tiers key off an issue's size label, which a PR does not
+carry, so every lens inherits the session's model, chosen once when the session starts.
 
 Each prompt is exactly this, and nothing else:
 
@@ -157,9 +161,10 @@ inline, Dropped, and each lens's raw output inside its own `<details>` block. If
 would pass 60,000 characters, leave the raw outputs out and say so in the body; the
 printed report still has them.
 
-Write the request to a JSON file and post it:
+Post the request on stdin, so the step needs no tool beyond `gh`:
 
-```json
+```sh
+gh api --method POST repos/<owner/repo>/pulls/<N>/reviews --input - --jq .id <<'EOF'
 {
   "commit_id": "<the reviewed head SHA>",
   "event": "COMMENT",
@@ -168,10 +173,7 @@ Write the request to a JSON file and post it:
     { "path": "<file>", "line": 42, "side": "RIGHT", "body": "<lens>: <defect>\n\n<failure scenario>" }
   ]
 }
-```
-
-```sh
-gh api --method POST repos/<owner/repo>/pulls/<N>/reviews --input <file> --jq .id
+EOF
 gh api repos/<owner/repo>/pulls/<N>/reviews/<id>/comments --jq length
 ```
 
@@ -190,6 +192,9 @@ git -C "$root" update-ref -d refs/review-pr/<N>
 Without `--force`. If `worktree remove` refuses because the tree is modified, something
 wrote to a tree every lens is told never to edit: report that with `git -C "$wt" status
 --short`, then remove it with `--force`.
+
+A lens that ran a mutant made its own clone and names its path in its output. Remove each
+one named, and only those.
 
 ## Running it on every PR
 

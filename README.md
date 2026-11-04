@@ -23,7 +23,7 @@ triage ──▶ next-issue ──▶ plan ──▶ branch ──▶ [spec] ─
 - **`autopilot`** works the `agent-ready` queue unattended and opens reviewable PRs. It
   never merges.
 - **`review-pr`** runs the same review lenses on any open PR, from a terminal or a GitHub
-  Action, and leaves a comment-only review.
+  Action, and prints the findings; with `post`, it leaves a comment-only review.
 - **`work-summary`** turns a date window into a plain-language rollup.
 
 Underneath, every step is backed by a reference doc — why an empty grep is not proof, how
@@ -109,7 +109,7 @@ a reviewer checks — all of that lives in your repo, where it can be right.
 After a plugin update, `/gh-issue-flow:setup upgrade` adds the keys the config schema
 gained since your `workflow.json` was written and generates any deploy-target doc that new
 evidence calls for. It touches nothing that already exists. You do not have
-to remember: every skill prints one line when the file is behind.
+to remember: every skill that reads `workflow.json` prints one line when the file is behind.
 
 ### 3. Try it
 
