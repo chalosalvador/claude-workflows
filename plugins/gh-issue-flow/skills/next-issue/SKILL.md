@@ -233,18 +233,18 @@ Same research (steps 1–3), executed as actions, with a hard checkpoint:
 - [ ] 4c. Implement what the issue asks for, within the HANDOFF's Shape — no
          opportunistic refactors.
 - [ ] 5. Run the repo's full VALIDATE gate — shared/execution.md § 2, verbatim.
-- [ ] 6. Review: spawn `gh-issue-flow:diff-reviewer` subagents IN PARALLEL (effort:
+- [ ] 6. Review: spawn `gh-issue-flow:diff-reviewer` subagents in parallel (effort:
          max, fresh context), one per lens the plan named — plus `scoping` whenever the
          diff adds a guard, `comments` whenever it adds or changes a comment or doc
          line, and `simplicity` whenever it changes more than comments and docs. Spawn
-         the NAMESPACED name; a bare one can be shadowed silently.
-         Adjudicate: fix every valid finding, explain any rejected. Commit BEFORE
-         spawning them. PASTE the plan's HANDOFF block into every lens prompt under
+         the namespaced name; a bare one can be shadowed silently.
+         Adjudicate: fix every valid finding, explain any rejected. Commit before
+         spawning them. Paste the plan's HANDOFF block into every lens prompt under
          its own heading, unedited — never your own summary of it. What else each
          prompt carries, and model tiering: shared/execution.md § 3.1.
-- [ ] 6b. If those fixes introduced NEW LOGIC — a new branch, gate, condition or code
-         path — commit them, then spawn ONE more `gh-issue-flow:diff-reviewer` over
-         just that commit, as THE LENS THAT RAISED THE FINDING (correctness only if it
+- [ ] 6b. If those fixes introduced new logic — a new branch, gate, condition or code
+         path — commit them, then spawn one more `gh-issue-flow:diff-reviewer` over
+         just that commit, as the lens that raised the finding (correctness only if it
          was your own), handed that finding verbatim and the HANDOFF block.
          Skip for test/comment/doc-only fixes — a changed message still gets a pass.
 - [ ] 6c. Archive the spec change as the LAST commit of this PR; assert the archive

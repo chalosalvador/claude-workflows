@@ -2,7 +2,7 @@
 
 Read this only when the run touches a Projects v2 board — `triage`, `next-issue`,
 `autopilot`, and `setup` when it reports which board is in effect. `work-summary` never
-needs it. The file-lookup step every skill runs, and the `number=` / `owner=` lines this
+needs it. The file-lookup step every skill that reads `workflow.json` runs, and the `number=` / `owner=` lines this
 file interprets, are [`config.md`](config.md) § Resolving `workflow.json`.
 
 ---

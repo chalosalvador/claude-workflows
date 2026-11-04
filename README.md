@@ -22,6 +22,8 @@ triage ──▶ next-issue ──▶ plan ──▶ branch ──▶ [spec] ─
   ending with a plain-words summary of what to review and test.
 - **`autopilot`** works the `agent-ready` queue unattended and opens reviewable PRs. It
   never merges.
+- **`review-pr`** runs the same review lenses on any open PR, from a terminal or a GitHub
+  Action, and prints the findings; with `post`, it leaves a comment-only review.
 - **`work-summary`** turns a date window into a plain-language rollup.
 
 Underneath, every step is backed by a reference doc — why an empty grep is not proof, how
@@ -107,7 +109,7 @@ a reviewer checks — all of that lives in your repo, where it can be right.
 After a plugin update, `/gh-issue-flow:setup upgrade` adds the keys the config schema
 gained since your `workflow.json` was written and generates any deploy-target doc that new
 evidence calls for. It touches nothing that already exists. You do not have
-to remember: every skill prints one line when the file is behind.
+to remember: every skill that reads `workflow.json` prints one line when the file is behind.
 
 ### 3. Try it
 
@@ -166,7 +168,7 @@ So the skills pass a **research handoff** forward (what was read, what the gate 
 and pointedly what is *still unverified*), gate the lens list on the plan, tier the model
 by the issue's size label, and let the planner scale its own output. Rules and the
 numbers: [`shared/execution.md`](plugins/gh-issue-flow/shared/execution.md)
-§ 3.1 — one place, so they cannot drift.
+§ 3.1.
 
 **None of it cuts scrutiny.** It removes duplicated research and unearned lenses. If
 you find yourself skipping the review to save budget, the honest move is to not run the
