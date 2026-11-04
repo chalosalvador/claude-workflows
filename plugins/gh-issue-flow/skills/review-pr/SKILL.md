@@ -15,8 +15,9 @@ description: >-
 Runs the same reviewer `next-issue` and `autopilot` run before a PR exists, on a PR that
 already does. The lenses, their rules and their output format belong to
 [`agents/diff-reviewer.md`](../../agents/diff-reviewer.md); this skill only supplies what
-the planner and the session supply in the issue flow: the diff location, the base, the lens
-list, and the merge of the results.
+the planner and the session supply in the issue flow: the diff location, the lens list and
+the merge of the results, plus the PR's own base, which an issue-flow lens resolves for
+itself.
 
 **Arguments:** a PR number or URL (required), then optionally:
 
@@ -37,7 +38,7 @@ list, and the merge of the results.
 **On GitHub this skill only comments.** No edit to the PR branch, no push, no approval or
 change request, no resolved thread, no label. Locally it fetches the base into
 `refs/remotes/origin/<base>`, which moves that ref under every worktree of the clone, and
-adds a worktree and a ref that § 7 removes.
+adds a worktree and a ref, and a lens may add a clone; § 7 removes all three.
 
 ## 1. Read the PR
 
@@ -193,8 +194,9 @@ Without `--force`. If `worktree remove` refuses because the tree is modified, so
 wrote to a tree every lens is told never to edit: report that with `git -C "$wt" status
 --short`, then remove it with `--force`.
 
-A lens that ran a mutant made its own clone and names its path in its output. Remove each
-one named, and only those.
+Remove each clone a lens names in its output
+([`diff-reviewer.md` § Discipline](../../agents/diff-reviewer.md#discipline)), and only
+those.
 
 ## Running it on every PR
 

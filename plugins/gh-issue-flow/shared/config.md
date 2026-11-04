@@ -26,7 +26,7 @@ machine and cannot by itself follow you between projects.
 **So Layer 1 is only the DEFAULT board, never the answer** — a repo's `workflow.json` →
 `board` wins. The board half of resolution (the order, the machine default, the way back
 after a wipe, the fatal `${BOARD:-…}` idiom) is [`board.md`](board.md) § Resolution, read
-only by the skills that touch a board. Every skill runs the step below.
+only by the skills that touch a board. Every skill that reads `workflow.json` runs the step below.
 
 ---
 

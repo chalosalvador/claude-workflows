@@ -189,8 +189,8 @@ does not decide whether that size gets checked. On a small diff, tier its model 
 
 ### 3.1 Cost discipline
 
-**This subsection is the single source for spend rules and their reasons. Skills link
-here; the one rule each spawn site also repeats is lever 1's paste instruction, because a
+**This subsection is the single source for spend rules when a planner ran, and their
+reasons. Skills link here; the one rule each spawn site also repeats is lever 1's paste instruction, because a
 session writing a lens prompt is not reading this file.**
 
 A review with no planner has no lens list or size label for levers 2 and 3 to read;

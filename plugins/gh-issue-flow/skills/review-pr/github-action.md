@@ -58,10 +58,11 @@ What each part is for:
 - **`ref:` a commit SHA**, not a branch: a comparison run over several days otherwise
   reviews later PRs with a different reviewer. The skill prints the plugin `version` it
   loaded on every run.
-- **`--allowedTools`** is the floor: spawning the lenses, reading files, `git` and `gh`,
-  which is everything the skill itself runs, posting included. A lens that runs the repo's
-  tests or a mutant needs those commands too; add the repo's gate commands, or the lens
-  reports that it could not run them.
+- **`--allowedTools`** is the floor: spawning the lenses, reading files, `git` and `gh`. A
+  lens that runs the repo's tests or a mutant needs those commands too; add the repo's gate
+  commands, or the lens reports that it could not run them. Removing a lens's clone needs
+  `rm`, which the list leaves out; the runner is discarded after the job, and the clone with
+  it.
 - **`GH_TOKEN`** is what `gh` reads. The `pull-requests: write` permission is what lets the
   skill post its review; everything else it does is a read.
 
